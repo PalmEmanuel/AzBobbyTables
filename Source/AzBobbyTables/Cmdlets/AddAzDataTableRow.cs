@@ -16,7 +16,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <para type="description">The name of the table.</para>
         /// </summary>
         [Parameter(Mandatory = true)]
-        public string ConnectionString { get; set; }
+        public string ConnectionS { get; set; }
 
         /// <summary>
         /// <para type="description">The name of the table.</para>
@@ -34,7 +34,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         {
             base.ProcessRecord();
 
-            AzDataTableService.Connect(ConnectionString, TableName);
+            AzDataTableService.Connect(ConnectionS, TableName);
 
             AzDataTableService.AddRowToTable(Row);
         }

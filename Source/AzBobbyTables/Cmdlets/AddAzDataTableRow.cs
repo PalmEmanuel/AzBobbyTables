@@ -33,10 +33,13 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [ValidateNotNullOrEmpty()]
         public Hashtable Row { get; set; }
 
-        protected override void ProcessRecord()
+        protected override void BeginProcessing()
         {
             AzDataTableService.Connect(ConnectionString, TableName);
+        }
 
+        protected override void ProcessRecord()
+        {
             AzDataTableService.AddRowToTable(Row);
         }
     }

@@ -31,16 +31,16 @@ namespace PipeHow.AzBobbyTables
 
             _tableClient.AddEntity(entity);
         }
-        internal static void AddRowsToTable(IEnumerable<Dictionary<string, object>> rows)
+        internal static void AddRowsToTable(IEnumerable<Hashtable> rows)
         {
             var transactions = new List<TableTransactionAction>();
 
             var entities = rows.Select(r =>
             {
                 TableEntity entity = new TableEntity();
-                foreach (var kvp in r)
+                foreach (var key in r.Keys)
                 {
-                    entity.Add(kvp.Key, kvp.Value);
+                    entity.Add(key.ToString(), r[key]);
                 }
                 return entity;
             });

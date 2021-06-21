@@ -1,7 +1,5 @@
-﻿using System;
+﻿using PipeHow.AzBobbyTables.Validation;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
@@ -13,7 +11,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     public class AddAzDataTableRow : Cmdlet
     {
         /// <summary>
-        /// <para type="description">The name of the table.</para>
+        /// <para type="description">The connection string to the table.</para>
         /// </summary>
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty()]
@@ -30,8 +28,8 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <para type="description">The entries to add to the table.</para>
         /// </summary>
         [Parameter(Mandatory = true)]
-        [ValidateNotNullOrEmpty()]
-        public Hashtable Row { get; set; }
+        [ValidateTableEntries()]
+        public Hashtable[] Rows { get; set; }
 
         protected override void BeginProcessing()
         {
@@ -40,7 +38,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 
         protected override void ProcessRecord()
         {
-            AzDataTableService.AddRowToTable(Row);
+            AzDataTableService.AddRowsToTable(Rows);
         }
     }
 }

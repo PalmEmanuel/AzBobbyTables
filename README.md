@@ -1,6 +1,6 @@
 # AzBobbyTables
 
-AzBobbyTables is a module that wraps the Azure Data Tables SDK.
+AzBobbyTables is a module that wraps the [Azure Data Tables SDK](https://github.com/Azure/azure-sdk-for-net/tree/main/sdk/tables/Azure.Data.Tables).
 
 ---
 

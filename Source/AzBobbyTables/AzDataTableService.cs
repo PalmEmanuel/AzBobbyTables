@@ -4,7 +4,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace PipeHow.AzBobbyTables
 {
@@ -12,30 +11,53 @@ namespace PipeHow.AzBobbyTables
     {
         private static TableClient _tableClient;
 
-        static AzDataTableService() {}
-
         internal static void Connect(string connectionString, string tableName)
         {
             _tableClient = new TableClient(connectionString, tableName);
         }
 
-        internal static void AddRowToTable(Hashtable row)
+        internal static void Connect(Uri sas)
+        {
+            _tableClient = new TableClient(sas);
+        }
+
+        internal static void RemoveEntityFromTable(string partitionKey, string rowKey)
+        {
+            _tableClient.DeleteEntity(partitionKey, rowKey);
+        }
+
+        internal static Response<IReadOnlyList<Response>> RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
+        {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = hashtables.Select(r =>
+            {
+                return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
+            return _tableClient.SubmitTransaction(transactions);
+        }
+
+        internal static void AddEntityToTable(Hashtable hashtable)
         {
             var transactions = new List<TableTransactionAction>();
 
             var entity = new TableEntity();
-            foreach (var key in row.Keys)
+            foreach (var key in hashtable.Keys)
             {
-                entity.Add(key.ToString(), row[key]);
+                entity.Add(key.ToString(), hashtable[key]);
             }
 
             _tableClient.AddEntity(entity);
         }
-        internal static void AddRowsToTable(IEnumerable<Hashtable> rows)
+
+        internal static Response<IReadOnlyList<Response>> AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
         {
             var transactions = new List<TableTransactionAction>();
 
-            var entities = rows.Select(r =>
+            var entities = hashtables.Select(r =>
             {
                 TableEntity entity = new TableEntity();
                 foreach (var key in r.Keys)
@@ -45,9 +67,10 @@ namespace PipeHow.AzBobbyTables
                 return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Add, e)));
+            TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
             
-            Response<IReadOnlyList<Response>> response = _tableClient.SubmitTransaction(transactions);
+            return _tableClient.SubmitTransaction(transactions);
         }
     }
 }

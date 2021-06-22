@@ -72,5 +72,15 @@ namespace PipeHow.AzBobbyTables
             
             return _tableClient.SubmitTransaction(transactions);
         }
+
+        internal static Response<TableEntity> GetEntityFromTable(string partitionKey, string rowKey)
+        {
+            return _tableClient.GetEntity<TableEntity>(partitionKey, rowKey);
+        }
+
+        internal static object GetEntitiesFromTable(string filter)
+        {
+            return _tableClient.Query<TableEntity>(filter);
+        }
     }
 }

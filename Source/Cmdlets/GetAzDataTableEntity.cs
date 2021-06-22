@@ -8,9 +8,9 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// <summary>
     /// Add an entity to an Azure Table.
     /// </summary>
-    [Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]
-    [Alias("Add-AzDataTableRow")]
-    public class AddAzDataTableEntity : PSCmdlet
+    [Cmdlet(VerbsCommon.Get, "AzDataTableEntity")]
+    [Alias("Get-AzDataTableRow")]
+    public class GetAzDataTableEntity : PSCmdlet
     {
         /// <summary>
         /// <para type="description">The connection string to the storage account.</para>
@@ -34,21 +34,12 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         public Uri SASToken { get; set; }
 
         /// <summary>
-        /// <para type="description">The entities to add to the table.</para>
+        /// <para type="description">The OData filter to use in the query.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true)]
         [Parameter(Mandatory = true, ParameterSetName = "SASToken", ValueFromPipeline = true)]
-        [ValidateEntity()]
-        [Alias("Row", "Entry", "Property")]
-        public Hashtable[] Entity { get; set; }
-
-        /// <summary>
-        /// <para type="description">Overwrites provided entities if they exist.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString")]
-        [Parameter(ParameterSetName = "SASToken")]
-        [Alias("UpdateExisting")]
-        public SwitchParameter Force { get; set; }
+        [Alias("Query")]
+        public string Filter { get; set; }
 
         protected override void BeginProcessing()
         {
@@ -67,7 +58,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 
         protected override void ProcessRecord()
         {
-            AzDataTableService.AddEntitiesToTable(Entity, Force.ToBool());
+            WriteObject(AzDataTableService.GetEntitiesFromTable(Filter));
         }
     }
 }

@@ -59,7 +59,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 
         protected override void ProcessRecord()
         {
-            WriteObject(AzDataTableService.RemoveEntitiesFromTable(Entity));
+            AzDataTableService.RemoveEntitiesFromTable(Entity);
         }
     }
 }

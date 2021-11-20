@@ -9,21 +9,29 @@ namespace PipeHow.AzBobbyTables
 {
     internal static class AzDataTableService
     {
-        private static TableClient _tableClient;
+        private static TableClient tableClient;
 
         internal static void Connect(string connectionString, string tableName)
         {
-            _tableClient = new TableClient(connectionString, tableName);
+            tableClient = new TableClient(connectionString, tableName);
+        }
+
+        internal static void Connect(Uri tableEndpoint, string tableName, string storageAccountKey)
+        {
+            var tableUriBuilder = new TableUriBuilder(tableEndpoint);
+            var accountName = tableUriBuilder.AccountName;
+            
+            tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(accountName, storageAccountKey));
         }
 
         internal static void Connect(Uri sas)
         {
-            _tableClient = new TableClient(sas);
+            tableClient = new TableClient(sas);
         }
 
         internal static void RemoveEntityFromTable(string partitionKey, string rowKey)
         {
-            _tableClient.DeleteEntity(partitionKey, rowKey);
+            tableClient.DeleteEntity(partitionKey, rowKey);
         }
 
         internal static Response<IReadOnlyList<Response>> RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
@@ -37,7 +45,7 @@ namespace PipeHow.AzBobbyTables
 
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
 
-            return _tableClient.SubmitTransaction(transactions);
+            return tableClient.SubmitTransaction(transactions);
         }
 
         internal static void AddEntityToTable(Hashtable hashtable)
@@ -50,7 +58,7 @@ namespace PipeHow.AzBobbyTables
                 entity.Add(key.ToString(), hashtable[key]);
             }
 
-            _tableClient.AddEntity(entity);
+            tableClient.AddEntity(entity);
         }
 
         internal static Response<IReadOnlyList<Response>> AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
@@ -70,17 +78,47 @@ namespace PipeHow.AzBobbyTables
             TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
             transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
             
-            return _tableClient.SubmitTransaction(transactions);
+            return tableClient.SubmitTransaction(transactions);
+        }
+
+        internal static Response UpdateEntityInTable(Hashtable hashtable)
+        {
+            TableEntity entity = new TableEntity();
+            foreach (var key in hashtable.Keys)
+            {
+                entity.Add(key.ToString(), hashtable[key]);
+            }
+
+            return tableClient.UpdateEntity(entity, ETag.All);
+        }
+
+        internal static Response<IReadOnlyList<Response>> UpdateEntitiesInTable(Hashtable[] hashtables)
+        {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = hashtables.Select(r =>
+            {
+                TableEntity entity = new TableEntity();
+                foreach (var key in r.Keys)
+                {
+                    entity.Add(key.ToString(), r[key]);
+                }
+                return entity;
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+
+            return tableClient.SubmitTransaction(transactions);
         }
 
         internal static Response<TableEntity> GetEntityFromTable(string partitionKey, string rowKey)
         {
-            return _tableClient.GetEntity<TableEntity>(partitionKey, rowKey);
+            return tableClient.GetEntity<TableEntity>(partitionKey, rowKey);
         }
 
-        internal static object GetEntitiesFromTable(string filter)
+        internal static IList<TableEntity> GetEntitiesFromTable(string filter)
         {
-            return _tableClient.Query<TableEntity>(filter);
+            return tableClient.Query<TableEntity>(filter).ToList();
         }
     }
 }

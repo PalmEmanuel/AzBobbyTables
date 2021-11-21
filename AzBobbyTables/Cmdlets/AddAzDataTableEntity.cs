@@ -1,11 +1,16 @@
 ﻿using PipeHow.AzBobbyTables.Validation;
-using System.Collections;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
 {
     /// <summary>
-    /// Add an entity to an Azure Table.
+    /// <para type="synopsis">Add one or more entities to an Azure Table.</para>
+    /// <para type="description">Add an entity to an Azure Table, as a PSCustomObject.</para>
+    /// <example>
+    ///     <code>$User = [pscustomobject]@{ FirstName = 'Bobby'; LastName = 'Tables' }</code>
+    ///     <code>Add-AzDataTableEntity -Entity $User -ConnectionString $ConnectionString</code>
+    ///     <para>Add the user "Bobby Tables" to the table using a connection string.</para>
+    /// </example>
     /// </summary>
     [Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]
     [Alias("Add-AzDataTableRow")]
@@ -15,21 +20,24 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <para type="description">The entities to add to the table.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true)]
-        [Parameter(Mandatory = true, ParameterSetName = "SASToken", ValueFromPipeline = true)]
+        [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true)]
         [ValidateEntity()]
         [Alias("Row", "Entry", "Property")]
-        public Hashtable[] Entity { get; set; }
+        public PSObject[] Entity { get; set; }
 
         /// <summary>
         /// <para type="description">Overwrites provided entities if they exist.</para>
         /// </summary>
         [Parameter(ParameterSetName = "ConnectionString")]
-        [Parameter(ParameterSetName = "SASToken")]
+        [Parameter(ParameterSetName = "SAS")]
         [Parameter(ParameterSetName = "Key")]
         [Alias("UpdateExisting")]
         public SwitchParameter Force { get; set; }
 
+        /// <summary>
+        /// The process step of the pipeline.
+        /// </summary>
         protected override void ProcessRecord()
         {
             AzDataTableService.AddEntitiesToTable(Entity, Force.IsPresent);

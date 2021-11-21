@@ -10,15 +10,15 @@ namespace PipeHow.AzBobbyTables.Validation
     {
         protected override void Validate(object arguments, EngineIntrinsics engineIntrinsics)
         {
-            var entities = (IEnumerable<Hashtable>)arguments;
+            var entities = (IEnumerable<PSObject>)arguments;
 
-            if (entities.Any(e => !e.ContainsKey("PartitionKey")))
+            if (entities.Any(e => !e.Properties.Any(p => p.Name == "PartitionKey")))
             {
-                throw new ArgumentException("PartitionKey must be provided in the hashtable in the right casing!");
+                throw new ArgumentException("PartitionKey must be provided in the input entity in the correct casing!");
             }
-            if (entities.Any(e => !e.ContainsKey("RowKey")))
+            if (entities.Any(e => !e.Properties.Any(p => p.Name == "RowKey")))
             {
-                throw new ArgumentException("RowKey must be provided in the hashtable in the right casing!");
+                throw new ArgumentException("RowKey must be provided in the input entity in the correct casing!");
             }
         }
     }

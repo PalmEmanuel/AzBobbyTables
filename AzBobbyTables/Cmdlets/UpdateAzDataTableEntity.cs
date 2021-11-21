@@ -1,11 +1,18 @@
 ﻿using PipeHow.AzBobbyTables.Validation;
-using System.Collections;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
 {
     /// <summary>
-    /// Update one or more entities in an Azure Table.
+    /// <para type="synopsis">Update one or more entities in an Azure Table.</para>
+    /// <para type="description">Update one or more entities already existing in an Azure Table. For adding and overwriting, see the command Add-AzDataTableEntity.</para>
+    /// <para type="description">The PartitionKey and RowKey cannot be updated.</para>
+    /// <example>
+    ///     <code>$UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby'" -ConnectionString $ConnectionString</code>
+    ///     <code>$UserEntity.LastName = 'Tables'</code>
+    ///     <code>Update-AzDataTableEntity -Entity $UserEntity -ConnectionString $ConnectionString</code>
+    ///     <para>Update the last name of the user "Bobby" to "Tables" using a connection string.</para>
+    /// </example>
     /// </summary>
     [Cmdlet(VerbsData.Update, "AzDataTableEntity")]
     [Alias("Update-AzDataTableRow")]
@@ -15,12 +22,15 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <para type="description">The entities to update in the table.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true)]
-        [Parameter(Mandatory = true, ParameterSetName = "SASToken", ValueFromPipeline = true)]
+        [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true)]
         [ValidateEntity()]
         [Alias("Row", "Entry", "Property")]
-        public Hashtable[] Entity { get; set; }
+        public PSObject[] Entity { get; set; }
 
+        /// <summary>
+        /// The process step of the pipeline.
+        /// </summary>
         protected override void ProcessRecord()
         {
             AzDataTableService.UpdateEntitiesInTable(Entity);

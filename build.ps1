@@ -14,7 +14,7 @@ $ModuleName = 'AzBobbyTables'
 $DotNetVersion = 'netstandard2.0'
 
 $ProjectRoot = "$PSScriptRoot"
-$ManifestDirectory = "$ProjectRoot/out/$ModuleName"
+$ManifestDirectory = "$ProjectRoot/bin/$ModuleName"
 $ModuleDirectory = "$ManifestDirectory/$ModuleName"
 $HelpDirectory = "$ManifestDirectory/en-US"
 

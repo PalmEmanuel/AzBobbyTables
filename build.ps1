@@ -21,9 +21,9 @@ $HelpDirectory = "$ManifestDirectory/en-US"
 if (Test-Path $ManifestDirectory) {
     Remove-Item -Path $ManifestDirectory -Recurse
 }
-New-Item -Path $ManifestDirectory -ItemType Directory
-New-Item -Path $HelpDirectory -ItemType Directory
-New-Item -Path $ModuleDirectory -ItemType Directory
+$null = New-Item -Path $ManifestDirectory -ItemType Directory
+$null = New-Item -Path $HelpDirectory -ItemType Directory
+$null = New-Item -Path $ModuleDirectory -ItemType Directory
 
 if ($Full) {
     dotnet build-server shutdown

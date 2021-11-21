@@ -24,27 +24,25 @@ namespace PipeHow.AzBobbyTables
         /// <summary>
         /// Create a connection to the table using a storage account access key.
         /// </summary>
-        /// <param name="tableEndpoint">The table endpoint of the storage account.</param>
         /// <param name="tableName">The name of the table.</param>
-        /// <param name="storageAccountKey">The access key to the storage account.</param>
-        internal static void Connect(Uri tableEndpoint, string tableName, string storageAccountKey)
+        /// <param name="storageAccountName">The name of the storage account.</param>
+        /// <param name="storageAccountKey">The access key of the storage account.</param>
+        internal static void Connect(string storageAccountName, string tableName, string storageAccountKey)
         {
-            var tableUriBuilder = new TableUriBuilder(tableEndpoint);
-            var accountName = tableUriBuilder.AccountName;
-            
-            tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(accountName, storageAccountKey));
+            var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
+            tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
         }
 
         /// <summary>
         /// Create a connection to the table using a shared access signature.
         /// </summary>
-        /// <param name="sasUrl">The table service SAS URL.</param>
+        /// <param name="sasUrl">The table service SAS URL, with or without the table name.</param>
         /// <param name="tableName">The table name.</param>
         internal static void Connect(Uri sasUrl, string tableName)
         {
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
-
+            
             // If the user did not specify a full endpoint to the table
             if (!sasUrl.ToString().Contains($"/{tableName}?"))
             {
@@ -53,16 +51,6 @@ namespace PipeHow.AzBobbyTables
                 sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
             }
             tableClient = new TableClient(sasUrl, sasCredential);
-        }
-
-        /// <summary>
-        /// Remove one entity from a table.
-        /// </summary>
-        /// <param name="partitionKey">The partition key of the entity.</param>
-        /// <param name="rowKey">The row key of the entity.</param>
-        internal static void RemoveEntityFromTable(string partitionKey, string rowKey)
-        {
-            tableClient.DeleteEntity(partitionKey, rowKey);
         }
 
         /// <summary>
@@ -82,21 +70,6 @@ namespace PipeHow.AzBobbyTables
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
 
             return tableClient.SubmitTransaction(transactions);
-        }
-
-        /// <summary>
-        /// Add an entity to a table.
-        /// </summary>
-        /// <param name="psobject">The entity to add.</param>
-        internal static void AddEntityToTable(PSObject psobject)
-        {
-            var entity = new TableEntity();
-            foreach (var property in psobject.Properties)
-            {
-                entity.Add(property.Name, property.Value);
-            }
-
-            tableClient.AddEntity(entity);
         }
 
         /// <summary>
@@ -126,22 +99,6 @@ namespace PipeHow.AzBobbyTables
         }
 
         /// <summary>
-        /// Updates an entity in a table.
-        /// </summary>
-        /// <param name="psobject">The entity to update.</param>
-        /// <returns>The result of the transaction.</returns>
-        internal static Response UpdateEntityInTable(PSObject psobject)
-        {
-            TableEntity entity = new TableEntity();
-            foreach (var property in psobject.Properties)
-            {
-                entity.Add(property.Name, property.Value);
-            }
-
-            return tableClient.UpdateEntity(entity, ETag.All);
-        }
-
-        /// <summary>
         /// Updates one or more entities in a table.
         /// </summary>
         /// <param name="psobjects">The entities to update.</param>
@@ -163,17 +120,6 @@ namespace PipeHow.AzBobbyTables
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
 
             return tableClient.SubmitTransaction(transactions);
-        }
-
-        /// <summary>
-        /// Get an entity from a table.
-        /// </summary>
-        /// <param name="partitionKey">The partition key of the entity.</param>
-        /// <param name="rowKey">The row key of the entity.</param>
-        /// <returns>The entity if found.</returns>
-        internal static Response<TableEntity> GetEntityFromTable(string partitionKey, string rowKey)
-        {
-            return tableClient.GetEntity<TableEntity>(partitionKey, rowKey);
         }
 
         /// <summary>

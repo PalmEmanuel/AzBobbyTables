@@ -7,9 +7,9 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// <para type="synopsis">Remove one or more entities from an Azure Table.</para>
     /// <para type="description">Remove one or more entities from an Azure Table, based on PartitionKey and RowKey.</para>
     /// <example>
-    ///     <code>$UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and LastName eq 'Tables'" -ConnectionString $ConnectionString</code>
-    ///     <code>Remove-AzDataTableEntity -Entity $UserEntity -ConnectionString $ConnectionString</code>
-    ///     <para>Get and remove the user "Bobby Tables" from the table using a connection string.</para>
+    ///     <code>$UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and LastName eq 'Tables'" -TableName $TableName -ConnectionString $ConnectionString</code>
+    ///     <code>Remove-AzDataTableEntity -Entity $UserEntity -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key</code>
+    ///     <para>Get the user "Bobby Tables" from the table using a connection string, then remove the user using the storage account name and an access key.</para>
     /// </example>
     /// </summary>
     [Cmdlet(VerbsCommon.Remove, "AzDataTableEntity")]

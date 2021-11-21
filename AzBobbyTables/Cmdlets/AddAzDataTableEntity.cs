@@ -7,9 +7,9 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// <para type="synopsis">Add one or more entities to an Azure Table.</para>
     /// <para type="description">Add an entity to an Azure Table, as a PSCustomObject.</para>
     /// <example>
-    ///     <code>$User = [pscustomobject]@{ FirstName = 'Bobby'; LastName = 'Tables' }</code>
-    ///     <code>Add-AzDataTableEntity -Entity $User -ConnectionString $ConnectionString</code>
-    ///     <para>Add the user "Bobby Tables" to the table using a connection string.</para>
+    ///     <code>$User = [pscustomobject]@{ FirstName = 'Bobby'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '1' }</code>
+    ///     <code>Add-AzDataTableEntity -Entity $User -TableName $TableName -SharedAccessSignature $SAS</code>
+    ///     <para>Add the user "Bobby Tables" to the table using a shared access signature URL.</para>
     /// </example>
     /// </summary>
     [Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]

@@ -25,18 +25,18 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         public string ConnectionString { get; set; }
 
         /// <summary>
+        /// <para type="description">The name of the storage account.</para>
+        /// </summary>
+        [Parameter(Mandatory = true, ParameterSetName = "Key")]
+        [ValidateNotNullOrEmpty()]
+        public string StorageAccountName { get; set; }
+
+        /// <summary>
         /// <para type="description">The storage account access key.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "Key")]
         [ValidateNotNullOrEmpty()]
         public string StorageAccountKey { get; set; }
-
-        /// <summary>
-        /// <para type="description">The table endpoint of the storage account.</para>
-        /// </summary>
-        [Parameter(Mandatory = true, ParameterSetName = "Key")]
-        [ValidateNotNullOrEmpty()]
-        public Uri TableEndpoint { get; set; }
 
         /// <summary>
         /// <para type="description">The table service SAS URL.</para>
@@ -63,7 +63,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
                     AzDataTableService.Connect(SharedAccessSignature, TableName);
                     break;
                 case "Key":
-                    AzDataTableService.Connect(TableEndpoint, TableName, StorageAccountKey);
+                    AzDataTableService.Connect(StorageAccountName, TableName, StorageAccountKey);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");

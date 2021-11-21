@@ -1,7 +1,6 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -39,10 +38,21 @@ namespace PipeHow.AzBobbyTables
         /// <summary>
         /// Create a connection to the table using a shared access signature.
         /// </summary>
-        /// <param name="sas">The SAS uri.</param>
-        internal static void Connect(Uri sas)
+        /// <param name="sasUrl">The table service SAS URL.</param>
+        /// <param name="tableName">The table name.</param>
+        internal static void Connect(Uri sasUrl, string tableName)
         {
-            tableClient = new TableClient(sas);
+            // The credential is built only using the token
+            var sasCredential = new AzureSasCredential(sasUrl.Query);
+
+            // If the user did not specify a full endpoint to the table
+            if (!sasUrl.ToString().Contains($"/{tableName}?"))
+            {
+                // Insert the table name before the URL parameters
+                var urlParts = sasUrl.ToString().Split('?');
+                sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
+            }
+            tableClient = new TableClient(sasUrl, sasCredential);
         }
 
         /// <summary>
@@ -102,7 +112,7 @@ namespace PipeHow.AzBobbyTables
             var entities = psobjects.Select(r =>
             {
                 TableEntity entity = new TableEntity();
-                foreach (var property in r.Properties)
+                foreach (var property in r.Properties.Where(p => p.Name != "ETag" && p.Name != "Timestamp"))
                 {
                     entity.Add(property.Name, property.Value);
                 }
@@ -143,7 +153,7 @@ namespace PipeHow.AzBobbyTables
             var entities = psobjects.Select(r =>
             {
                 TableEntity entity = new TableEntity();
-                foreach (var property in r.Properties)
+                foreach (var property in r.Properties.Where(p => p.Name != "ETag" && p.Name != "Timestamp"))
                 {
                     entity.Add(property.Name, property.Value);
                 }

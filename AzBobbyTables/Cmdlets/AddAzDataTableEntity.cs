@@ -22,8 +22,8 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true)]
         [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true)]
-        [ValidateEntity()]
         [Alias("Row", "Entry", "Property")]
+        [ValidateEntity]
         public PSObject[] Entity { get; set; }
 
         /// <summary>

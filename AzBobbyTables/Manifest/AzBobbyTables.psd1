@@ -4,10 +4,10 @@
 RootModule = 'AzBobbyTables/AzBobbyTables.dll'
 
 # Version number of this module.
-ModuleVersion = '1.0.0'
+ModuleVersion = '1.0.1'
 
 # Supported PSEditions
-CompatiblePSEditions = @('Core','Desktop')
+CompatiblePSEditions = @('Core')
 
 # ID used to uniquely identify this module
 GUID = 'eead4f42-5080-4f83-8901-340c529a5a11'
@@ -25,7 +25,7 @@ Copyright = '(c) 2021 Emanuel Palm. All rights reserved.'
 Description = 'A module that wraps the Azure Data Tables SDK.'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '5.1'
+PowerShellVersion = '7.0'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''

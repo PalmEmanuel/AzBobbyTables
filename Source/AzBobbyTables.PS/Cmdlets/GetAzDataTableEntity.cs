@@ -36,15 +36,19 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         protected override void ProcessRecord()
         {
             // Format back to to PSObject
-            WriteObject(AzDataTableService.GetEntitiesFromTable(Filter).Select(e =>
+            var entities = AzDataTableService.GetEntitiesFromTable(Filter).Select(e =>
             {
-                PSObject psobject = new PSObject();
+                Hashtable hashtable = new Hashtable();
                 foreach (string key in e.Keys)
                 {
-                    psobject.Members.Add(new PSNoteProperty(key, e[key]));
+                    hashtable.Add(key, e[key]);
                 }
-                return psobject;
-            }));
+                return hashtable;
+            });
+            foreach (var entity in entities)
+            {
+                WriteObject(entity);
+            }
         }
     }
 }

@@ -66,7 +66,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
                 // Cast hashtable to dictionary to be able to run linq
                 // Then find if any values have unsupported types
                 var dictionaries = entities.Select(e => e.ToDictionary<string, object>());
-                if (dictionaries.Any(d => d.Values.Any(t => !AzDataTableService.SupportedTypeList.Contains(t.GetType().Name.ToLower()))))
+                if (dictionaries.Any(d => d.Keys.Where(k => k.ToLower() != "timestamp" && k.ToLower() != "etag").Select(k => d[k]).Any(t => !AzDataTableService.SupportedTypeList.Contains(t.GetType().Name.ToLower()))))
                 {
                     string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
 

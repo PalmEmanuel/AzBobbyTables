@@ -14,6 +14,7 @@ namespace PipeHow.AzBobbyTables.Core
             "byte[]",
             "bool",
             "datetime",
+            "datetimeoffset",
             "double",
             "guid",
             "int32",

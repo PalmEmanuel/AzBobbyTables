@@ -1,4 +1,6 @@
-﻿using PipeHow.AzBobbyTables.Validation;
+﻿using PipeHow.AzBobbyTables.Core;
+using PipeHow.AzBobbyTables.Validation;
+using System.Collections;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
@@ -26,7 +28,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true)]
         [Alias("Row", "Entry", "Property")]
         [ValidateEntity]
-        public PSObject[] Entity { get; set; }
+        public Hashtable[] Entity { get; set; }
 
         /// <summary>
         /// <para type="description">Overwrites provided entities if they exist.</para>

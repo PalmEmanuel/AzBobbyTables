@@ -1,4 +1,8 @@
-﻿using System;
+﻿using PipeHow.AzBobbyTables.Core;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
@@ -54,6 +58,26 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         protected override void BeginProcessing()
         {
             WriteDebug("ParameterSetName: " + ParameterSetName);
+            
+            if (MyInvocation.BoundParameters.ContainsKey("Entity"))
+            {
+                Hashtable[] entities = MyInvocation.BoundParameters["Entity"] as Hashtable[];
+
+                // Cast hashtable to dictionary to be able to run linq
+                // Then find if any values have unsupported types
+                var dictionaries = entities.Select(e => e.ToDictionary<string, object>());
+                if (dictionaries.Any(d => d.Values.Any(t => !AzDataTableService.SupportedTypeList.Contains(t.GetType().Name.ToLower()))))
+                {
+                    string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
+
+Example of first entity provided
+--------------------------------
+{string.Join("\n", dictionaries.First().Select(d => string.Join("\n", $"[{d.Value.GetType().FullName}] {d.Key}")))}
+";
+                    WriteWarning(warningMessage);
+                }
+            }
+            
             switch (ParameterSetName)
             {
                 case "ConnectionString":

@@ -1,4 +1,7 @@
-﻿using System.Management.Automation;
+﻿using PipeHow.AzBobbyTables.Core;
+using System.Collections;
+using System.Linq;
+using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
 {
@@ -32,18 +35,16 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// </summary>
         protected override void ProcessRecord()
         {
-            // Get all entities from table, loop through them and output them as PS(Custom)Objects
-            foreach (var entity in AzDataTableService.GetEntitiesFromTable(Filter))
+            // Format back to to PSObject
+            WriteObject(AzDataTableService.GetEntitiesFromTable(Filter).Select(e =>
             {
-                PSObject entityObject = new PSObject();
-                entityObject.Properties.Add(new PSNoteProperty("ETag", entity.ETag));
-                foreach (var key in entity.Keys)
+                PSObject psobject = new PSObject();
+                foreach (string key in e.Keys)
                 {
-                    if (key == "odata.etag") continue;
-                    entityObject.Properties.Add(new PSNoteProperty(key, entity[key]));
+                    psobject.Members.Add(new PSNoteProperty(key, e[key]));
                 }
-                WriteObject(entityObject);
-            }
+                return psobject;
+            }));
         }
     }
 }

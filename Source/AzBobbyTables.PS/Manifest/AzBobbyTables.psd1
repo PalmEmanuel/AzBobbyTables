@@ -1,10 +1,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'AzBobbyTables/AzBobbyTables.dll'
+RootModule = 'AzBobbyTables.PS.dll'
 
 # Version number of this module.
-ModuleVersion = '1.0.2'
+ModuleVersion = '2.0.0'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Core')
@@ -16,10 +16,10 @@ GUID = 'eead4f42-5080-4f83-8901-340c529a5a11'
 Author = 'Emanuel Palm'
 
 # Company or vendor of this module
-CompanyName = 'pipehow.tech'
+CompanyName = 'pipe.how'
 
 # Copyright statement for this module
-Copyright = '(c) 2021 Emanuel Palm. All rights reserved.'
+Copyright = '(c) Emanuel Palm. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'A module that wraps the Azure Data Tables SDK.'

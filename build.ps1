@@ -7,41 +7,54 @@ param(
     $Version,
 
     [Switch]
-    $Full
+    $NoClean
 )
 
-$ModuleName = 'AzBobbyTables'
+Push-Location 'Source'
+
+$ModuleName = $PSScriptRoot.Split('\')[-1]
+$Configuration = 'Release'
 $DotNetVersion = 'netstandard2.0'
 
-$ProjectRoot = "$PSScriptRoot"
-$ManifestDirectory = "$ProjectRoot/bin/$ModuleName"
-$ModuleDirectory = "$ManifestDirectory/$ModuleName"
-$HelpDirectory = "$ManifestDirectory/en-US"
+# Define build output locations
+$OutDir = "$PSScriptRoot\$ModuleName"
+$OutDependencies = "$OutDir\dependencies"
 
-if (Test-Path $ManifestDirectory) {
-    Remove-Item -Path $ManifestDirectory -Recurse
+if (Test-Path $OutDir) {
+    Remove-Item $OutDir -Recurse -Force -ErrorAction Stop
 }
-$null = New-Item -Path $ManifestDirectory -ItemType Directory
-$null = New-Item -Path $HelpDirectory -ItemType Directory
-$null = New-Item -Path $ModuleDirectory -ItemType Directory
 
-if ($Full) {
+# Build both Core and PS projects
+if (-not $NoClean.IsPresent) {
     dotnet build-server shutdown
-    dotnet clean
+    dotnet clean -c $Configuration
 }
-dotnet publish $ModuleName -c $Configuration
+dotnet publish -c $Configuration
 
-$ModuleFiles = [System.Collections.Generic.HashSet[string]]::new()
+# Ensure output directories exist and are clean for build
+New-Item -Path $OutDir -ItemType Directory -ErrorAction Ignore
+Get-ChildItem $OutDir | Remove-Item -Recurse
+New-Item -Path $OutDependencies -ItemType Directory
 
-Get-ChildItem -Path "$ProjectRoot/$ModuleName/bin/$Configuration/$DotNetVersion/publish" |
+# Create array to remember copied files
+$CopiedDependencies = @()
+
+# Copy .dll and .pdb files from Core to the dependency directory
+Get-ChildItem -Path "$ModuleName.Core\bin\$Configuration\$DotNetVersion\publish" |
 Where-Object { $_.Extension -in '.dll', '.pdb' } |
-ForEach-Object { 
-    [void]$ModuleFiles.Add($_.Name); 
-    Copy-Item -LiteralPath $_.FullName -Destination $ModuleDirectory 
+ForEach-Object {
+    $CopiedDependencies += $_.Name
+    Copy-Item -Path $_.FullName -Destination $OutDependencies
 }
 
-Copy-Item -Path "$ProjectRoot/$ModuleName/bin/$Configuration/$DotNetVersion/$ModuleName.dll-Help.xml" -Destination $HelpDirectory
-Copy-Item -Path "$ProjectRoot/$ModuleName/Manifest/$ModuleName.psd1" -Destination $ManifestDirectory
+# Copy files from PS to output directory, except those already copied from Core
+Get-ChildItem -Path "$ModuleName.PS\bin\$Configuration\$DotNetVersion\publish" |
+Where-Object { $_.Name -notin $CopiedDependencies -and $_.Extension -in '.dll', '.pdb' } |
+ForEach-Object {
+    Copy-Item -Path $_.FullName -Destination $OutDir
+}
+
+Copy-Item -Path "$ModuleName.PS\Manifest\$ModuleName.psd1" -Destination $OutDir
 if (-not $PSBoundParameters.ContainsKey('Version')) {
     try {
         $Version = gitversion /showvariable LegacySemVerPadded
@@ -50,9 +63,9 @@ if (-not $PSBoundParameters.ContainsKey('Version')) {
         $Version = [string]::Empty
     }
 }
-if($Version) {
+if ($Version) {
     $SemVer, $PreReleaseTag = $Version.Split('-')
     Update-ModuleManifest -Path "$ManifestDirectory/$ModuleName.psd1" -ModuleVersion $SemVer -Prerelease $PreReleaseTag
 }
 
-Compress-Archive -Path $ManifestDirectory -DestinationPath "$ProjectRoot/$ModuleName.zip" -Force
+Pop-Location

@@ -19,6 +19,7 @@ $DotNetVersion = 'netstandard2.0'
 # Define build output locations
 $OutDir = "$PSScriptRoot\$ModuleName"
 $OutDependencies = "$OutDir\dependencies"
+$OutDocs = "$OutDir/en-US"
 
 if (Test-Path $OutDir) {
     Remove-Item $OutDir -Recurse -Force -ErrorAction Stop
@@ -35,6 +36,7 @@ dotnet publish -c $Configuration
 New-Item -Path $OutDir -ItemType Directory -ErrorAction Ignore
 Get-ChildItem $OutDir | Remove-Item -Recurse
 New-Item -Path $OutDependencies -ItemType Directory
+New-Item -Path $OutDocs -ItemType Directory
 
 # Create array to remember copied files
 $CopiedDependencies = @()
@@ -67,5 +69,7 @@ if ($Version) {
     $SemVer, $PreReleaseTag = $Version.Split('-')
     Update-ModuleManifest -Path "$ManifestDirectory/$ModuleName.psd1" -ModuleVersion $SemVer -Prerelease $PreReleaseTag
 }
+
+New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs
 
 Pop-Location

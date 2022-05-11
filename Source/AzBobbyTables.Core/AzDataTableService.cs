@@ -69,13 +69,13 @@ namespace PipeHow.AzBobbyTables.Core
         /// <summary>
         /// Remove one or more entities from a table.
         /// </summary>
-        /// <param name="Hashtables">The list of entities to remove, with PartitionKey and RowKey set.</param>
+        /// <param name="hashtables">The list of entities to remove, with PartitionKey and RowKey set.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void RemoveEntitiesFromTable(IEnumerable<Hashtable> Hashtables)
+        public static void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
         {
             var transactions = new List<TableTransactionAction>();
 
-            var entities = Hashtables.Select(r =>
+            var entities = hashtables.Select(r =>
             {
                 return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
             });
@@ -88,14 +88,14 @@ namespace PipeHow.AzBobbyTables.Core
         /// <summary>
         /// Add one or more entities to a table.
         /// </summary>
-        /// <param name="Hashtables">The entities to add.</param>
+        /// <param name="hashtables">The entities to add.</param>
         /// <param name="overwrite">Whether or not to update already existing entities.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void AddEntitiesToTable(IEnumerable<Hashtable> Hashtables, bool overwrite = false)
+        public static void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
         {
             var transactions = new List<TableTransactionAction>();
 
-            var entities = Hashtables.Select(e =>
+            var entities = hashtables.Select(e =>
             {
                 TableEntity entity = new TableEntity();
                 foreach (string key in e.Keys)
@@ -117,13 +117,13 @@ namespace PipeHow.AzBobbyTables.Core
         /// <summary>
         /// Updates one or more entities in a table.
         /// </summary>
-        /// <param name="Hashtables">The entities to update.</param>
+        /// <param name="hashtables">The entities to update.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void UpdateEntitiesInTable(Hashtable[] Hashtables)
+        public static void UpdateEntitiesInTable(Hashtable[] hashtables)
         {
             var transactions = new List<TableTransactionAction>();
 
-            var entities = Hashtables.Select(e =>
+            var entities = hashtables.Select(e =>
             {
                 TableEntity entity = new TableEntity();
                 foreach (string key in e.Keys)

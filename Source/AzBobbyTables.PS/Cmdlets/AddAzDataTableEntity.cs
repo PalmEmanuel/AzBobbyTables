@@ -7,14 +7,6 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 {
     /// <summary>
     /// <para type="synopsis">Add one or more entities to an Azure Table.</para>
-    /// <para type="description">Add an entity to an Azure Table, as a Hashtable.</para>
-    /// <example>
-    ///     <code>
-    ///$User = @{ FirstName = 'Bobby'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '1' }
-    ///Add-AzDataTableEntity -Entity $User -TableName $TableName -SharedAccessSignature $SAS
-    ///     </code>
-    ///     <para>Add the user "Bobby Tables" to the table using a shared access signature URL.</para>
-    /// </example>
     /// </summary>
     [Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]
     [Alias("Add-AzDataTableRow")]

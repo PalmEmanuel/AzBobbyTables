@@ -43,6 +43,16 @@ PS C:\> Add-AzDataTableEntity -Entity $User -TableName $TableName -SharedAccessS
 
 Add the user "Bobby Tables" to a table using a shared access signature URL.
 
+### Example 2
+```powershell
+PS C:\> $Users = @(
+>>  @{ FirstName = 'Bobby'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '1' },
+>>  @{ FirstName = 'Bobby Junior'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '2' } )
+PS C:\> Add-AzDataTableEntity -Entity $Users -TableName $TableName -ConnectionString $ConnectionString -Force
+```
+
+Add multiple users to a table using a connection string, overwriting any existing rows.
+
 ## PARAMETERS
 
 ### -ConnectionString
@@ -93,7 +103,7 @@ Accept wildcard characters: False
 
 ### -SharedAccessSignature
 The table service SAS URL.
-The table endpoint of the storage account, with the shared access token token appended to it.
+The table endpoint of the storage account, with the shared access token appended to it.
 
 ```yaml
 Type: Uri

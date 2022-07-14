@@ -51,6 +51,14 @@ PS C:\> Remove-AzDataTableEntity -Entity $UserEntity -TableName $TableName -Stor
 
 Get the user "Bobby Tables" from the table using a connection string, then remove the user using the storage account name and an access key.
 
+### Example 3
+```powershell
+PS C:\> $Users = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> Remove-AzDataTableEntity -Entity $Users -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
+```
+
+Gets all users with the last name "Tables" from the table using a connection string, then removes the users using the storage account name and an access key.
+
 ## PARAMETERS
 
 ### -ConnectionString

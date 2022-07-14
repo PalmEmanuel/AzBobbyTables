@@ -83,7 +83,7 @@ namespace PipeHow.AzBobbyTables.Core
 
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
 
-            tableClient.SubmitTransaction(transactions);
+            SubmitTransaction(transactions);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace PipeHow.AzBobbyTables.Core
             TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
             transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
             
-            tableClient.SubmitTransaction(transactions);
+            SubmitTransaction(transactions);
         }
 
         /// <summary>
@@ -139,7 +139,24 @@ namespace PipeHow.AzBobbyTables.Core
 
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
 
-            tableClient.SubmitTransaction(transactions);
+            SubmitTransaction(transactions);
+        }
+
+        /// <summary>
+        /// Submit transactions with built-in batch handling and splitting of partitions.
+        /// </summary>
+        private static void SubmitTransaction(IList<TableTransactionAction> transactions)
+        {
+            // Transactions only support up to 100 entities of the same partitionkey
+            // Loop through transactions grouped by partitionkey
+            foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
+            {
+                // Loop through each group and submit up to 100 at a time
+                for (int i = 0; i < group.Count(); i += 100)
+                {
+                    tableClient.SubmitTransaction(group.Skip(i).Take(100));
+                }
+            }
         }
 
         /// <summary>

@@ -22,6 +22,14 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         public string TableName { get; set; }
 
         /// <summary>
+        /// <para type="description">If the table should be created if it does not exist.</para>
+        /// </summary>
+        [Parameter(ParameterSetName = "ConnectionString")]
+        [Parameter(ParameterSetName = "SAS")]
+        [Parameter(ParameterSetName = "Key")]
+        public SwitchParameter CreateTableIfNotExists { get; set; }
+
+        /// <summary>
         /// <para type="description">The connection string to the storage account.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString")]
@@ -81,13 +89,13 @@ Example of first entity provided
             switch (ParameterSetName)
             {
                 case "ConnectionString":
-                    AzDataTableService.Connect(ConnectionString, TableName);
+                    AzDataTableService.Connect(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "SAS":
-                    AzDataTableService.Connect(SharedAccessSignature, TableName);
+                    AzDataTableService.Connect(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "Key":
-                    AzDataTableService.Connect(StorageAccountName, TableName, StorageAccountKey);
+                    AzDataTableService.Connect(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");

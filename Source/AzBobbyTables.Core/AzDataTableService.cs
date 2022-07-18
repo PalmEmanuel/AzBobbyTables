@@ -30,9 +30,14 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="connectionString">The connection string to the storage account.</param>
         /// <param name="tableName">The name of the table.</param>
-        public static void Connect(string connectionString, string tableName)
+        public static void Connect(string connectionString, string tableName, bool createIfNotExists)
         {
             tableClient = new TableClient(connectionString, tableName);
+
+            if (createIfNotExists)
+            {
+                tableClient.CreateIfNotExists();
+            }
         }
 
         /// <summary>
@@ -41,10 +46,15 @@ namespace PipeHow.AzBobbyTables.Core
         /// <param name="tableName">The name of the table.</param>
         /// <param name="storageAccountName">The name of the storage account.</param>
         /// <param name="storageAccountKey">The access key of the storage account.</param>
-        public static void Connect(string storageAccountName, string tableName, string storageAccountKey)
+        public static void Connect(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
         {
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
             tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+
+            if (createIfNotExists)
+            {
+                tableClient.CreateIfNotExists();
+            }
         }
 
         /// <summary>
@@ -52,7 +62,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="sasUrl">The table service SAS URL, with or without the table name.</param>
         /// <param name="tableName">The table name.</param>
-        public static void Connect(Uri sasUrl, string tableName)
+        public static void Connect(Uri sasUrl, string tableName, bool createIfNotExists)
         {
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
@@ -65,6 +75,11 @@ namespace PipeHow.AzBobbyTables.Core
                 sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
             }
             tableClient = new TableClient(sasUrl, sasCredential);
+
+            if (createIfNotExists)
+            {
+                tableClient.CreateIfNotExists();
+            }
         }
 
         /// <summary>

@@ -14,20 +14,20 @@ Update one or more entities in an Azure Table.
 
 ### ConnectionString
 ```
-Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> -ConnectionString <String>
- [<CommonParameters>]
+Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
+ -ConnectionString <String> [<CommonParameters>]
 ```
 
 ### SAS
 ```
-Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> -SharedAccessSignature <Uri>
- [<CommonParameters>]
+Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
+ -SharedAccessSignature <Uri> [<CommonParameters>]
 ```
 
 ### Key
 ```
-Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> -StorageAccountName <String>
- -StorageAccountKey <String> [<CommonParameters>]
+Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -134,6 +134,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CreateTableIfNotExists
+If the table should be created if it does not exist.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

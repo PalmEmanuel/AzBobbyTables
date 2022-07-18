@@ -14,20 +14,20 @@ Add one or more entities to an Azure Table.
 
 ### ConnectionString
 ```
-Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> -ConnectionString <String>
- [<CommonParameters>]
+Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> [-CreateTableIfNotExists]
+ -ConnectionString <String> [<CommonParameters>]
 ```
 
 ### SAS
 ```
-Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> -SharedAccessSignature <Uri>
- [<CommonParameters>]
+Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> [-CreateTableIfNotExists]
+ -SharedAccessSignature <Uri> [<CommonParameters>]
 ```
 
 ### Key
 ```
-Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> -StorageAccountName <String>
- -StorageAccountKey <String> [<CommonParameters>]
+Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -156,6 +156,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CreateTableIfNotExists
+{{ Fill CreateTableIfNotExists Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

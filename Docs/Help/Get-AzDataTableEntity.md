@@ -14,18 +14,20 @@ Get one or more entities from an Azure Table.
 
 ### ConnectionString
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> -ConnectionString <String> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+ -ConnectionString <String> [<CommonParameters>]
 ```
 
 ### SAS
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> -SharedAccessSignature <Uri> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+ -SharedAccessSignature <Uri> [<CommonParameters>]
 ```
 
 ### Key
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> -StorageAccountName <String>
- -StorageAccountKey <String> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -130,6 +132,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CreateTableIfNotExists
+If the table should be created if it does not exist.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

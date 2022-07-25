@@ -36,7 +36,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// </summary>
         protected override void ProcessRecord()
         {
-            AzDataTableService.AddEntitiesToTable(Entity, Force.IsPresent);
+            tableService.AddEntitiesToTable(Entity, Force.IsPresent);
         }
     }
 }

@@ -60,6 +60,8 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [ValidatePattern("https://.*")]
         public Uri SharedAccessSignature { get; set; }
 
+        protected AzDataTableService tableService;
+
         /// <summary>
         /// The process step of the pipeline.
         /// </summary>
@@ -89,13 +91,13 @@ Example of first entity provided
             switch (ParameterSetName)
             {
                 case "ConnectionString":
-                    AzDataTableService.Connect(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = new AzDataTableService(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "SAS":
-                    AzDataTableService.Connect(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = new AzDataTableService(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "Key":
-                    AzDataTableService.Connect(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
+                    tableService = new AzDataTableService(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");

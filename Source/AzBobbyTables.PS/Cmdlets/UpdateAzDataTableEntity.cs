@@ -1,5 +1,4 @@
-﻿using PipeHow.AzBobbyTables.Core;
-using PipeHow.AzBobbyTables.Validation;
+﻿using PipeHow.AzBobbyTables.Validation;
 using System.Collections;
 using System.Management.Automation;
 
@@ -27,7 +26,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// </summary>
         protected override void ProcessRecord()
         {
-            AzDataTableService.UpdateEntitiesInTable(Entity);
+            tableService.UpdateEntitiesInTable(Entity);
         }
     }
 }

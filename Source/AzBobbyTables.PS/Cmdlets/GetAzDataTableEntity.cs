@@ -1,5 +1,4 @@
-﻿using PipeHow.AzBobbyTables.Core;
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using System.Management.Automation;
 
@@ -27,7 +26,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         protected override void ProcessRecord()
         {
             // Format back to to PSObject
-            var entities = AzDataTableService.GetEntitiesFromTable(Filter).Select(e =>
+            var entities = tableService.GetEntitiesFromTable(Filter).Select(e =>
             {
                 Hashtable hashtable = new Hashtable();
                 foreach (string key in e.Keys)

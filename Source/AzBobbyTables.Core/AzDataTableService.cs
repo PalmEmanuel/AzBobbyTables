@@ -7,9 +7,9 @@ using System.Linq;
 
 namespace PipeHow.AzBobbyTables.Core
 {
-    public static class AzDataTableService
+    public class AzDataTableService
     {
-        private static TableClient tableClient;
+        private TableClient tableClient;
         public static string[] SupportedTypeList { get; } = {
             "byte[]",
             "bool",
@@ -30,7 +30,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="connectionString">The connection string to the storage account.</param>
         /// <param name="tableName">The name of the table.</param>
-        public static void Connect(string connectionString, string tableName, bool createIfNotExists)
+        public AzDataTableService(string connectionString, string tableName, bool createIfNotExists)
         {
             tableClient = new TableClient(connectionString, tableName);
 
@@ -46,7 +46,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// <param name="tableName">The name of the table.</param>
         /// <param name="storageAccountName">The name of the storage account.</param>
         /// <param name="storageAccountKey">The access key of the storage account.</param>
-        public static void Connect(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
+        public AzDataTableService(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
         {
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
             tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
@@ -62,7 +62,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="sasUrl">The table service SAS URL, with or without the table name.</param>
         /// <param name="tableName">The table name.</param>
-        public static void Connect(Uri sasUrl, string tableName, bool createIfNotExists)
+        public AzDataTableService(Uri sasUrl, string tableName, bool createIfNotExists)
         {
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
@@ -87,7 +87,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="hashtables">The list of entities to remove, with PartitionKey and RowKey set.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
+        public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
         {
             var transactions = new List<TableTransactionAction>();
 
@@ -107,7 +107,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// <param name="hashtables">The entities to add.</param>
         /// <param name="overwrite">Whether or not to update already existing entities.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
+        public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
         {
             var transactions = new List<TableTransactionAction>();
 
@@ -135,7 +135,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="hashtables">The entities to update.</param>
         /// <returns>The result of the transaction.</returns>
-        public static void UpdateEntitiesInTable(Hashtable[] hashtables)
+        public void UpdateEntitiesInTable(Hashtable[] hashtables)
         {
             var transactions = new List<TableTransactionAction>();
 
@@ -160,7 +160,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// <summary>
         /// Submit transactions with built-in batch handling and splitting of partitions.
         /// </summary>
-        private static void SubmitTransaction(IList<TableTransactionAction> transactions)
+        private void SubmitTransaction(IList<TableTransactionAction> transactions)
         {
             // Transactions only support up to 100 entities of the same partitionkey
             // Loop through transactions grouped by partitionkey
@@ -179,7 +179,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         /// <param name="query">The query to filter entities by.</param>
         /// <returns>The result of the query.</returns>
-        public static IEnumerable<Hashtable> GetEntitiesFromTable(string query)
+        public IEnumerable<Hashtable> GetEntitiesFromTable(string query)
         {
             // Get entities from table, loop through them and output them as hashtables
             // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session

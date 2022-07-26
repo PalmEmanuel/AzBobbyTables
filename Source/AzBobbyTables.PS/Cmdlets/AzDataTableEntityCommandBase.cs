@@ -15,9 +15,9 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <summary>
         /// <para type="description">The name of the table.</para>
         /// </summary>
-        [Parameter(Mandatory = true, ParameterSetName = "ConnectionString")]
-        [Parameter(Mandatory = true, ParameterSetName = "SAS")]
-        [Parameter(Mandatory = true, ParameterSetName = "Key")]
+        [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", Position = 0)]
+        [Parameter(Mandatory = true, ParameterSetName = "SAS", Position = 0)]
+        [Parameter(Mandatory = true, ParameterSetName = "Key", Position = 0)]
         [ValidateNotNullOrEmpty()]
         public string TableName { get; set; }
 

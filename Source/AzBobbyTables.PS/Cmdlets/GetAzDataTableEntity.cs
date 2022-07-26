@@ -14,9 +14,9 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <summary>
         /// <para type="description">The OData filter to use in the query.</para>
         /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true)]
+        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 1)]
+        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
+        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
         [Alias("Query")]
         public string Filter { get; set; }
 

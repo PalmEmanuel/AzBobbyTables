@@ -21,12 +21,20 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         public string Filter { get; set; }
 
         /// <summary>
+        /// <para type="description">The properties to return for the entities.</para>
+        /// </summary>
+        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 2)]
+        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 2)]
+        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 2)]
+        public string[] Property { get; set; }
+
+        /// <summary>
         /// The process step of the pipeline.
         /// </summary>
         protected override void ProcessRecord()
         {
             // Format back to to PSObject
-            var entities = tableService.GetEntitiesFromTable(Filter).Select(e =>
+            var entities = tableService.GetEntitiesFromTable(Filter, Property).Select(e =>
             {
                 Hashtable hashtable = new Hashtable();
                 foreach (string key in e.Keys)

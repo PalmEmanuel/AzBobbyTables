@@ -14,19 +14,19 @@ Get one or more entities from an Azure Table.
 
 ### ConnectionString
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
  -ConnectionString <String> [<CommonParameters>]
 ```
 
 ### SAS
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
  -SharedAccessSignature <Uri> [<CommonParameters>]
 ```
 
 ### Key
 ```
-Get-AzDataTableEntity [-Filter <String>] -TableName <String> [-CreateTableIfNotExists]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
  -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
@@ -43,6 +43,13 @@ PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and La
 ```
 
 Get the user "Bobby Tables" from the table using a connection string.
+
+### Example 2
+```powershell
+PS C:\> $UserEntities = Get-AzDataTableEntity -Property 'FirstName','Age' -TableName $TableName -SharedAccessSignature $SAS
+```
+
+Get only the properties "FirstName" and "Age" for all entities found in the table using a shared access signature URL.
 
 ## PARAMETERS
 
@@ -61,6 +68,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -CreateTableIfNotExists
+If the table should be created if it does not exist.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Filter
 The OData filter to use in the query.
 Documentation on querying tables and entities: https://docs.microsoft.com/en-gb/rest/api/storageservices/querying-tables-and-entities
@@ -69,6 +91,21 @@ Documentation on querying tables and entities: https://docs.microsoft.com/en-gb/
 Type: String
 Parameter Sets: (All)
 Aliases: Query
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Property
+One or several names of properties, to specify data to return for the entities.
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
 
 Required: False
 Position: Named
@@ -132,21 +169,6 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -CreateTableIfNotExists
-If the table should be created if it does not exist.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

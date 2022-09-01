@@ -178,12 +178,13 @@ namespace PipeHow.AzBobbyTables.Core
         /// Get entities from a table based on a OData query.
         /// </summary>
         /// <param name="query">The query to filter entities by.</param>
+        /// <param name="query">The list of properties to return.</param>
         /// <returns>The result of the query.</returns>
-        public IEnumerable<Hashtable> GetEntitiesFromTable(string query)
+        public IEnumerable<Hashtable> GetEntitiesFromTable(string query, string[] properties = null)
         {
             // Get entities from table, loop through them and output them as hashtables
             // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session
-            return tableClient.Query<TableEntity>(query).Select(e =>
+            return tableClient.Query<TableEntity>(query, select: properties).Select(e =>
             {
                 Hashtable entityObject = new Hashtable();
                 entityObject.Add("ETag", e["odata.etag"]);

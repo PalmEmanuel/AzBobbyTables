@@ -10,7 +10,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// </summary>
     [Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]
     [Alias("Add-AzDataTableRow")]
-    public class AddAzDataTableEntity : AzDataTableEntityCommandBase
+    public class AddAzDataTableEntity : AzDataTableCommandBase
     {
         /// <summary>
         /// <para type="description">The entities to add to the table.</para>

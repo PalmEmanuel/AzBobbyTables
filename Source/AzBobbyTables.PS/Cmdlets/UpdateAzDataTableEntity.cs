@@ -9,7 +9,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// </summary>
     [Cmdlet(VerbsData.Update, "AzDataTableEntity")]
     [Alias("Update-AzDataTableRow")]
-    public class UpdateAzDataTableEntity : AzDataTableEntityCommandBase
+    public class UpdateAzDataTableEntity : AzDataTableCommandBase
     {
         /// <summary>
         /// <para type="description">The entities to update in the table.</para>

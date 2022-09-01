@@ -10,7 +10,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// <summary>
     /// The base class of the Azure Table commands, containing connection parameters.
     /// </summary>
-    public class AzDataTableEntityCommandBase : PSCmdlet
+    public class AzDataTableCommandBase : PSCmdlet
     {
         /// <summary>
         /// <para type="description">The name of the table.</para>

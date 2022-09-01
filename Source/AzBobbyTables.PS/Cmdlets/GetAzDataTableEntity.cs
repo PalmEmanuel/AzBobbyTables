@@ -9,7 +9,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// </summary>
     [Cmdlet(VerbsCommon.Get, "AzDataTableEntity")]
     [Alias("Get-AzDataTableRow")]
-    public class GetAzDataTableEntity : AzDataTableEntityCommandBase
+    public class GetAzDataTableEntity : AzDataTableCommandBase
     {
         /// <summary>
         /// <para type="description">The OData filter to use in the query.</para>

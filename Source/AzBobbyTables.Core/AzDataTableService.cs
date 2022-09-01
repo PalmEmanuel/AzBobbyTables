@@ -196,5 +196,19 @@ namespace PipeHow.AzBobbyTables.Core
                 return entityObject;
             });
         }
+
+        /// <summary>
+        /// Clear all entities from a table.
+        /// </summary>
+        public void ClearTable()
+        {
+            var entities = tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
+
+            var transactions = new List<TableTransactionAction>();
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
+            SubmitTransaction(transactions);
+        }
     }
 }

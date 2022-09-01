@@ -9,7 +9,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
     /// </summary>
     [Cmdlet(VerbsCommon.Remove, "AzDataTableEntity")]
     [Alias("Remove-AzDataTableRow")]
-    public class RemoveAzDataTableEntity : AzDataTableEntityCommandBase
+    public class RemoveAzDataTableEntity : AzDataTableCommandBase
     {
         /// <summary>
         /// <para type="description">The entities to remove from the table.</para>

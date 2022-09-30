@@ -18,6 +18,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", Position = 0)]
         [Parameter(Mandatory = true, ParameterSetName = "SAS", Position = 0)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", Position = 0)]
+        [Parameter(Mandatory = true, ParameterSetName = "Token", Position = 0)]
         [ValidateNotNullOrEmpty()]
         public string TableName { get; set; }
 
@@ -27,6 +28,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "ConnectionString")]
         [Parameter(ParameterSetName = "SAS")]
         [Parameter(ParameterSetName = "Key")]
+        [Parameter(ParameterSetName = "Token")]
         public SwitchParameter CreateTableIfNotExists { get; set; }
 
         /// <summary>
@@ -40,6 +42,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// <para type="description">The name of the storage account.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "Key")]
+        [Parameter(Mandatory = true, ParameterSetName = "Token")]
         [ValidateNotNullOrEmpty()]
         public string StorageAccountName { get; set; }
 
@@ -59,6 +62,13 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [ValidateNotNullOrEmpty()]
         [ValidatePattern("https://.*")]
         public Uri SharedAccessSignature { get; set; }
+
+        /// <summary>
+        /// <para type="description">The token to authenticate with.</para>
+        /// </summary>
+        [Parameter(Mandatory = true, ParameterSetName = "Token")]
+        [ValidateNotNullOrEmpty()]
+        public string Token { get; set; }
 
         protected AzDataTableService tableService;
 
@@ -91,13 +101,16 @@ Example of first entity provided
             switch (ParameterSetName)
             {
                 case "ConnectionString":
-                    tableService = new AzDataTableService(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithConnectionString(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "SAS":
-                    tableService = new AzDataTableService(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithSAS(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
                     break;
                 case "Key":
-                    tableService = new AzDataTableService(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithStorageKey(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
+                    break;
+                case "Token":
+                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Token, CreateTableIfNotExists.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");

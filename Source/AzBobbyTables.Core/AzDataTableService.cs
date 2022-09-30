@@ -25,48 +25,59 @@ namespace PipeHow.AzBobbyTables.Core
             "string"
         };
 
-        /// <summary>
-        /// Create a connection to the table using a connection string.
-        /// </summary>
-        /// <param name="connectionString">The connection string to the storage account.</param>
-        /// <param name="tableName">The name of the table.</param>
-        public AzDataTableService(string connectionString, string tableName, bool createIfNotExists)
+        private AzDataTableService() { }
+
+        public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists)
         {
-            tableClient = new TableClient(connectionString, tableName);
+            var bobbyService = new AzDataTableService();
+            var tableClient = new TableClient(connectionString, tableName);
 
             if (createIfNotExists)
             {
                 tableClient.CreateIfNotExists();
             }
+
+            bobbyService.tableClient = tableClient;
+            return bobbyService;
         }
 
-        /// <summary>
-        /// Create a connection to the table using a storage account access key.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="storageAccountName">The name of the storage account.</param>
-        /// <param name="storageAccountKey">The access key of the storage account.</param>
-        public AzDataTableService(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
+        public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
         {
+            var bobbyService = new AzDataTableService();
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
-            tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+            var tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
 
             if (createIfNotExists)
             {
                 tableClient.CreateIfNotExists();
             }
+
+            bobbyService.tableClient = tableClient;
+            return bobbyService;
         }
 
-        /// <summary>
-        /// Create a connection to the table using a shared access signature.
-        /// </summary>
-        /// <param name="sasUrl">The table service SAS URL, with or without the table name.</param>
-        /// <param name="tableName">The table name.</param>
-        public AzDataTableService(Uri sasUrl, string tableName, bool createIfNotExists)
+        public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists)
         {
+            var bobbyService = new AzDataTableService();
+            var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
+            var tableClient = new TableClient(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+
+            if (createIfNotExists)
+            {
+                tableClient.CreateIfNotExists();
+            }
+
+            bobbyService.tableClient = tableClient;
+            return bobbyService;
+        }
+
+
+        public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists)
+        {
+            var bobbyService = new AzDataTableService();
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
-            
+
             // If the user did not specify a full endpoint to the table
             if (!sasUrl.ToString().Contains($"/{tableName}?"))
             {
@@ -74,12 +85,15 @@ namespace PipeHow.AzBobbyTables.Core
                 var urlParts = sasUrl.ToString().Split('?');
                 sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
             }
-            tableClient = new TableClient(sasUrl, sasCredential);
+            var tableClient = new TableClient(sasUrl, sasCredential);
 
             if (createIfNotExists)
             {
                 tableClient.CreateIfNotExists();
             }
+
+            bobbyService.tableClient = tableClient;
+            return bobbyService;
         }
 
         /// <summary>

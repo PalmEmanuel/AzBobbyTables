@@ -30,6 +30,12 @@ Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTable
  -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
+### Token
+```
+Update-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -Token <String> [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Update one or more entities already existing in an Azure Table.
 For adding and overwriting, also see the command Add-AzDataTableEntity.
@@ -115,7 +121,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key
+Parameter Sets: Key, Token
 Aliases:
 
 Required: True
@@ -149,6 +155,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Token
+{{ Fill Token Description }}
+
+```yaml
+Type: String
+Parameter Sets: Token
+Aliases:
+
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False

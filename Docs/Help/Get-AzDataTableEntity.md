@@ -30,6 +30,12 @@ Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <Stri
  -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
+### Token
+```
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -Token <String> [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Get either all entities from an Azure Table, or those matching a provided OData filter.
 
@@ -150,7 +156,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key
+Parameter Sets: Key, Token
 Aliases:
 
 Required: True
@@ -166,6 +172,21 @@ The name of the table.
 ```yaml
 Type: String
 Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Token
+{{ Fill Token Description }}
+
+```yaml
+Type: String
+Parameter Sets: Token
 Aliases:
 
 Required: True

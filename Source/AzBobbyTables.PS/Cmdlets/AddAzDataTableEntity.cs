@@ -1,5 +1,4 @@
-﻿using PipeHow.AzBobbyTables.Core;
-using PipeHow.AzBobbyTables.Validation;
+﻿using PipeHow.AzBobbyTables.Validation;
 using System.Collections;
 using System.Management.Automation;
 
@@ -18,6 +17,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
+        [Parameter(Mandatory = true, ParameterSetName = "Token", ValueFromPipeline = true, Position = 1)]
         [Alias("Row", "Entry", "Property")]
         [ValidateEntity]
         public Hashtable[] Entity { get; set; }
@@ -28,6 +28,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "ConnectionString")]
         [Parameter(ParameterSetName = "SAS")]
         [Parameter(ParameterSetName = "Key")]
+        [Parameter(ParameterSetName = "Token")]
         [Alias("UpdateExisting")]
         public SwitchParameter Force { get; set; }
 

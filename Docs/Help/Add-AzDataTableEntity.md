@@ -30,6 +30,12 @@ Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> [-Creat
  -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
 ```
 
+### Token
+```
+Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> -Token <String> [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Add one or more entities to an Azure Table, provided as hashtables.
 
@@ -137,7 +143,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key
+Parameter Sets: Key, Token
 Aliases:
 
 Required: True
@@ -171,6 +177,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Token
+{{ Fill Token Description }}
+
+```yaml
+Type: String
+Parameter Sets: Token
+Aliases:
+
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False

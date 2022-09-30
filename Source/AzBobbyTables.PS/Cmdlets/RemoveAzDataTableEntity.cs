@@ -17,6 +17,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
+        [Parameter(Mandatory = true, ParameterSetName = "Token", ValueFromPipeline = true, Position = 1)]
         [ValidateEntity()]
         [Alias("Row", "Entry", "Property")]
         public Hashtable[] Entity { get; set; }

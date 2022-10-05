@@ -1,4 +1,4 @@
-# Contributing to Bicep PowerShell
+# Contributing to AzBobbyTables
 
 You are more than welcome to contribute to the module, whether it is [Pull Requests](#pull-requests), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)!
 
@@ -62,13 +62,9 @@ Edit the markdown file(s) in the `.\Docs\Help` folder and populate `{{ ... }}` p
 
 ```powershell
 # re-import your module with latest changes
-Import-Module .\Source\Bicep.psd1 -Force
+Import-Module .\Source\AzBobbyTables.psd1 -Force
 Update-MarkdownHelp .\Docs\Help
 ```
-
-### Tests
-
-[Pester](https://github.com/pester/Pester) is the ubiquitous test and mock framework for PowerShell. We use it for automatic testing and it executes at Pull Requests. We have a lot improvements to do on the test front and contributions are more than welcome. The progress can be tracked [here](https://github.com/PSBicep/PSBicep/issues/22).
 
 ## Pull Requests
 
@@ -86,4 +82,4 @@ If you like to start contributing, please make sure that there is a related issu
 ## Bug Reports
 
 - Please first search [Open Issues](https://github.com/PalmEmanuel/AzBobbyTables/issues) before opening an issue, to see if it has already been reported.
-- Try to be as specific as possible, including the version of the module, PowerShell version and OS used to reproduce the issue, and any example files or snippets of Bicep code needed to reproduce it.
+- Try to be as specific as possible, including the version of the module, PowerShell version and OS used to reproduce the issue, and any example files or snippets of code needed to reproduce it.

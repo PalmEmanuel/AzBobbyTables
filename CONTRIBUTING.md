@@ -1,0 +1,89 @@
+# Contributing to Bicep PowerShell
+
+You are more than welcome to contribute to the module, whether it is [Pull Requests](#pull-requests), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)!
+
+## Getting Started
+
+- Fork this repository (see [this forking guide](https://guides.github.com/activities/forking/) for more information).
+- Checkout the repository locally with `git clone git@github.com:{your_username}/AzBobbyTables.git`.
+- If you haven't already, you will need the [PlatyPs](https://github.com/PowerShell/platyPS) PowerShell Module to generate command help and docs.
+
+## Structure
+
+The repository is organized as below:
+
+- **Docs** (`Docs/Help`): Help documentation for the module. Used by `PlatyPS` to generate help files.
+- **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
+- **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The PowerShell modules with commands and parameters.
+- **build.ps1**: The script that builds the module from source and documentation.
+
+### Running the module locally
+
+```powershell
+.\build.ps1
+```
+
+- Import the module:
+
+```powershell
+Import-Module .\AzBobbyTables\AzBobbyTables.psd1
+```
+
+### platyPS
+
+[platyPS](https://github.com/PowerShell/platyPS) is used to write the external help in markdown. When contributing, always make sure that the changes are added to the help file.
+
+#### Quickstart
+
+- Install the platyPS module from the [PowerShell Gallery](https://powershellgallery.com):
+
+```powershell
+Install-Module -Name platyPS -Scope CurrentUser
+Import-Module platyPS
+```
+
+- Create initial markdown help file for the module (This will only create help files for new commands, existing files will not be overwritten):
+
+```powershell
+# you should have module imported in the session
+Import-Module .\AzBobbyTables\AzBobbyTables.psd1
+New-MarkdownHelp -Module AzBobbyTables -OutputFolder .\Docs\Help
+```
+
+Edit the markdown file(s) in the `.\Docs\Help` folder and populate `{{ ... }}` placeholders with missed help content.
+
+- Run the build script to update the documentation
+
+```powershell
+.\build.ps1
+```
+
+- If you've made a lot of changes to the module code, you can easily update the markdown file(s) automatically with:
+
+```powershell
+# re-import your module with latest changes
+Import-Module .\Source\Bicep.psd1 -Force
+Update-MarkdownHelp .\Docs\Help
+```
+
+### Tests
+
+[Pester](https://github.com/pester/Pester) is the ubiquitous test and mock framework for PowerShell. We use it for automatic testing and it executes at Pull Requests. We have a lot improvements to do on the test front and contributions are more than welcome. The progress can be tracked [here](https://github.com/PSBicep/PSBicep/issues/22).
+
+## Pull Requests
+
+If you like to start contributing, please make sure that there is a related issue to link to your PR.
+
+- Make sure that the issue is tagged in the PR.
+- Write a short but informative commit message.
+
+## Feature Suggestions
+
+- Please first search [Open Issues](https://github.com/PalmEmanuel/AzBobbyTables/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
+- Ensure you have included a "What?" - what your feature entails, being as specific as possible, and giving mocked-up syntax examples where possible.
+- Ensure you have included a "Why?" - what the benefit of including this feature will be.
+
+## Bug Reports
+
+- Please first search [Open Issues](https://github.com/PalmEmanuel/AzBobbyTables/issues) before opening an issue, to see if it has already been reported.
+- Try to be as specific as possible, including the version of the module, PowerShell version and OS used to reproduce the issue, and any example files or snippets of Bicep code needed to reproduce it.

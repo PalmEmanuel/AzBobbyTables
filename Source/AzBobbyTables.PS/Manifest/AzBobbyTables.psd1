@@ -4,7 +4,7 @@
 RootModule = 'AzBobbyTables.PS.dll'
 
 # Version number of this module.
-ModuleVersion = '2.3.1'
+ModuleVersion = '2.3.2'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Core')
@@ -87,7 +87,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @('azure', 'storage', 'table')
+        Tags = @('azure', 'storage', 'table', 'cosmos', 'cosmosdb', 'data')
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/PalmEmanuel/AzBobbyTables/blob/main/LICENSE'

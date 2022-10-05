@@ -18,6 +18,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
         [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
         [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 1)]
+        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 1)]
         [Alias("Query")]
         public string Filter { get; set; }
 
@@ -28,6 +29,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 2)]
         [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 2)]
         [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 2)]
+        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 2)]
         public string[] Property { get; set; }
 
         /// <summary>

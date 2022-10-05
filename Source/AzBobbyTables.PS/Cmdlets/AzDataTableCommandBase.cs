@@ -1,7 +1,6 @@
 ﻿using PipeHow.AzBobbyTables.Core;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 
@@ -19,6 +18,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "SAS", Position = 0)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", Position = 0)]
         [Parameter(Mandatory = true, ParameterSetName = "Token", Position = 0)]
+        [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity", Position = 0)]
         [ValidateNotNullOrEmpty()]
         public string TableName { get; set; }
 
@@ -29,6 +29,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "SAS")]
         [Parameter(ParameterSetName = "Key")]
         [Parameter(ParameterSetName = "Token")]
+        [Parameter(ParameterSetName = "ManagedIdentity")]
         public SwitchParameter CreateTableIfNotExists { get; set; }
 
         /// <summary>
@@ -43,6 +44,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "Key")]
         [Parameter(Mandatory = true, ParameterSetName = "Token")]
+        [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity")]
         [ValidateNotNullOrEmpty()]
         public string StorageAccountName { get; set; }
 
@@ -69,6 +71,12 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "Token")]
         [ValidateNotNullOrEmpty()]
         public string Token { get; set; }
+
+        /// <summary>
+        /// <para type="description">The token to authenticate with.</para>
+        /// </summary>
+        [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity")]
+        public SwitchParameter ManagedIdentity { get; set; }
 
         protected AzDataTableService tableService;
 
@@ -111,6 +119,9 @@ Example of first entity provided
                     break;
                 case "Token":
                     tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Token, CreateTableIfNotExists.IsPresent);
+                    break;
+                case "ManagedIdentity":
+                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Helpers.GetManagedIdentityToken(StorageAccountName), CreateTableIfNotExists.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");

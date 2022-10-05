@@ -18,6 +18,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
         [Parameter(Mandatory = true, ParameterSetName = "Token", ValueFromPipeline = true, Position = 1)]
+        [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 1)]
         [Alias("Row", "Entry", "Property")]
         [ValidateEntity]
         public Hashtable[] Entity { get; set; }
@@ -29,6 +30,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "SAS")]
         [Parameter(ParameterSetName = "Key")]
         [Parameter(ParameterSetName = "Token")]
+        [Parameter(ParameterSetName = "ManagedIdentity")]
         [Alias("UpdateExisting")]
         public SwitchParameter Force { get; set; }
 

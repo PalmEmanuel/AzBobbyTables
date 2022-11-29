@@ -196,7 +196,7 @@ namespace PipeHow.AzBobbyTables.Core
         /// <returns>The result of the query.</returns>
         public IEnumerable<Hashtable> GetEntitiesFromTable(string query, string[] properties = null)
         {
-            // Get entities from table, loop through them and output them as hashtables
+            // Get entities from table, output them as hashtables
             // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session
             return tableClient.Query<TableEntity>(query, select: properties).Select(e =>
             {

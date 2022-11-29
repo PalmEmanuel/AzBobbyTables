@@ -6,18 +6,18 @@ You are more than welcome to contribute to the module, whether it is [Pull Reque
 
 - Fork this repository (see [this forking guide](https://guides.github.com/activities/forking/) for more information).
 - Checkout the repository locally with `git clone git@github.com:{your_username}/AzBobbyTables.git`.
-- If you haven't already, you will need the [PlatyPs](https://github.com/PowerShell/platyPS) PowerShell Module to generate command help and docs.
+- If you haven't already, you will need the [platyPS](https://github.com/PowerShell/platyPS) PowerShell Module to generate command help and docs.
 
 ## Structure
 
 The repository is organized as below:
 
-- **Docs** (`Docs/Help`): Help documentation for the module. Used by `PlatyPS` to generate help files.
+- **Docs** (`Docs/Help`): Help documentation for the module. Used by `platyPS` to generate help files.
 - **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
 - **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The PowerShell modules with commands and parameters.
 - **build.ps1**: The script that builds the module from source and documentation.
 
-### Running the module locally
+### Building the module
 
 ```powershell
 .\build.ps1
@@ -35,30 +35,30 @@ Import-Module .\AzBobbyTables\AzBobbyTables.psd1
 
 #### Quickstart
 
-- Install the platyPS module from the [PowerShell Gallery](https://powershellgallery.com):
+- Install the `platyPS` module from the [PowerShell Gallery](https://www.powershellgallery.com/):
 
 ```powershell
 Install-Module -Name platyPS -Scope CurrentUser
 Import-Module platyPS
 ```
 
-- Create initial markdown help file for the module (This will only create help files for new commands, existing files will not be overwritten):
+- Create markdown help files for the module (this will only create help files for new commands, existing files will not be overwritten):
 
 ```powershell
-# you should have module imported in the session
+# you need the module imported in the session
 Import-Module .\AzBobbyTables\AzBobbyTables.psd1
 New-MarkdownHelp -Module AzBobbyTables -OutputFolder .\Docs\Help
 ```
 
-Edit the markdown file(s) in the `.\Docs\Help` folder and populate `{{ ... }}` placeholders with missed help content.
+Edit the new markdown files in the `.\Docs\Help` folder and replace `{{ ... }}` placeholders with missing help content.
 
-- Run the build script to update the documentation
+- Run the build script to update the documentation.
 
 ```powershell
 .\build.ps1
 ```
 
-- If you've made a lot of changes to the module code, you can easily update the markdown file(s) automatically with:
+- If you've made changes to the commands in the module, you can easily update the markdown files with:
 
 ```powershell
 # re-import your module with latest changes

@@ -18,7 +18,7 @@ If you find a bug or have an idea for a new feature, please create an issue in t
 
 ## Contribution
 
-If you like AzBobbyTables and want to contribute, you are very much welcome to do so! Please read the [Contribution Guide](CONTRIBUTING.md) before you start!
+If you like AzBobbyTables and want to contribute, you are very welcome to do so! Please read the [Contribution Guide](CONTRIBUTING.md) to get started!
 
 ---
 

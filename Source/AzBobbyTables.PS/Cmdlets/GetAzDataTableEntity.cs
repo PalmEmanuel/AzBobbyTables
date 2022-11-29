@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Linq;
-using System.Management.Automation;
+﻿using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
 {
@@ -37,16 +35,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         /// </summary>
         protected override void ProcessRecord()
         {
-            // Format back to to PSObject
-            var entities = tableService.GetEntitiesFromTable(Filter, Property).Select(e =>
-            {
-                Hashtable hashtable = new Hashtable();
-                foreach (string key in e.Keys)
-                {
-                    hashtable.Add(key, e[key]);
-                }
-                return hashtable;
-            });
+            var entities = tableService.GetEntitiesFromTable(Filter, Property);
             foreach (var entity in entities)
             {
                 WriteObject(entity);

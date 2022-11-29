@@ -162,7 +162,7 @@ Accept wildcard characters: False
 ```
 
 ### -Token
-{{ Fill Token Description }}
+The token to use for authentication.
 
 ```yaml
 Type: String

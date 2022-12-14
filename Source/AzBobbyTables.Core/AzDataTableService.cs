@@ -1,15 +1,28 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using Microsoft.VisualStudio.Threading;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace PipeHow.AzBobbyTables.Core
 {
     public class AzDataTableService
     {
-        private TableClient tableClient;
+        private TableClient _tableClient;
+
+        /// <summary>
+        /// Cancellation token used within the AzDataTableService.
+        /// </summary>
+        private readonly CancellationToken _cancellationToken;
+
+        private readonly JoinableTaskFactory _joinableTaskFactory = new JoinableTaskFactory(new JoinableTaskContext());
+
+        /// <summary>
+        /// List of supported data types for the table.
+        /// </summary>
         public static string[] SupportedTypeList { get; } = {
             "byte[]",
             "bool",
@@ -25,56 +38,55 @@ namespace PipeHow.AzBobbyTables.Core
             "string"
         };
 
-        private AzDataTableService() { }
+        private AzDataTableService(CancellationToken cancellationToken = default) { _cancellationToken = cancellationToken; }
 
-        public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists)
+        public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists, CancellationToken cancellationToken = default)
         {
-            var bobbyService = new AzDataTableService();
+            var bobbyService = new AzDataTableService(cancellationToken);
             var tableClient = new TableClient(connectionString, tableName);
 
             if (createIfNotExists)
             {
-                tableClient.CreateIfNotExists();
+                tableClient.CreateIfNotExists(cancellationToken);
             }
 
-            bobbyService.tableClient = tableClient;
+            bobbyService._tableClient = tableClient;
             return bobbyService;
         }
 
-        public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists)
+        public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists, CancellationToken cancellationToken = default)
         {
-            var bobbyService = new AzDataTableService();
+            var bobbyService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
             var tableClient = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
 
             if (createIfNotExists)
             {
-                tableClient.CreateIfNotExists();
+                tableClient.CreateIfNotExists(cancellationToken);
             }
 
-            bobbyService.tableClient = tableClient;
+            bobbyService._tableClient = tableClient;
             return bobbyService;
         }
 
-        public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists)
+        public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists, CancellationToken cancellationToken = default)
         {
-            var bobbyService = new AzDataTableService();
+            var bobbyService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
             var tableClient = new TableClient(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
 
             if (createIfNotExists)
             {
-                tableClient.CreateIfNotExists();
+                tableClient.CreateIfNotExists(cancellationToken);
             }
 
-            bobbyService.tableClient = tableClient;
+            bobbyService._tableClient = tableClient;
             return bobbyService;
         }
 
-
-        public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists)
+        public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists, CancellationToken cancellationToken = default)
         {
-            var bobbyService = new AzDataTableService();
+            var dataTableService = new AzDataTableService(cancellationToken);
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
 
@@ -89,11 +101,11 @@ namespace PipeHow.AzBobbyTables.Core
 
             if (createIfNotExists)
             {
-                tableClient.CreateIfNotExists();
+                tableClient.CreateIfNotExists(cancellationToken);
             }
 
-            bobbyService.tableClient = tableClient;
-            return bobbyService;
+            dataTableService._tableClient = tableClient;
+            return dataTableService;
         }
 
         /// <summary>
@@ -172,33 +184,44 @@ namespace PipeHow.AzBobbyTables.Core
         }
 
         /// <summary>
-        /// Submit transactions with built-in batch handling and splitting of partitions.
-        /// </summary>
-        private void SubmitTransaction(IList<TableTransactionAction> transactions)
-        {
-            // Transactions only support up to 100 entities of the same partitionkey
-            // Loop through transactions grouped by partitionkey
-            foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
-            {
-                // Loop through each group and submit up to 100 at a time
-                for (int i = 0; i < group.Count(); i += 100)
-                {
-                    tableClient.SubmitTransaction(group.Skip(i).Take(100));
-                }
-            }
-        }
-
-        /// <summary>
         /// Get entities from a table based on a OData query.
         /// </summary>
         /// <param name="query">The query to filter entities by.</param>
         /// <param name="query">The list of properties to return.</param>
         /// <returns>The result of the query.</returns>
-        public IEnumerable<Hashtable> GetEntitiesFromTable(string query, string[] properties = null)
+        public IEnumerable<Hashtable> GetEntitiesFromTable(string query, string[] properties = null, int? top = null, int? skip = null, string[] orderBy = null)
         {
-            // Get entities from table, output them as hashtables
+            // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
+            IAsyncEnumerable<TableEntity> entities = _tableClient.QueryAsync<TableEntity>(query, null, properties, _cancellationToken);
+
+            // If user specified one or more properties to sort list by
+            // This may slow the query down a lot with a lot of results
+            if (orderBy is not null && orderBy.Count() > 0)
+            {
+                // Must create a new variable to be able to modify it within the loop
+                // https://ericlippert.com/2009/11/12/closing-over-the-loop-variable-considered-harmful-part-one/
+                // OrderBy for the first property, ThenBy for the rest
+                var orderableEntities = entities.OrderBy(e => e[orderBy.First()]);
+                foreach (var propertyName in orderBy.Skip(1))
+                {
+                    orderableEntities = orderableEntities.ThenBy(e => e[propertyName]);
+                }
+                entities = orderableEntities;
+            }
+            // If user specified to skip a number of entities
+            if (skip is not null)
+            {
+                entities = entities.Skip((int)skip);
+            }
+            // If user asked to only take a number of entities
+            if (top is not null)
+            {
+                entities = entities.Take((int)top);
+            }
+            
+            // Output entities as hashtables
             // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session
-            return tableClient.Query<TableEntity>(query, select: properties).Select(e =>
+            return entities.ToEnumerable().Select(e =>
             {
                 Hashtable entityObject = new Hashtable();
                 entityObject.Add("ETag", e["odata.etag"]);
@@ -216,13 +239,30 @@ namespace PipeHow.AzBobbyTables.Core
         /// </summary>
         public void ClearTable()
         {
-            var entities = tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
+            var entities = _tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
 
             var transactions = new List<TableTransactionAction>();
 
             transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
 
             SubmitTransaction(transactions);
+        }
+
+        /// <summary>
+        /// Submit transactions with built-in batch handling and splitting of partitions.
+        /// </summary>
+        private void SubmitTransaction(IList<TableTransactionAction> transactions)
+        {
+            // Transactions only support up to 100 entities of the same partitionkey
+            // Loop through transactions grouped by partitionkey
+            foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
+            {
+                // Loop through each group and submit up to 100 at a time
+                for (int i = 0; i < group.Count(); i += 100)
+                {
+                    _tableClient.SubmitTransaction(group.Skip(i).Take(100), _cancellationToken);
+                }
+            }
         }
     }
 }

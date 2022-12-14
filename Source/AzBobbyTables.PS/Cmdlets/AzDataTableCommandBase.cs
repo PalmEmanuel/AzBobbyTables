@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Management.Automation;
+using System.Threading;
 
 namespace PipeHow.AzBobbyTables.Cmdlets
 {
@@ -80,6 +81,8 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 
         protected AzDataTableService tableService;
 
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
         /// <summary>
         /// The process step of the pipeline.
         /// </summary>
@@ -87,44 +90,71 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         {
             WriteDebug("ParameterSetName: " + ParameterSetName);
             
+            // If the user specified the -Entity parameter, validate the data types of input
             if (MyInvocation.BoundParameters.ContainsKey("Entity"))
             {
-                Hashtable[] entities = MyInvocation.BoundParameters["Entity"] as Hashtable[];
-
-                // Cast hashtable to dictionary to be able to run linq
-                // Then find if any values have unsupported types
-                var dictionaries = entities.Select(e => e.ToDictionary<string, object>());
-                if (dictionaries.Any(d => d.Keys.Where(k => k.ToLower() != "timestamp" && k.ToLower() != "etag").Select(k => d[k]).Any(t => !AzDataTableService.SupportedTypeList.Contains(t.GetType().Name.ToLower()))))
-                {
-                    string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
-
-Example of first entity provided
---------------------------------
-{string.Join("\n", dictionaries.First().Select(d => string.Join("\n", $"[{d.Value.GetType().FullName}] {d.Key}")))}
-";
-                    WriteWarning(warningMessage);
-                }
+                // Only writes a warning to the user if it doesn't
+                ValidateEntitiesAndWarn();
             }
             
             switch (ParameterSetName)
             {
                 case "ConnectionString":
-                    tableService = AzDataTableService.CreateWithConnectionString(ConnectionString, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithConnectionString(ConnectionString, TableName, CreateTableIfNotExists.IsPresent, cancellationTokenSource.Token);
                     break;
                 case "SAS":
-                    tableService = AzDataTableService.CreateWithSAS(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithSAS(SharedAccessSignature, TableName, CreateTableIfNotExists.IsPresent, cancellationTokenSource.Token);
                     break;
                 case "Key":
-                    tableService = AzDataTableService.CreateWithStorageKey(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithStorageKey(StorageAccountName, TableName, StorageAccountKey, CreateTableIfNotExists.IsPresent, cancellationTokenSource.Token);
                     break;
                 case "Token":
-                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Token, CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Token, CreateTableIfNotExists.IsPresent, cancellationTokenSource.Token);
                     break;
                 case "ManagedIdentity":
-                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Helpers.GetManagedIdentityToken(StorageAccountName), CreateTableIfNotExists.IsPresent);
+                    tableService = AzDataTableService.CreateWithToken(StorageAccountName, TableName, Helpers.GetManagedIdentityToken(StorageAccountName), CreateTableIfNotExists.IsPresent, cancellationTokenSource.Token);
                     break;
                 default:
                     throw new ArgumentException($"Unknown parameter set '{ParameterSetName}' was used!");
+            }
+        }
+
+        protected override void StopProcessing()
+        {
+            // Cancel any operations if user presses CTRL + C
+            cancellationTokenSource.Cancel();
+        }
+
+        /// <summary>
+        /// Validate the data types of user input to ensure it matches the supported table data types.
+        /// 
+        /// </summary>
+        private void ValidateEntitiesAndWarn()
+        {
+            Hashtable[] entities = MyInvocation.BoundParameters["Entity"] as Hashtable[];
+
+            try
+            {
+                // Use OfType to get an enumerable of the keys, to select all values
+                var values = entities.SelectMany(h => h.Keys.OfType<string>().Select(k => h[k]));
+                // ValidateEntitiesAndWarn if any null values
+                if (values.Any(v => v is null)) { WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation."); }
+
+                var firstEntity = entities.First();
+                if (values.Any(v => v is not null && !AzDataTableService.SupportedTypeList.Contains(v.GetType().Name.ToLower())))
+                {
+                    string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
+
+Example of first entity provided
+--------------------------------
+{string.Join("\n", firstEntity.Keys.OfType<string>().Select(k => string.Join("\n", $"[{firstEntity[k].GetType().FullName}] {k}")))}
+";
+                    WriteWarning(warningMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, entities));
             }
         }
     }

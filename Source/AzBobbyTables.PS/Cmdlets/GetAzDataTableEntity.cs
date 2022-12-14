@@ -61,16 +61,21 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 5)]
         public string[] Sort { get; set; }
 
+        protected override void BeginProcessing()
+        {
+            base.BeginProcessing();
+
+            if (MyInvocation.BoundParameters.ContainsKey("Sort"))
+            {
+                WriteWarning("Using the Sort parameter with large data sets may result in slow queries.");
+            }
+        }
+
         /// <summary>
         /// The process step of the pipeline.
         /// </summary>
         protected override void ProcessRecord()
         {
-            if (MyInvocation.BoundParameters.ContainsKey("Sort"))
-            {
-                WriteWarning("Using the Sort parameter with large data sets may result in slow queries.");
-            }
-
             var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
             foreach (var entity in entities)
             {

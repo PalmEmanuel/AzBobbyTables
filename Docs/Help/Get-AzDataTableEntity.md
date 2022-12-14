@@ -14,26 +14,37 @@ Get one or more entities from an Azure Table.
 
 ### ConnectionString
 ```
-Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
- -ConnectionString <String> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
+ [-Sort <String[]>] -TableName <String> [-CreateTableIfNotExists] -ConnectionString <String>
+ [<CommonParameters>]
 ```
 
 ### SAS
 ```
-Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
- -SharedAccessSignature <Uri> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
+ [-Sort <String[]>] -TableName <String> [-CreateTableIfNotExists] -SharedAccessSignature <Uri>
+ [<CommonParameters>]
 ```
 
 ### Key
 ```
-Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
- -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
+ [-Sort <String[]>] -TableName <String> [-CreateTableIfNotExists] -StorageAccountName <String>
+ -StorageAccountKey <String> [<CommonParameters>]
 ```
 
 ### Token
 ```
-Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] -TableName <String> [-CreateTableIfNotExists]
- -StorageAccountName <String> -Token <String> [<CommonParameters>]
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
+ [-Sort <String[]>] -TableName <String> [-CreateTableIfNotExists] -StorageAccountName <String> -Token <String>
+ [<CommonParameters>]
+```
+
+### ManagedIdentity
+```
+Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
+ [-Sort <String[]>] -TableName <String> [-CreateTableIfNotExists] -StorageAccountName <String>
+ [-ManagedIdentity] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -51,6 +62,13 @@ PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and La
 Get the user "Bobby Tables" from the table using a connection string.
 
 ### Example 2
+```powershell
+PS C:\> $UserEntities = Get-AzDataTableEntity -Sort 'Id','Age' -First 100 -Skip 500 -TableName $TableName -ManagedIdentity -StorageAccountName $Name
+```
+
+Skipping the first 100 entities, get 500 entities sorted by id and age from the table using a managed identity for authorization.
+
+### Example 3
 ```powershell
 PS C:\> $UserEntities = Get-AzDataTableEntity -Property 'FirstName','Age' -TableName $TableName -SharedAccessSignature $SAS
 ```
@@ -156,7 +174,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key, Token
+Parameter Sets: Key, Token, ManagedIdentity
 Aliases:
 
 Required: True
@@ -182,7 +200,7 @@ Accept wildcard characters: False
 ```
 
 ### -Token
-The token to use for authentication.
+The token to use for authorization.
 
 ```yaml
 Type: String
@@ -193,6 +211,68 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -First
+Gets only the specified number of objects. Enter the number of objects to get.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases: Top, Take
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -ManagedIdentity
+Specifies that the command is run by a managed identity (such as in an Azure Function), and authorization will be handled using that identity.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: ManagedIdentity
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Skip
+Ignores the specified number of objects and then gets the remaining objects. Enter the number of objects to skip.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Sort
+Specifies one or several property names that to sort the entities by. If several properties are provided, the entities are sorted in the order that the property names are provided.
+
+Note that using this parameter may slow down the command a lot when working with large data sets!
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 

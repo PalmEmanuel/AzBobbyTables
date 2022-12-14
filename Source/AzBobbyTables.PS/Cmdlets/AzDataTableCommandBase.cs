@@ -67,14 +67,14 @@ namespace PipeHow.AzBobbyTables.Cmdlets
         public Uri SharedAccessSignature { get; set; }
 
         /// <summary>
-        /// <para type="description">The token to authenticate with.</para>
+        /// <para type="description">The token to use for authorization.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "Token")]
         [ValidateNotNullOrEmpty()]
         public string Token { get; set; }
 
         /// <summary>
-        /// <para type="description">The token to authenticate with.</para>
+        /// <para type="description">Specifies that the command should be run by a managed identity.</para>
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity")]
         public SwitchParameter ManagedIdentity { get; set; }
@@ -127,7 +127,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets
 
         /// <summary>
         /// Validate the data types of user input to ensure it matches the supported table data types.
-        /// 
+        /// Also warn if any value is null.
         /// </summary>
         private void ValidateEntitiesAndWarn()
         {

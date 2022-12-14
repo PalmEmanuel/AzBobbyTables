@@ -36,6 +36,12 @@ Clear-AzDataTable [-TableName] <String> [-CreateTableIfNotExists] -StorageAccoun
  [<CommonParameters>]
 ```
 
+### ManagedIdentity
+```
+Clear-AzDataTable [-TableName] <String> [-CreateTableIfNotExists] -StorageAccountName <String>
+ [-ManagedIdentity] [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Clear all entities from an Azure Table.
 
@@ -47,6 +53,14 @@ PS C:\> Clear-AzDataTable -TableName $TableName -ConnectionString $ConnectionStr
 ```
 
 Clear all entities from a table using a connection string.
+
+
+### Example 2
+```powershell
+PS C:\> Clear-AzDataTable -TableName $TableName -StorageAccountName $Name -ManagedIdentity
+```
+
+Clear all entities from a table using a managed identity.
 
 ## PARAMETERS
 
@@ -116,7 +130,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key, Token
+Parameter Sets: Key, Token, ManagedIdentity
 Aliases:
 
 Required: True
@@ -142,11 +156,26 @@ Accept wildcard characters: False
 ```
 
 ### -Token
-The token to use for authentication.
+The token to use for authorization.
 
 ```yaml
 Type: String
 Parameter Sets: Token
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ManagedIdentity
+Specifies that the command is run by a managed identity (such as in an Azure Function), and authorization will be handled using that identity.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: ManagedIdentity
 Aliases:
 
 Required: True

@@ -36,6 +36,12 @@ Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTable
  -StorageAccountName <String> -Token <String> [<CommonParameters>]
 ```
 
+### ManagedIdentity
+```
+Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
+ -StorageAccountName <String> [-ManagedIdentity] [<CommonParameters>]
+```
+
 ## DESCRIPTION
 Remove one or more entities from an Azure Table, based on PartitionKey and RowKey.
 
@@ -133,7 +139,7 @@ The name of the storage account.
 
 ```yaml
 Type: String
-Parameter Sets: Key, Token
+Parameter Sets: Key, Token, ManagedIdentity
 Aliases:
 
 Required: True
@@ -174,11 +180,26 @@ Accept wildcard characters: False
 ```
 
 ### -Token
-The token to use for authentication.
+The token to use for authorization.
 
 ```yaml
 Type: String
 Parameter Sets: Token
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ManagedIdentity
+Specifies that the command is run by a managed identity (such as in an Azure Function), and authorization will be handled using that identity.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: ManagedIdentity
 Aliases:
 
 Required: True

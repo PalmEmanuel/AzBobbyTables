@@ -1,80 +1,72 @@
-﻿using System.Management.Automation;
+﻿using System.Linq;
+using System.Management.Automation;
 
-namespace PipeHow.AzBobbyTables.Cmdlets
+namespace PipeHow.AzBobbyTables.Cmdlets;
+
+/// <summary>
+/// <para type="synopsis">Get one or more entities from an Azure Table.</para>
+/// </summary>
+[Cmdlet(VerbsCommon.Get, "AzDataTableEntity", DefaultParameterSetName = "TableOperation")]
+public class GetAzDataTableEntity : AzDataTableOperationCommand
 {
     /// <summary>
-    /// <para type="synopsis">Get one or more entities from an Azure Table.</para>
+    /// <para type="description">The OData filter to use in the query.</para>
     /// </summary>
-    [Cmdlet(VerbsCommon.Get, "AzDataTableEntity")]
-    [Alias("Get-AzDataTableRow")]
-    public class GetAzDataTableEntity : AzDataTableCommandBase
+    [Parameter(ParameterSetName = "TableOperation")]
+    public string Filter { get; set; }
+
+    /// <summary>
+    /// <para type="description">The properties to return for the entities.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "TableOperation")]
+    public string[] Property { get; set; }
+
+    /// <summary>
+    /// <para type="description">The amount of entities to retrieve.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "TableOperation")]
+    [Alias("Top", "Take")]
+    public int? First { get; set; }
+
+    /// <summary>
+    /// <para type="description">The amount of entities to skip from the query result.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "TableOperation")]
+    public int? Skip { get; set; }
+
+    /// <summary>
+    /// <para type="description">The names of one or more properties to sort by, in order.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "TableOperation")]
+    public string[] Sort { get; set; }
+
+    /// <summary>
+    /// <para type="description">Specify that the output should only specify the number of entities.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "Count")]
+    public SwitchParameter Count { get; set; }
+
+    protected override void BeginProcessing()
     {
-        /// <summary>
-        /// <para type="description">The OData filter to use in the query.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 1)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 1)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 1)]
-        [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 1)]
-        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 1)]
-        [Alias("Query")]
-        public string Filter { get; set; }
+        base.BeginProcessing();
 
-        /// <summary>
-        /// <para type="description">The properties to return for the entities.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 2)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 2)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 2)]
-        [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 2)]
-        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 2)]
-        public string[] Property { get; set; }
-
-        /// <summary>
-        /// <para type="description">The amount of entities to retrieve.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 3)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 3)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 3)]
-        [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 3)]
-        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 3)]
-        [Alias("Top", "Take")]
-        public int? First { get; set; }
-
-        /// <summary>
-        /// <para type="description">The amount of entities to skip from the query result.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 4)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 4)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 4)]
-        [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 4)]
-        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 4)]
-        public int? Skip { get; set; }
-
-        /// <summary>
-        /// <para type="description">The names of one or more properties to sort by, in order.</para>
-        /// </summary>
-        [Parameter(ParameterSetName = "ConnectionString", ValueFromPipeline = true, Position = 5)]
-        [Parameter(ParameterSetName = "SAS", ValueFromPipeline = true, Position = 5)]
-        [Parameter(ParameterSetName = "Key", ValueFromPipeline = true, Position = 5)]
-        [Parameter(ParameterSetName = "Token", ValueFromPipeline = true, Position = 5)]
-        [Parameter(ParameterSetName = "ManagedIdentity", ValueFromPipeline = true, Position = 5)]
-        public string[] Sort { get; set; }
-
-        protected override void BeginProcessing()
+        if (MyInvocation.BoundParameters.ContainsKey("Sort"))
         {
-            base.BeginProcessing();
-
-            if (MyInvocation.BoundParameters.ContainsKey("Sort"))
-            {
-                WriteWarning("Using the Sort parameter with large data sets may result in slow queries.");
-            }
+            WriteWarning("Using the Sort parameter with large data sets may result in slow queries.");
         }
+    }
 
-        /// <summary>
-        /// The process step of the pipeline.
-        /// </summary>
-        protected override void ProcessRecord()
+    /// <summary>
+    /// The process step of the pipeline.
+    /// </summary>
+    protected override void ProcessRecord()
+    {
+        if (Count.IsPresent)
+        {
+            var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
+            WriteObject(entities.Count());
+        }
+        else
         {
             var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
             foreach (var entity in entities)

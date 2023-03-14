@@ -5,7 +5,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 /// <summary>
 /// <para type="synopsis">Clear all entities from an Azure Table.</para>
 /// </summary>
-[Cmdlet(VerbsCommon.Clear, "AzDataTable")]
+[Cmdlet(VerbsCommon.Clear, "AzDataTable", DefaultParameterSetName = "TableOperation")]
 public class ClearAzDataTable : AzDataTableOperationCommand
 {
     protected override void EndProcessing() => tableService.ClearTable();

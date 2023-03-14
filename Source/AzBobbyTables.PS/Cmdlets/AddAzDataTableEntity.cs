@@ -7,7 +7,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 /// <summary>
 /// <para type="synopsis">Add one or more entities to an Azure Table.</para>
 /// </summary>
-[Cmdlet(VerbsCommon.Add, "AzDataTableEntity")]
+[Cmdlet(VerbsCommon.Add, "AzDataTableEntity", DefaultParameterSetName = "TableOperation")]
 public class AddAzDataTableEntity : AzDataTableOperationCommand
 {
     /// <summary>

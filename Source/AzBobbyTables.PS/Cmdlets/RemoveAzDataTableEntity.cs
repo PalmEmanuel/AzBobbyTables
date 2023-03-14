@@ -7,7 +7,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 /// <summary>
 /// <para type="synopsis">Remove one or more entities from an Azure Table.</para>
 /// </summary>
-[Cmdlet(VerbsCommon.Remove, "AzDataTableEntity")]
+[Cmdlet(VerbsCommon.Remove, "AzDataTableEntity", DefaultParameterSetName = "TableOperation")]
 public class RemoveAzDataTableEntity : AzDataTableOperationCommand
 {
     /// <summary>

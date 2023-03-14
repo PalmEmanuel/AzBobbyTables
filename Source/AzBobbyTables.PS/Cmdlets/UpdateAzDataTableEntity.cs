@@ -7,7 +7,7 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 /// <summary>
 /// <para type="synopsis">Update one or more entities in an Azure Table.</para>
 /// </summary>
-[Cmdlet(VerbsData.Update, "AzDataTableEntity")]
+[Cmdlet(VerbsData.Update, "AzDataTableEntity", DefaultParameterSetName = "TableOperation")]
 public class UpdateAzDataTableEntity : AzDataTableOperationCommand
 {
     /// <summary>

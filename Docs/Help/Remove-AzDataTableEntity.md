@@ -12,34 +12,15 @@ Remove one or more entities from an Azure Table.
 
 ## SYNTAX
 
-### ConnectionString
+### TableOperation
 ```
-Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
- -ConnectionString <String> [<CommonParameters>]
-```
-
-### SAS
-```
-Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
- -SharedAccessSignature <Uri> [<CommonParameters>]
+Remove-AzDataTableEntity -Entity <Hashtable[]> -Context <AzDataTableContext> [-CreateTableIfNotExists]
+ [<CommonParameters>]
 ```
 
-### Key
+### Count
 ```
-Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
- -StorageAccountName <String> -StorageAccountKey <String> [<CommonParameters>]
-```
-
-### Token
-```
-Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
- -StorageAccountName <String> -Token <String> [<CommonParameters>]
-```
-
-### ManagedIdentity
-```
-Remove-AzDataTableEntity -Entity <Hashtable[]> -TableName <String> [-CreateTableIfNotExists]
- -StorageAccountName <String> [-ManagedIdentity] [<CommonParameters>]
+Remove-AzDataTableEntity -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -73,94 +54,18 @@ Gets all users with the last name "Tables" from the table using a connection str
 
 ## PARAMETERS
 
-### -ConnectionString
-The connection string to the storage account.
-
-```yaml
-Type: String
-Parameter Sets: ConnectionString
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Entity
 The entities to remove from the table.
 
 ```yaml
 Type: Hashtable[]
-Parameter Sets: (All)
-Aliases: Row, Entry, Property
+Parameter Sets: TableOperation
+Aliases:
 
 Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
-
-### -SharedAccessSignature
-The table service SAS URL.
-The table endpoint of the storage account, with the shared access token token appended to it.
-
-```yaml
-Type: Uri
-Parameter Sets: SAS
-Aliases: SAS
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -StorageAccountKey
-The storage account access key.
-
-```yaml
-Type: String
-Parameter Sets: Key
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -StorageAccountName
-The name of the storage account.
-
-```yaml
-Type: String
-Parameter Sets: Key, Token, ManagedIdentity
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -TableName
-The name of the table.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
@@ -179,33 +84,18 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Token
-The token to use for authorization.
+### -Context
+{{ Fill Context Description }}
 
 ```yaml
-Type: String
-Parameter Sets: Token
+Type: AzDataTableContext
+Parameter Sets: (All)
 Aliases:
 
 Required: True
 Position: Named
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ManagedIdentity
-Specifies that the command is run by a managed identity (such as in an Azure Function), and authorization will be handled using that identity.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: ManagedIdentity
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
+Accept pipeline input: True (ByPropertyName)
 Accept wildcard characters: False
 ```
 

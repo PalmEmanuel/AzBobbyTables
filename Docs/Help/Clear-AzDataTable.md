@@ -15,13 +15,13 @@ Clear all entities from an Azure Table.
 
 ### TableOperation
 
-```
+```powershell
 Clear-AzDataTable -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
 ```
 
 ### Count
 
-```
+```powershell
 Clear-AzDataTable -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
 ```
 

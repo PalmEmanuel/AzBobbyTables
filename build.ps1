@@ -7,7 +7,10 @@ param(
     $Version,
 
     [Switch]
-    $NoClean
+    $NoClean,
+
+    [Switch]
+    $SkipIntegrationTests
 )
 
 Push-Location 'Source'
@@ -74,4 +77,4 @@ New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs
 
 Pop-Location
 
-& .\Tests\TestRunner.ps1 -ModuleLoadPath "$OutDir\$ModuleName.psd1"
+& .\Tests\TestRunner.ps1 -ModuleLoadPath "$OutDir\$ModuleName.psd1" -SkipIntegration:$SkipIntegrationTests.IsPresent

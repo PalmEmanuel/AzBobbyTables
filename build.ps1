@@ -17,7 +17,7 @@ $Configuration = 'Release'
 $DotNetVersion = 'netstandard2.0'
 
 # Define build output locations
-$OutDir = "$PSScriptRoot\$ModuleName"
+$OutDir = "$PSScriptRoot\out"
 $OutDependencies = "$OutDir\dependencies"
 $OutDocs = "$OutDir/en-US"
 

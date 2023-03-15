@@ -1,7 +1,7 @@
 param(
     [Parameter()]
     [ValidateScript({ $_ -match '\.psd1$' }, ErrorMessage = 'Please input a .psd1 file')]
-    $Manifest = (Get-ChildItem "$PSScriptRoot\..\Source\*.psd1" -Recurse).FullName
+    $Manifest
 )
 
 BeforeDiscovery {
@@ -13,8 +13,6 @@ BeforeDiscovery {
 
     # Get exported commands
     $ExportedCommands = (Get-Module $ModuleName).ExportedCommands.Keys
-    
-    $RootDirectory = "$(Split-Path -Path $Manifest -Parent)\..\..\..\"
 
     # Set up testcases
     $CommandTestCases = @()
@@ -39,44 +37,41 @@ BeforeDiscovery {
     }
 }
 
-Describe "Module $ModuleName" {
-    
+BeforeAll {
+    $RootDirectory = "$(Split-Path -Path $Manifest -Parent)\..\"
+    $ModuleName = (Get-Module $Manifest -ListAvailable).Name
+}
+
+Describe "$ModuleName" {
     # A module should always have exported commands
-    Context 'Exported commands' {
+    Context 'module' {
         # Tests run on both uncompiled and compiled modules
-        It 'Exported commands exist' -TestCases (@{ Count = $CommandTestCases.Count }) {
-            param ( $Count )
+        It 'has commands' -TestCases (@{ Count = $CommandTestCases.Count }) {
             $Count | Should -BeGreaterThan 0 -Because 'commands should exist'
         }
 
-        # This test will run on all commands except for New-AzDataTableContext.
-        It "Exported command '<Command>' should have parameter Context." -TestCases $CommandTestCases.Where({ $_['Command'] -ne 'New-AzDataTableContext' }) {
-            param ( $Command )
-            Get-Command $Command | Should -HaveParameter 'Context'
+        # This test will run on all commands except for New-AzDataTableContext
+        It "has parameter Context for all commands except New-AzDataTableContext" {
+            Get-Command -Module $ModuleName | Where-Object Name -ne 'New-AzDataTableContext' | Should -HaveParameter 'Context'
         }
         
-        It "Exported command '<Command>' should have its class file in the correct directory." -TestCases $CommandTestCases {
-            param ( $Command )
+        It "has command <Command> defined in file in the correct directory" -TestCases $CommandTestCases {
             $CommandFileName = $Command -replace '-'
             
             "$RootDirectory\Source\$ModuleName.PS\Cmdlets\$CommandFileName.cs" | Should -Exist
         }
 
-        It "Exported command '<Command>' should have a test file." -TestCases $CommandTestCases {
-            param ( $Command )
+        It "has test file for command <Command>" -TestCases $CommandTestCases {
             $Command
             
             "$RootDirectory\Tests\$Command.Tests.ps1" | Should -Exist
         }
 
-        It "Exported command '<Command>' should have a markdown help file." -TestCases $CommandTestCases {
-            param ( $Command )
+        It "has markdown help file for command <Command>" -TestCases $CommandTestCases {
             "$RootDirectory\Docs\Help\$Command.md" | Should -Exist
         }
 
-        It "Markdown help file for '<Command>' should contain parameter '<Parameter>'." -TestCases $ParametersTestCases {
-            param ( $Command, $Parameter )
-
+        It "has parameter <Parameter> documented in markdown help file for command <Command>" -TestCases $ParametersTestCases {
             "$RootDirectory\Docs\Help\$Command.md" | Should -FileContentMatch $Parameter
         }
     }

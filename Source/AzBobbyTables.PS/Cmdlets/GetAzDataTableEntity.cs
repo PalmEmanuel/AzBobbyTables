@@ -43,7 +43,7 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
     /// <summary>
     /// <para type="description">Specify that the output should only specify the number of entities.</para>
     /// </summary>
-    [Parameter(ParameterSetName = "Count")]
+    [Parameter(ParameterSetName = "Count", Mandatory = true)]
     public SwitchParameter Count { get; set; }
 
     protected override void BeginProcessing()

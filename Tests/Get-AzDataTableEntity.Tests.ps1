@@ -7,63 +7,71 @@ param(
 BeforeDiscovery {
     . "$PSScriptRoot\CommonTestLogic.ps1"
     Invoke-ModuleReload -Manifest $Manifest
+    
+    # Get command from current test file name
+    $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
+    $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
+    $ParameterTestCases += @(
+        @{
+            Command       = $Command
+            Name          = 'Filter'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Property'
+            Type          = 'string[]'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'First'
+            Type          = 'System.Nullable`1[System.Int32]'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Skip'
+            Type          = 'System.Nullable`1[System.Int32]'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Sort'
+            Type          = 'string[]'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Count'
+            Type          = 'System.Management.Automation.SwitchParameter'
+            ParameterSets = @(
+                @{ Name = 'Count'; Mandatory = $true }
+            )
+        }
+    )
 }
 
 Describe 'Get-AzDataTableEntity' {
     Context 'parameters' {
-        # Get command from current test file name
-        $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-        $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
-        $ParameterTestCases += @(
-            @{
-                Command       = $Command
-                Name          = 'Filter'
-                Type          = 'string'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'Property'
-                Type          = 'string[]'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'First'
-                Type          = 'System.Nullable`1[System.Int32]'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'Skip'
-                Type          = 'System.Nullable`1[System.Int32]'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'Sort'
-                Type          = 'string[]'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'Count'
-                Type          = 'System.Management.Automation.SwitchParameter'
-                ParameterSets = @(
-                    @{ Name = 'Count'; Mandatory = $true }
-                )
-            }
-        )
+
+        It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
+            $Command.Parameters.GetEnumerator() | Where-Object {
+                $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and
+                $_.Key -notin $Parameters
+            } | Should -BeNullOrEmpty
+        }
 
         It 'has parameter <Name> of type <Type>' -TestCases $ParameterTestCases {
             $Command | Should -HaveParameter $Name -Type $Type

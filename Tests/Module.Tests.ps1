@@ -7,9 +7,10 @@ param(
 BeforeDiscovery {
     # Get module name from manifest
     $ModuleName = (Get-Module $Manifest -ListAvailable).Name
+    
     # Remove and import module
-    Remove-Module $ModuleName -Force -ErrorAction SilentlyContinue
-    Import-Module $Manifest -Force
+    . "$PSScriptRoot\CommonTestLogic.ps1"
+    Invoke-ModuleReload -Manifest $Manifest
 
     # Get exported commands
     $ExportedCommands = (Get-Module $ModuleName).ExportedCommands.Keys
@@ -51,27 +52,27 @@ Describe "$ModuleName" {
         }
 
         # This test will run on all commands except for New-AzDataTableContext
-        It "has parameter Context for all commands except New-AzDataTableContext" {
-            Get-Command -Module $ModuleName | Where-Object Name -ne 'New-AzDataTableContext' | Should -HaveParameter 'Context'
+        It 'has parameter Context for all commands except New-AzDataTableContext' {
+            Get-Command -Module $ModuleName | Where-Object Name -NE 'New-AzDataTableContext' | Should -HaveParameter 'Context'
         }
         
-        It "has command <Command> defined in file in the correct directory" -TestCases $CommandTestCases {
+        It 'has command <Command> defined in file in the correct directory' -TestCases $CommandTestCases {
             $CommandFileName = $Command -replace '-'
             
             "$RootDirectory\Source\$ModuleName.PS\Cmdlets\$CommandFileName.cs" | Should -Exist
         }
 
-        It "has test file for command <Command>" -TestCases $CommandTestCases {
+        It 'has test file for command <Command>' -TestCases $CommandTestCases {
             $Command
             
             "$RootDirectory\Tests\$Command.Tests.ps1" | Should -Exist
         }
 
-        It "has markdown help file for command <Command>" -TestCases $CommandTestCases {
+        It 'has markdown help file for command <Command>' -TestCases $CommandTestCases {
             "$RootDirectory\Docs\Help\$Command.md" | Should -Exist
         }
 
-        It "has parameter <Parameter> documented in markdown help file for command <Command>" -TestCases $ParametersTestCases {
+        It 'has parameter <Parameter> documented in markdown help file for command <Command>' -TestCases $ParametersTestCases {
             "$RootDirectory\Docs\Help\$Command.md" | Should -FileContentMatch $Parameter
         }
     }

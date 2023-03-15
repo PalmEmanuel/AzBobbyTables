@@ -7,13 +7,21 @@ param(
 BeforeDiscovery {
     . "$PSScriptRoot\CommonTestLogic.ps1"
     Invoke-ModuleReload -Manifest $Manifest
+
+    # Get command from current test file name
+    $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
+    $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
 }
 
 Describe 'Clear-AzDataTable' {
     Context 'parameters' {
-        # Get command from current test file name
-        $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-        $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
+
+        It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
+            $Command.Parameters.GetEnumerator() | Where-Object {
+                $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and
+                $_.Key -notin $Parameters
+            } | Should -BeNullOrEmpty
+        }
 
         It 'has parameter <Name> of type <Type>' -TestCases $ParameterTestCases {
             $Command | Should -HaveParameter $Name -Type $Type
@@ -27,10 +35,10 @@ Describe 'Clear-AzDataTable' {
         foreach ($ParameterTestCase in $ParameterTestCases) {
             foreach ($ParameterSet in $ParameterTestCase.ParameterSets) {
                 It 'has parameter <ParameterName> set to mandatory <Mandatory> for parameter set <Name>' -TestCases @{
-                    Command = $ParameterTestCase['Command']
+                    Command       = $ParameterTestCase['Command']
                     ParameterName = $ParameterTestCase['Name']
-                    Name = $ParameterSet['Name']
-                    Mandatory = $ParameterSet['Mandatory']
+                    Name          = $ParameterSet['Name']
+                    Mandatory     = $ParameterSet['Mandatory']
                 } {
                     $Parameter = $Command.Parameters[$ParameterName]
                     $Parameter.ParameterSets[$Name].IsMandatory | Should -Be $Mandatory

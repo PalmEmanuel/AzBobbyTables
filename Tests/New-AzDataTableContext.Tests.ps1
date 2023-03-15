@@ -4,82 +4,87 @@ param(
     $Manifest
 )
 
-BeforeAll {
+BeforeDiscovery {
     . "$PSScriptRoot\CommonTestLogic.ps1"
     Invoke-ModuleReload -Manifest $Manifest
+    
+    # Get command from current test file name
+    $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
+    $ParameterTestCases = @(
+        @{
+            Command       = $Command
+            Name          = 'TableName'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'ConnectionString'; Mandatory = $true }
+                @{ Name = 'SAS'; Mandatory = $true }
+                @{ Name = 'Key'; Mandatory = $true }
+                @{ Name = 'Token'; Mandatory = $true }
+                @{ Name = 'ManagedIdentity'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'ConnectionString'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'ConnectionString'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'StorageAccountName'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'Key'; Mandatory = $true }
+                @{ Name = 'Token'; Mandatory = $true }
+                @{ Name = 'ManagedIdentity'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'StorageAccountKey'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'Key'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'SharedAccessSignature'
+            Type          = 'System.Uri'
+            ParameterSets = @(
+                @{ Name = 'SAS'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Token'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'Token'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'ManagedIdentity'
+            Type          = 'System.Management.Automation.SwitchParameter'
+            ParameterSets = @(
+                @{ Name = 'ManagedIdentity'; Mandatory = $true }
+            )
+        }
+    )
 }
 
 Describe 'New-AzDataTableContext' {
     Context 'parameters' {
-        BeforeAll {
-            # Get command from current test file name
-            $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-            $ParameterTestCases = @(
-                @{
-                    Command       = $Command
-                    Name          = 'TableName'
-                    Type          = 'string'
-                    ParameterSets = @(
-                        @{ Name = 'ConnectionString'; Mandatory = $true }
-                        @{ Name = 'SAS'; Mandatory = $true }
-                        @{ Name = 'Key'; Mandatory = $true }
-                        @{ Name = 'Token'; Mandatory = $true }
-                        @{ Name = 'ManagedIdentity'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'ConnectionString'
-                    Type          = 'string'
-                    ParameterSets = @(
-                        @{ Name = 'ConnectionString'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'StorageAccountName'
-                    Type          = 'string'
-                    ParameterSets = @(
-                        @{ Name = 'Key'; Mandatory = $true }
-                        @{ Name = 'Token'; Mandatory = $true }
-                        @{ Name = 'ManagedIdentity'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'StorageAccountKey'
-                    Type          = 'string'
-                    ParameterSets = @(
-                        @{ Name = 'Key'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'SharedAccessSignature'
-                    Type          = 'System.Uri'
-                    ParameterSets = @(
-                        @{ Name = 'SAS'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'Token'
-                    Type          = 'string'
-                    ParameterSets = @(
-                        @{ Name = 'Token'; Mandatory = $true }
-                    )
-                }
-                @{
-                    Command       = $Command
-                    Name          = 'ManagedIdentity'
-                    Type          = 'System.Management.Automation.SwitchParameter'
-                    ParameterSets = @(
-                        @{ Name = 'ManagedIdentity'; Mandatory = $true }
-                    )
-                }
-            )
-        }
 
+        It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
+            $Command.Parameters.GetEnumerator() | Where-Object {
+                $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and
+                $_.Key -notin $Parameters
+            } | Should -BeNullOrEmpty
+        }
         It 'has parameter <Name> of type <Type>' -TestCases $ParameterTestCases {
             $Command | Should -HaveParameter $Name -Type $Type
         }

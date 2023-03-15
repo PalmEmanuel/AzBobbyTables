@@ -10,6 +10,8 @@ param (
 
     [switch]$TestResults,
 
+    [switch]$SkipIntegration,
+
     [switch]$PassThru
 )
 
@@ -44,4 +46,8 @@ if ($TestResults.IsPresent) {
     $PesterConfiguration.TestResult.OutputFormat = 'JUnitXml'
 }
 
-Invoke-Pester -Configuration $PesterConfiguration 
+if ($SkipIntegration) {
+    $PesterConfiguration.Filter.ExcludeTag = 'Integration'
+}
+
+Invoke-Pester -Configuration $PesterConfiguration

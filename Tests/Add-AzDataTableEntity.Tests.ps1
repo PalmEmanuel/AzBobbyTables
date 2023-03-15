@@ -7,31 +7,39 @@ param(
 BeforeDiscovery {
     . "$PSScriptRoot\CommonTestLogic.ps1"
     Invoke-ModuleReload -Manifest $Manifest
+    
+    # Get command from current test file name
+    $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
+    $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
+    $ParameterTestCases += @(
+        @{
+            Command       = $Command
+            Name          = 'Entity'
+            Type          = 'System.Collections.Hashtable[]'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'Force'
+            Type          = 'System.Management.Automation.SwitchParameter'
+            ParameterSets = @(
+                @{ Name = 'TableOperation'; Mandatory = $false }
+            )
+        }
+    )
 }
 
 Describe 'Add-AzDataTableEntity' {
     Context 'parameters' {
-        # Get command from current test file name
-        $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-        $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
-        $ParameterTestCases += @(
-            @{
-                Command       = $Command
-                Name          = 'Entity'
-                Type          = 'System.Collections.Hashtable[]'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $true }
-                )
-            }
-            @{
-                Command       = $Command
-                Name          = 'Force'
-                Type          = 'System.Management.Automation.SwitchParameter'
-                ParameterSets = @(
-                    @{ Name = 'TableOperation'; Mandatory = $false }
-                )
-            }
-        )
+
+        It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
+            $Command.Parameters.GetEnumerator() | Where-Object {
+                $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and
+                $_.Key -notin $Parameters
+            } | Should -BeNullOrEmpty
+        }
 
         It 'has parameter <Name> of type <Type>' -TestCases $ParameterTestCases {
             $Command | Should -HaveParameter $Name -Type $Type

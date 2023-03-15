@@ -17,7 +17,7 @@ $Configuration = 'Release'
 $DotNetVersion = 'netstandard2.0'
 
 # Define build output locations
-$OutDir = "$PSScriptRoot\$ModuleName"
+$OutDir = "$PSScriptRoot\out"
 $OutDependencies = "$OutDir\dependencies"
 $OutDocs = "$OutDir/en-US"
 
@@ -67,9 +67,11 @@ if (-not $PSBoundParameters.ContainsKey('Version')) {
 }
 if ($Version) {
     $SemVer, $PreReleaseTag = $Version.Split('-')
-    Update-ModuleManifest -Path "$ManifestDirectory/$ModuleName.psd1" -ModuleVersion $SemVer -Prerelease $PreReleaseTag
+    Update-ModuleManifest -Path "$OutDir/$ModuleName.psd1" -ModuleVersion $SemVer -Prerelease $PreReleaseTag
 }
 
 New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs
 
 Pop-Location
+
+& .\Tests\TestRunner.ps1 -ModuleLoadPath "$OutDir\$ModuleName.psd1"

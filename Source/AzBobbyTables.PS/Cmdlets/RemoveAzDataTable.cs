@@ -3,10 +3,10 @@
 namespace PipeHow.AzBobbyTables.Cmdlets;
 
 /// <summary>
-/// <para type="synopsis">Clear all entities from an Azure Table.</para>
+/// <para type="synopsis">Removes a Azure Table.</para>
 /// </summary>
-[Cmdlet(VerbsCommon.Clear, "AzDataTable")]
-public class ClearAzDataTable : AzDataTableOperationCommand
+[Cmdlet(VerbsCommon.Remove, "AzDataTable")]
+public class RemoveAzDataTable : AzDataTableOperationCommand
 {
     /// <summary>
     /// <para type="description">The context used for the table, created with New-AzDataTableContext.</para>
@@ -14,5 +14,5 @@ public class ClearAzDataTable : AzDataTableOperationCommand
     [Parameter(Mandatory = true)]
     public AzDataTableContext Context { get; set; }
 
-    protected override void EndProcessing() => tableService.ClearTable();
+    protected override void EndProcessing() => tableService.RemoveTable();
 }

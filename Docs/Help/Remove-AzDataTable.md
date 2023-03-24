@@ -5,21 +5,21 @@ online version:
 schema: 2.0.0
 ---
 
-# Clear-AzDataTable
+# Remove-AzDataTable
 
 ## SYNOPSIS
 
-Clear all entities from an Azure Table.
+Delete an existing table.
 
 ## SYNTAX
 
 ```
-Clear-AzDataTable -Context <AzDataTableContext> [<CommonParameters>]
+Remove-AzDataTable -Context <AzDataTableContext> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Clear all entities from an Azure Table.
+Delete an existing table.
 
 ## EXAMPLES
 
@@ -27,19 +27,10 @@ Clear all entities from an Azure Table.
 
 ```powershell
 PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
-PS C:\> Clear-AzDataTable -Context $Context
+PS C:\> Remove-AzDataTable -Context $Context
 ```
 
-Clear all entities from a table using a connection string.
-
-### Example 2
-
-```powershell
-PS C:\> $Context = New-AzDataTableContext -TableName $TableName -StorageAccountName $Name -ManagedIdentity
-PS C:\> Clear-AzDataTable $Context
-```
-
-Clear all entities from a table using a managed identity.
+Remove an existing table using a connection string for the storage account.
 
 ## PARAMETERS
 

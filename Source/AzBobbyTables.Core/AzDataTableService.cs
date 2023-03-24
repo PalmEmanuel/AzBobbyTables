@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading;
 
 namespace PipeHow.AzBobbyTables.Core;
@@ -105,6 +106,11 @@ public class AzDataTableService
         return dataTableService;
     }
 
+    public void RemoveTable()
+    {
+        _tableClient.Delete();
+    }
+
     /// <summary>
     /// Remove one or more entities from a table.
     /// </summary>
@@ -117,6 +123,28 @@ public class AzDataTableService
         var entities = hashtables.Select(r =>
         {
             return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
+        });
+
+        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
+        SubmitTransaction(transactions);
+    }
+
+    /// <summary>
+    /// Remove one or more entities from a table.
+    /// </summary>
+    /// <param name="psobjects">The list of entities to remove, with PartitionKey and RowKey set.</param>
+    /// <returns>The result of the transaction.</returns>
+    public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects)
+    {
+        var transactions = new List<TableTransactionAction>();
+
+        var entities = psobjects.Select(e =>
+        {
+            return new TableEntity(
+                e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
+                e.Properties.First(p => p.Name == "RowKey").Value.ToString()
+            );
         });
 
         transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
@@ -154,11 +182,40 @@ public class AzDataTableService
     }
 
     /// <summary>
+    /// Add one or more entities to a table.
+    /// </summary>
+    /// <param name="psobjects">The entities to add.</param>
+    /// <param name="overwrite">Whether or not to update already existing entities.</param>
+    /// <returns>The result of the transaction.</returns>
+    public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, bool overwrite = false)
+    {
+        var transactions = new List<TableTransactionAction>();
+
+        var entities = psobjects.Select(e =>
+        {
+            TableEntity entity = new();
+            foreach (var prop in e.Properties)
+            {
+                if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                {
+                    entity.Add(prop.Name, prop.Value);
+                }
+            }
+            return entity;
+        });
+
+        TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
+        transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
+
+        SubmitTransaction(transactions);
+    }
+
+    /// <summary>
     /// Updates one or more entities in a table.
     /// </summary>
     /// <param name="hashtables">The entities to update.</param>
     /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(Hashtable[] hashtables)
+    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables)
     {
         var transactions = new List<TableTransactionAction>();
 
@@ -181,12 +238,39 @@ public class AzDataTableService
     }
 
     /// <summary>
+    /// Updates one or more entities in a table.
+    /// </summary>
+    /// <param name="psobjects">The entities to update.</param>
+    /// <returns>The result of the transaction.</returns>
+    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects)
+    {
+        var transactions = new List<TableTransactionAction>();
+
+        var entities = psobjects.Select(e =>
+        {
+            TableEntity entity = new();
+            foreach (var prop in e.Properties)
+            {
+                if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                {
+                    entity.Add(prop.Name, prop.Value);
+                }
+            }
+            return entity;
+        });
+
+        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+
+        SubmitTransaction(transactions);
+    }
+
+    /// <summary>
     /// Get entities from a table based on a OData query.
     /// </summary>
     /// <param name="query">The query to filter entities by.</param>
     /// <param name="query">The list of properties to return.</param>
     /// <returns>The result of the query.</returns>
-    public IEnumerable<Hashtable> GetEntitiesFromTable(string query, string[] properties = null, int? top = null, int? skip = null, string[] orderBy = null)
+    public IEnumerable<PSObject> GetEntitiesFromTable(string query, string[] properties = null, int? top = null, int? skip = null, string[] orderBy = null)
     {
         // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
         IAsyncEnumerable<TableEntity> entities = _tableClient.QueryAsync<TableEntity>(query, null, properties, _cancellationToken);
@@ -220,14 +304,12 @@ public class AzDataTableService
         // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session
         return entities.ToEnumerable().Select(e =>
         {
-            Hashtable entityObject = new()
-            {
-                { "ETag", e["odata.etag"] }
-            };
+            PSObject entityObject = new();
+            entityObject.Properties.Add(new PSNoteProperty("ETag", e["odata.etag"]));
             foreach (var key in e.Keys)
             {
                 if (key == "odata.etag") continue;
-                entityObject.Add(key, e[key]);
+                entityObject.Properties.Add(new PSNoteProperty(key, e[key]));
             }
             return entityObject;
         });

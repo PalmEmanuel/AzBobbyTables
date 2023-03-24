@@ -7,8 +7,16 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 /// <para type="synopsis">Get one or more entities from an Azure Table.</para>
 /// </summary>
 [Cmdlet(VerbsCommon.Get, "AzDataTableEntity", DefaultParameterSetName = "TableOperation")]
+[OutputType(typeof(PSObject))]
 public class GetAzDataTableEntity : AzDataTableOperationCommand
 {
+    /// <summary>
+    /// <para type="description">The context used for the table, created with New-AzDataTableContext.</para>
+    /// </summary>
+    [Parameter(Mandatory = true, ParameterSetName = "TableOperation")]
+    [Parameter(Mandatory = true, ParameterSetName = "Count")]
+    public AzDataTableContext Context { get; set; }
+
     /// <summary>
     /// <para type="description">The OData filter to use in the query.</para>
     /// </summary>
@@ -43,7 +51,7 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
     /// <summary>
     /// <para type="description">Specify that the output should only specify the number of entities.</para>
     /// </summary>
-    [Parameter(ParameterSetName = "Count", Mandatory = true)]
+    [Parameter(Mandatory = true, ParameterSetName = "Count")]
     public SwitchParameter Count { get; set; }
 
     protected override void BeginProcessing()

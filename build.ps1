@@ -73,8 +73,10 @@ if ($Version) {
     Update-ModuleManifest -Path "$OutDir/$ModuleName.psd1" -ModuleVersion $SemVer -Prerelease $PreReleaseTag
 }
 
-New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs
-
 Pop-Location
 
-& .\Tests\TestRunner.ps1 -ModuleLoadPath "$OutDir\$ModuleName.psd1" -SkipIntegration:$SkipIntegrationTests.IsPresent
+# Run markdown file updates and tests in separate PowerShell sessions to avoid module load assembly locking
+& pwsh -c "Import-Module '$OutDir\$ModuleName.psd1'; Update-MarkdownHelpModule -Path '$PSScriptRoot\Docs\Help'"
+& pwsh -c ".\Tests\TestRunner.ps1 -ModuleLoadPath '$OutDir\$ModuleName.psd1' -SkipIntegration:`$$($SkipIntegrationTests.IsPresent)"
+
+New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs

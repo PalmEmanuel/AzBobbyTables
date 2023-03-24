@@ -14,33 +14,28 @@ Creates a context object with authentication information for the table to operat
 ## SYNTAX
 
 ### ConnectionString
-
-```powershell
+```
 New-AzDataTableContext -TableName <String> -ConnectionString <String> [<CommonParameters>]
 ```
 
 ### SAS
-
-```powershell
+```
 New-AzDataTableContext -TableName <String> -SharedAccessSignature <Uri> [<CommonParameters>]
 ```
 
 ### Key
-
-```powershell
+```
 New-AzDataTableContext -TableName <String> -StorageAccountName <String> -StorageAccountKey <String>
  [<CommonParameters>]
 ```
 
 ### Token
-
-```powershell
+```
 New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Token <String> [<CommonParameters>]
 ```
 
 ### ManagedIdentity
-
-```powershell
+```
 New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity] [<CommonParameters>]
 ```
 
@@ -205,7 +200,6 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS

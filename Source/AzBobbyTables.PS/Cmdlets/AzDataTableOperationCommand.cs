@@ -9,32 +9,29 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 
 public class AzDataTableOperationCommand : AzDataTableCommand
 {
-    /// <summary>
-    /// <para type="description">The context used for the table, created with New-AzDataTableContext.</para>
-    /// </summary>
-    [Parameter(Mandatory = true, ParameterSetName = "TableOperation", ValueFromPipelineByPropertyName = true, Position = 0)]
-    [Parameter(Mandatory = true, ParameterSetName = "Count", ValueFromPipelineByPropertyName = true, Position = 0)]
-    public AzDataTableContext Context { get; set; }
-
-    /// <summary>
-    /// <para type="description">If the table should be created if it does not exist.</para>
-    /// </summary>
-    [Parameter(ParameterSetName = "TableOperation")]
-    [Parameter(ParameterSetName = "Count")]
-    public SwitchParameter CreateTableIfNotExists { get; set; }
-
     protected override void BeginProcessing()
     {
         base.BeginProcessing();
 
+        var parameters = MyInvocation.BoundParameters;
+
         // If the user specified the -Entity parameter, validate the data types of input
-        if (MyInvocation.BoundParameters.ContainsKey("Entity"))
+        if (parameters.ContainsKey("Entity"))
         {
-            // Only writes a warning to the user if it doesn't
+            // Only writes a warning to the user if it doesn't match expected types
             ValidateEntitiesAndWarn();
         }
 
-        tableService = CreateWithContext(Context, CreateTableIfNotExists, cancellationTokenSource.Token);
+        // Mandatory
+        AzDataTableContext context = (AzDataTableContext)parameters["Context"];
+
+        // If switch was provided and true, or if command is New-AzDataTable, create table
+        bool createIfNotExists = (
+                parameters.ContainsKey("CreateTableIfNotExists") &&
+                ((SwitchParameter)parameters["CreateTableIfNotExists"]).IsPresent
+            ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
+
+        tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token);
     }
 
     // Determine way to create AzDataTableService by using the provided Context, created with from New-AzDataTableContext
@@ -57,30 +54,62 @@ public class AzDataTableOperationCommand : AzDataTableCommand
     /// </summary>
     protected void ValidateEntitiesAndWarn()
     {
-        Hashtable[] entities = MyInvocation.BoundParameters["Entity"] as Hashtable[];
-
-        try
+        switch (((object[])MyInvocation.BoundParameters["Entity"]).First())
         {
-            // Use OfType to get an enumerable of the keys, to select all values
-            var values = entities.SelectMany(h => h.Keys.OfType<string>().Select(k => h[k]));
-            // ValidateEntitiesAndWarn if any null values
-            if (values.Any(v => v is null)) { WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation."); }
+            case Hashtable firstEntity:
+                try
+                {
+                    // Use OfType to get an enumerable of the keys, to select all values
+                    var values = firstEntity.Values.Cast<object>();
 
-            var firstEntity = entities.First();
-            if (values.Any(v => v is not null && !AzDataTableService.SupportedTypeList.Contains(v.GetType().Name.ToLower())))
-            {
-                string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
+                    // ValidateEntitiesAndWarn if any null values
+                    if (values.Any(v => v is null)) {
+                        WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation.");
+                    }
+
+                    // Write warning if any values are of unsupported datatypes
+                    if (values.Any(v => v is not null && !AzDataTableService.SupportedTypeList.Contains(v.GetType().Name.ToLower())))
+                    {
+                        string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
 
 Example of first entity provided
 --------------------------------
 {string.Join("\n", firstEntity.Keys.OfType<string>().Select(k => string.Join("\n", $"[{firstEntity[k].GetType().FullName}] {k}")))}
 ";
-                WriteWarning(warningMessage);
-            }
-        }
-        catch (Exception ex)
-        {
-            WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, entities));
+                        WriteWarning(warningMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                }
+                break;
+            case PSObject firstEntity:
+                try
+                {
+                    // Use OfType to get an enumerable of the keys, to select all values
+                    var properties = firstEntity.Properties;
+                    // ValidateEntitiesAndWarn if any null values
+                    if (properties.Any(p => p.Value is null)) { WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation."); }
+
+                    if (properties.Any(p => p.Value is not null && !AzDataTableService.SupportedTypeList.Contains(p.Value.GetType().Name.ToLower())))
+                    {
+                        string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
+
+Example of first entity provided
+--------------------------------
+{string.Join("\n", firstEntity.Properties.Select(p => string.Join("\n", $"[{p.Value.GetType().FullName}] {p.Name}")))}
+";
+                        WriteWarning(warningMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                }
+                break;
+            default:
+                throw new ArgumentException("Entities provided were not Hashtable or PSObject!");
         }
     }
 }

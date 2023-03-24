@@ -10,15 +10,7 @@ BeforeDiscovery {
 
     # Get command from current test file name
     $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-    $ParameterTestCases += @(
-        @{
-            Command       = $Command
-            Name          = 'Entity'
-            Type          = 'System.Object[]'
-            ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $true }
-            )
-        }
+    $ParameterTestCases = @(
         @{
             Command       = $Command
             Name          = 'Context'
@@ -30,7 +22,7 @@ BeforeDiscovery {
     )
 }
 
-Describe 'Remove-AzDataTableEntity' {
+Describe 'Remove-AzDataTable' {
     Context 'parameters' {
 
         It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {

@@ -16,11 +16,6 @@ public class AzDataTableCommand : PSCmdlet
 
     private protected CancellationTokenSource cancellationTokenSource = new();
 
-    /// <summary>
-    /// The process step of the pipeline.
-    /// </summary>
-    protected override void BeginProcessing() => WriteDebug("ParameterSetName: " + ParameterSetName);
-
     // Cancel any operations if user presses CTRL + C
     protected override void StopProcessing() => cancellationTokenSource.Cancel();
 }

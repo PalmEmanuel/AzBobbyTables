@@ -14,8 +14,8 @@ The repository is organized as below:
 
 - **Docs** (`Docs/Help`): Help documentation for the module. Used by `platyPS` to generate help files.
 - **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
-- **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The PowerShell modules with commands and parameters.
-- **build.ps1**: The script that builds the module from source and documentation.
+- **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The compiled PowerShell module with commands and parameters.
+- **build.ps1**: The script that builds the module from source and documentation, and runs the `Pester` tests.
 
 ### Building the module
 
@@ -26,7 +26,7 @@ The repository is organized as below:
 - Import the module:
 
 ```powershell
-Import-Module .\AzBobbyTables\AzBobbyTables.psd1
+Import-Module .\out\AzBobbyTables.psd1
 ```
 
 ### platyPS
@@ -46,7 +46,7 @@ Import-Module platyPS
 
 ```powershell
 # you need the module imported in the session
-Import-Module .\AzBobbyTables\AzBobbyTables.psd1
+Import-Module .\out\AzBobbyTables.psd1
 New-MarkdownHelp -Module AzBobbyTables -OutputFolder .\Docs\Help
 ```
 
@@ -62,7 +62,7 @@ Edit the new markdown files in the `.\Docs\Help` folder and replace `{{ ... }}` 
 
 ```powershell
 # re-import your module with latest changes
-Import-Module .\Source\AzBobbyTables.psd1 -Force
+Import-Module .\out\AzBobbyTables.psd1 -Force
 Update-MarkdownHelp .\Docs\Help
 ```
 

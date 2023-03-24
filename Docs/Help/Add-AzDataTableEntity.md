@@ -13,22 +13,14 @@ Add one or more entities to an Azure Table.
 
 ## SYNTAX
 
-### TableOperation
-
-```powershell
-Add-AzDataTableEntity -Entity <Hashtable[]> [-Force] -Context <AzDataTableContext> [-CreateTableIfNotExists]
- [<CommonParameters>]
 ```
-
-### Count
-
-```powershell
-Add-AzDataTableEntity -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
+Add-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force] [-CreateTableIfNotExists]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Add one or more entities to an Azure Table, provided as hashtables.
+Add one or more entities to an Azure Table, as an array of either Hashtables or PSObjects.
 
 ## EXAMPLES
 
@@ -56,33 +48,16 @@ Add multiple users to a table using a shared access signature URL, overwriting a
 
 ## PARAMETERS
 
-### -Entity
+### -Context
 
-The entities to add to the table.
+A context object created by New-AzDataTableContext, with authentication information for the table to operate on.
 
 ```yaml
-Type: Hashtable[]
-Parameter Sets: TableOperation
+Type: AzDataTableContext
+Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: Named
-Default value: None
-Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
-
-### -Force
-
-Overwrites provided entities if they exist.
-The same as running the command Update-AzDataTableEntity.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: TableOperation
-Aliases:
-
-Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -105,31 +80,50 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Context
+### -Entity
 
-A context object created by New-AzDataTableContext, with authentication information for the table to operate on.
+The entities to add to the table.
 
 ```yaml
-Type: AzDataTableContext
+Type: Object[]
 Parameter Sets: (All)
 Aliases:
 
 Required: True
 Position: Named
 Default value: None
-Accept pipeline input: True (ByPropertyName)
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Force
+
+Overwrites provided entities if they exist.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### CommonParameters
-
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 
-### System.Collections.Hashtable[]
+### System.Collections.Hashtable[] or System.Management.Automation.PSObject[]
+
+This cmdlet takes either an array of hashtables or psobjects as input to the Entity parameter, which can also be provided through the pipeline.
 
 ## OUTPUTS
+
+### System.Object
 
 ## NOTES
 

@@ -8,23 +8,19 @@ schema: 2.0.0
 # Update-AzDataTableEntity
 
 ## SYNOPSIS
+
 Update one or more entities in an Azure Table.
 
 ## SYNTAX
 
-### TableOperation
 ```
-Update-AzDataTableEntity -Entity <Hashtable[]> -Context <AzDataTableContext> [-CreateTableIfNotExists]
- [<CommonParameters>]
-```
-
-### Count
-```
-Update-AzDataTableEntity -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
+Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Update one or more entities already existing in an Azure Table.
+
+Update one or more entities already existing in an Azure Table, as an array of either Hashtables or PSObjects.
+
 For adding and overwriting, also see the command Add-AzDataTableEntity.
 
 The PartitionKey and RowKey cannot be updated.
@@ -32,6 +28,7 @@ The PartitionKey and RowKey cannot be updated.
 ## EXAMPLES
 
 ### Example 1
+
 ```powershell
 PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby'" -TableName $TableName -ConnectionString $ConnectionString
 PS C:\> $UserEntity['LastName'] = 'Tables'
@@ -42,38 +39,9 @@ Update the last name of the user "Bobby" to "Tables" using a connection string.
 
 ## PARAMETERS
 
-### -Entity
-The entities to update in the table.
-
-```yaml
-Type: Hashtable[]
-Parameter Sets: TableOperation
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
-
-### -CreateTableIfNotExists
-If the table should be created if it does not exist.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Context
-{{ Fill Context Description }}
+
+A context object created by New-AzDataTableContext, with authentication information for the table to operate on.
 
 ```yaml
 Type: AzDataTableContext
@@ -83,7 +51,23 @@ Aliases:
 Required: True
 Position: Named
 Default value: None
-Accept pipeline input: True (ByPropertyName)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Entity
+
+The entities to update in the table.
+
+```yaml
+Type: Object[]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: True (ByValue)
 Accept wildcard characters: False
 ```
 
@@ -92,9 +76,13 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### System.Collections.Hashtable[]
+### System.Collections.Hashtable[] or System.Management.Automation.PSObject[]
+
+This cmdlet takes either an array of hashtables or psobjects as input to the Entity parameter, which can also be provided through the pipeline.
 
 ## OUTPUTS
+
+### None
 
 ## NOTES
 

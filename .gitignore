@@ -353,3 +353,6 @@ out/
 *.xml
 *.zip
 Test.ps1
+
+# Azurite files
+__*

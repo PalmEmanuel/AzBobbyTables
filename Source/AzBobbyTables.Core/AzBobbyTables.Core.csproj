@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
     <RootNamespace>PipeHow.$(MSBuildProjectName.Replace(" ", "_").TrimEnd(".PS"))</RootNamespace>
   </PropertyGroup>
 
@@ -10,6 +13,7 @@
 	  <PackageReference Include="Azure.Data.Tables" Version="12.8.0" />
 	  <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.5.22" />
 	  <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,16 @@ BeforeDiscovery {
 
     # Get command from current test file name
     $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
-    $ParameterTestCases = Get-CommonOperationCommandParameterTestCases -Command $Command
+    $ParameterTestCases = @(
+        @{
+            Command       = $Command
+            Name          = 'Context'
+            Type          = 'PipeHow.AzBobbyTables.AzDataTableContext'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $true }
+            )
+        }
+    )
 }
 
 Describe 'Clear-AzDataTable' {

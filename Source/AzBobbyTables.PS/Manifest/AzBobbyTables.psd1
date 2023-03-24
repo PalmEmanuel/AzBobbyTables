@@ -4,7 +4,7 @@
 RootModule = 'AzBobbyTables.PS.dll'
 
 # Version number of this module.
-ModuleVersion = '3.0.0'
+ModuleVersion = '3.1.0'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Core')
@@ -71,6 +71,8 @@ CmdletsToExport = @(
     'Remove-AzDataTableEntity'
     'Update-AzDataTableEntity'
     'New-AzDataTableContext'
+    'Remove-AzDataTable'
+    'New-AzDataTable'
 )
 
 # Variables to export from this module

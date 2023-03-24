@@ -55,6 +55,10 @@ Describe "$ModuleName" {
         It 'has parameter Context for all commands except New-AzDataTableContext' {
             Get-Command -Module $ModuleName | Where-Object Name -NE 'New-AzDataTableContext' | Should -HaveParameter 'Context'
         }
+
+        It 'has no help file with empty documentation sections' {
+            Get-ChildItem "$RootDirectory\Docs\Help\*.md" | Select-String '{{|}}' | Should -BeNullOrEmpty
+        }
         
         It 'has command <Command> defined in file in the correct directory' -TestCases $CommandTestCases {
             $CommandFileName = $Command -replace '-'

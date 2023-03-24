@@ -14,16 +14,14 @@ Get one or more entities from an Azure Table.
 ## SYNTAX
 
 ### TableOperation (Default)
-
-```powershell
-Get-AzDataTableEntity [-Filter <String>] [-Property <String[]>] [-First <Int32>] [-Skip <Int32>]
- [-Sort <String[]>] -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
+```
+Get-AzDataTableEntity -Context <AzDataTableContext> [-Filter <String>] [-Property <String[]>] [-First <Int32>]
+ [-Skip <Int32>] [-Sort <String[]>] [<CommonParameters>]
 ```
 
 ### Count
-
-```powershell
-Get-AzDataTableEntity [-Count] -Context <AzDataTableContext> [-CreateTableIfNotExists] [<CommonParameters>]
+```
+Get-AzDataTableEntity -Context <AzDataTableContext> [-Count] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -46,13 +44,22 @@ Get the user "Bobby Tables" from the table using a connection string.
 ### Example 2
 
 ```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $UserCount = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -Context $Context -Count
+```
+
+Use the Count parameter to get only the number of users matching the filter, using a connection string.
+
+### Example 3
+
+```powershell
 PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ManagedIdentity -StorageAccountName $Name
 PS C:\> $UserEntities = Get-AzDataTableEntity -Sort 'Id','Age' -First 100 -Skip 500 -Context $Context
 ```
 
 Skipping the first 100 entities, get 500 entities sorted by id and age from the table using a managed identity for authorization.
 
-### Example 3
+### Example 4
 
 ```powershell
 PS C:\> $Context = New-AzDataTableContext -TableName $TableName -SharedAccessSignature $SAS
@@ -63,16 +70,32 @@ Get only the properties "FirstName" and "Age" for all entities found in the tabl
 
 ## PARAMETERS
 
-### -CreateTableIfNotExists
+### -Context
 
-If the table should be created if it does not exist.
+A context object created by New-AzDataTableContext, with authentication information for the table to operate on.
 
 ```yaml
-Type: SwitchParameter
+Type: AzDataTableContext
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Count
+
+Specifies to only get the number of matching entities in the table, and not the data itself.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: Count
+Aliases:
+
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -96,22 +119,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Property
-
-One or several names of properties, to specify data to return for the entities.
-
-```yaml
-Type: String[]
-Parameter Sets: TableOperation
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -First
 
 Gets only the specified number of objects. Enter the number of objects to get.
@@ -120,6 +127,22 @@ Gets only the specified number of objects. Enter the number of objects to get.
 Type: Int32
 Parameter Sets: TableOperation
 Aliases: Top, Take
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Property
+
+One or several names of properties, to specify data to return for the entities.
+
+```yaml
+Type: String[]
+Parameter Sets: TableOperation
+Aliases:
 
 Required: False
 Position: Named
@@ -162,49 +185,16 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Count
-
-Specifies to only get the number of matching entities in the table, and not the data itself.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: Count
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Context
-
-A context object created by New-AzDataTableContext, with authentication information for the table to operate on.
-
-```yaml
-Type: AzDataTableContext
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: True (ByPropertyName)
-Accept wildcard characters: False
-```
-
 ### CommonParameters
-
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 
-### System.String
+### None
 
 ## OUTPUTS
 
-### System.Collections.Hashtable[]
+### System.Management.Automation.PSObject
 
 ## NOTES
 

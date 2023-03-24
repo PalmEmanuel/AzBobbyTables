@@ -40,7 +40,7 @@ public class UpdateAzDataTableEntity : AzDataTableOperationCommand
                 tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>());
                 break;
             default:
-                throw new ArgumentException($"Entities provided were not Hashtable or PSObject! Entity was {Entity.GetType().FullName}");
+                throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
         }
     }
 }

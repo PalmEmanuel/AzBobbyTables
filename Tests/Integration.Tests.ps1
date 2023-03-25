@@ -118,6 +118,11 @@ Describe 'Integration Tests' -Tag 'Integration' {
             }
         }
 
+        It 'can get count of entities' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
+        }
+
         It 'can remove entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
             Remove-AzDataTableEntity -Context $Context -Entity $UsersToRemoveHashtable | Should -BeNullOrEmpty
@@ -216,6 +221,11 @@ Describe 'Integration Tests' -Tag 'Integration' {
                 $ExpectedData = Get-ComparableHash ($UpdatedUsersPSObjects | Where-Object { $_.Id -eq $User.Id })
                 Get-ComparableHash $User | Should -Be $ExpectedData
             }
+        }
+
+        It 'can get count of entities' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
         }
 
         It 'can remove entities' {

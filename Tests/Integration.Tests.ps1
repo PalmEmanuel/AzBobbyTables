@@ -110,7 +110,9 @@ Describe 'Integration Tests' -Tag 'Integration' {
 
         It 'can update entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111").Count | Should -BeExactly $UsersHashtable.Count
             Update-AzDataTableEntity -Context $Context -Entity $UpdatedUsersHashtable | Should -BeNullOrEmpty
+            Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111" | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp','ETag'
             foreach ($User in $Result) {
                 $ExpectedData = Get-ComparableHash ($UpdatedUsersHashtable | Where-Object { $_['Id'] -eq $User.Id })
@@ -215,7 +217,9 @@ Describe 'Integration Tests' -Tag 'Integration' {
 
         It 'can update entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111").Count | Should -BeExactly $UsersPSObjects.Count
             Update-AzDataTableEntity -Context $Context -Entity $UpdatedUsersPSObjects | Should -BeNullOrEmpty
+            Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111" | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp', 'ETag'
             foreach ($User in $Result) {
                 $ExpectedData = Get-ComparableHash ($UpdatedUsersPSObjects | Where-Object { $_.Id -eq $User.Id })

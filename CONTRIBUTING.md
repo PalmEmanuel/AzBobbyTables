@@ -15,7 +15,7 @@ The repository is organized as below:
 - **Docs** (`Docs/Help`): Help documentation for the module. Used by `platyPS` to generate help files.
 - **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
 - **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The compiled PowerShell module with commands and parameters.
-- **build.ps1**: The script that builds the module from source and documentation, and runs the `Pester` tests.
+- **build.ps1**: The script that builds the module from source, generates documentation and runs the `Pester` tests.
 
 ### Building the module
 

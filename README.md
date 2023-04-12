@@ -12,7 +12,7 @@ AzBobbyTables is published to [PowerShell Gallery](https://www.powershellgallery
 Install-Module -Name AzBobbyTables
 ```
 
-## Bug report and feature requests
+## Bug reports and feature requests
 
 If you find a bug or have an idea for a new feature, please create an issue in the repo! Before submitting, have a look and see if there are any similar issues already open, in which case you can add to the discussion.
 

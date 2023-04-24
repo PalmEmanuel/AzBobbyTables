@@ -9,8 +9,9 @@ param(
     [Switch]
     $NoClean,
 
-    [Switch]
-    $SkipIntegrationTests
+    [Parameter(Mandatory)]
+    [ValidateSet('All','SkipIntegration','None')]
+    $RunTests
 )
 
 Push-Location 'Source'
@@ -76,6 +77,8 @@ Pop-Location
 
 # Run markdown file updates and tests in separate PowerShell sessions to avoid module load assembly locking
 & pwsh -c "Import-Module '$OutDir\$ModuleName.psd1'; Update-MarkdownHelpModule -Path '$PSScriptRoot\Docs\Help'"
-& pwsh -c ".\Tests\TestRunner.ps1 -ModuleLoadPath '$OutDir\$ModuleName.psd1' -SkipIntegration:`$$($SkipIntegrationTests.IsPresent)"
+if ($RunTests -ne 'None') {
+    & pwsh -c ".\Tests\TestRunner.ps1 -SkipIntegration:`$$($RunTests -eq 'SkipIntegration')"
+}
 
 New-ExternalHelp -Path "$PSScriptRoot\Docs\Help" -OutputPath $OutDocs

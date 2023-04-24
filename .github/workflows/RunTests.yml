@@ -9,16 +9,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v3
+    - name: Cache Azurite
+      id: azurite-cache
+      uses: actions/cache@v3
       with:
-        node-version: 16
-        cache: 'npm'
+        key: azurite-cache
+        path: |
+          ~/.npm
     - name: Install Azurite
+      if: steps.azurite-cache.outputs.cache-hit != 'true'
       run: npm install -g azurite
     - name: Install and cache Pester
       uses: potatoqualitee/psmodulecache@v5.2
       with:
-        modules-to-cache: Pester
+        modules-to-cache: Pester, PlatyPS
+    - name: Build module
+      run: .\build.ps1 -RunTests None
+      shell: pwsh
     - name: Run tests
       run: .\Tests\TestRunner.ps1 -TestResults -Verbosity Normal
       shell: pwsh

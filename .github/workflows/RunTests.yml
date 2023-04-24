@@ -19,7 +19,7 @@ jobs:
     - name: Install Azurite
       if: steps.azurite-cache.outputs.cache-hit != 'true'
       run: npm install -g azurite
-    - name: Install and cache Pester
+    - name: Install and cache PowerShell modules
       uses: potatoqualitee/psmodulecache@v5.2
       with:
         modules-to-cache: Pester, PlatyPS

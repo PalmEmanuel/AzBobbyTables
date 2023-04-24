@@ -1,22 +1,18 @@
-# This workflow adds info about each merged PR to release draft
 env:
-    COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-    GITHUB_TOKEN: ${{ secrets.RELEASE_SECRET }}
-    GITHUB_REPOSITORY: ${{ github.repository }}
+    COMMIT_MESSAGE:     ${{ github.event.head_commit.message }}
+    GITHUB_TOKEN:       ${{ secrets.RELEASE_SECRET }}
+    GITHUB_REPOSITORY:  ${{ github.repository }}
 
-  name: CreateOrUpdateRelease
+name: CreateOrUpdateRelease
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: windows-latest
 
-  on:
-    push:
-      branches: [ main ]
-
-  jobs:
-    build:
-      
-      runs-on: windows-latest
-
-      steps:
-      - uses: actions/checkout@v2
-      - name: CreateOrUpdateRelease
-        shell: pwsh
-        run: ./scripts/MergedPRDetailsToReleaseDraft -CommitMessage "$env:COMMIT_MESSAGE" -Token "$env:GITHUB_TOKEN" -Repository $env:GITHUB_REPOSITORY -Verbose
+    steps:
+    - uses: actions/checkout@v2
+    - name: CreateOrUpdateRelease
+      shell: pwsh
+      run: ./scripts/MergedPRDetailsToReleaseDraft -CommitMessage "$env:COMMIT_MESSAGE" -Token "$env:GITHUB_TOKEN" -Repository $env:GITHUB_REPOSITORY -Verbose

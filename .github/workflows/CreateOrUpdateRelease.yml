@@ -1,6 +1,6 @@
 env:
     COMMIT_MESSAGE:     ${{ github.event.head_commit.message }}
-    GITHUB_TOKEN:       ${{ secrets.RELEASE_SECRET }}
+    GITHUB_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
     GITHUB_REPOSITORY:  ${{ github.repository }}
 
 name: CreateOrUpdateRelease

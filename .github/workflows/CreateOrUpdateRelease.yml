@@ -15,4 +15,4 @@ jobs:
     - uses: actions/checkout@v2
     - name: CreateOrUpdateRelease
       shell: pwsh
-      run: ./scripts/SetReleaseDraft.ps1 -CommitMessage "$env:COMMIT_MESSAGE" -Token "$env:GITHUB_TOKEN" -Repository $env:GITHUB_REPOSITORY -Verbose
+      run: ./scripts/SetReleaseDraft.ps1 -CommitMessage $env:COMMIT_MESSAGE -Token $env:GITHUB_TOKEN -Repository $env:GITHUB_REPOSITORY -Verbose

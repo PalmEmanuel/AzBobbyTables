@@ -6,7 +6,7 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
     <GenerateDependencyFile>false</GenerateDependencyFile>
-    <RootNamespace>PipeHow.$(MSBuildProjectName.Replace(" ", "_").TrimEnd(".PS"))</RootNamespace>
+    <RootNamespace>PipeHow.$(MSBuildProjectName.Replace(" ", "_").TrimEnd(".Core"))</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

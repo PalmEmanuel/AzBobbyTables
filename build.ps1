@@ -16,7 +16,6 @@ param(
 Push-Location 'Source'
 
 $ModuleName = $PSScriptRoot.Split('\')[-1]
-$Configuration = 'Release'
 $DotNetVersion = 'netstandard2.0'
 
 # Define build output locations

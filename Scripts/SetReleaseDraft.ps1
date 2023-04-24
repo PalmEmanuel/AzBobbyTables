@@ -10,7 +10,7 @@ param (
     [string]$Repository
 )
 
-$URL = "https://api.github.com/repos/$Repository/"
+$URL = "https://api.github.com/repos/$Repository"
 
 $Headers = @{
     'authorization' = "token $Token"

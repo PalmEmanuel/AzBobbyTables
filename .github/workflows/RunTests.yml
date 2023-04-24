@@ -9,12 +9,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: 'npm'
     - name: Install Azurite
       run: npm install -g azurite
-      shell: pwsh
-    - name: Install Pester
-      run: Install-Module -Name Pester -Force
-      shell: pwsh
+    - name: Install and cache Pester
+      uses: potatoqualitee/psmodulecache@v5.2
+      with:
+        modules-to-cache: Pester
     - name: Run tests
       run: .\Tests\TestRunner.ps1 -TestResults -Verbosity Normal
       shell: pwsh

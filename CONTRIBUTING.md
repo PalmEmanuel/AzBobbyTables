@@ -67,7 +67,7 @@ Import-Module .\out\AzBobbyTables.psd1 -Force
 Update-MarkdownHelp .\Docs\Help
 ```
 
-### Testing
+### Pester
 
 [Pester](https://github.com/pester/Pester) is the ubiquitous test and mock framework for PowerShell. AzBobbyTables uses it for automatic testing of the different commands within the module, as well as integration tests with [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=npm) for local storage testing.
 

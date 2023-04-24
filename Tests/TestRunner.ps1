@@ -1,5 +1,4 @@
 param (
-    [Parameter(Mandatory)]
     [string]$ModuleLoadPath = (Get-ChildItem "$PSScriptRoot\..\*\*.psd1"),
     
     [string[]]$TestsPath = $PSScriptRoot,

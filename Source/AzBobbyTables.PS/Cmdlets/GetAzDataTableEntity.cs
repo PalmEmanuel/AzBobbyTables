@@ -69,18 +69,25 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
     /// </summary>
     protected override void ProcessRecord()
     {
-        if (Count.IsPresent)
+        try
         {
-            var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
-            WriteObject(entities.Count());
-        }
-        else
-        {
-            var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
-            foreach (var entity in entities)
+            if (Count.IsPresent)
             {
-                WriteObject(entity);
+                var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
+                WriteObject(entities.Count());
             }
+            else
+            {
+                var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
+                foreach (var entity in entities)
+                {
+                    WriteObject(entity);
+                }
+            }
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
         }
     }
 }

@@ -31,21 +31,39 @@ public class AzDataTableOperationCommand : AzDataTableCommand
                 ((SwitchParameter)parameters["CreateTableIfNotExists"]).IsPresent
             ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
 
-        tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token);
+        try
+        {
+            tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token);
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
+        }
     }
 
     // Determine way to create AzDataTableService by using the provided Context, created with from New-AzDataTableContext
     private AzDataTableService CreateWithContext(AzDataTableContext context, bool createIfNotExists, CancellationToken cancellationToken = default)
     {
-        return context.ConnectionType switch
+        try
         {
-            AzDataTableConnectionType.ConnectionString => AzDataTableService.CreateWithConnectionString(context.ConnectionString, context.TableName, createIfNotExists, cancellationToken),
-            AzDataTableConnectionType.SAS => AzDataTableService.CreateWithSAS(context.SharedAccessSignature, context.TableName, createIfNotExists, cancellationToken),
-            AzDataTableConnectionType.Key => AzDataTableService.CreateWithStorageKey(context.StorageAccountName, context.TableName, context.StorageAccountKey, createIfNotExists, cancellationToken),
-            AzDataTableConnectionType.Token => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, context.Token, createIfNotExists, cancellationToken),
-            AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName), createIfNotExists, cancellationToken),
-            _ => throw new ArgumentException($"Unknown connection type {context.ConnectionType} was used!"),
-        };
+            return context.ConnectionType switch
+            {
+                AzDataTableConnectionType.ConnectionString => AzDataTableService.CreateWithConnectionString(context.ConnectionString, context.TableName, createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.SAS => AzDataTableService.CreateWithSAS(context.SharedAccessSignature, context.TableName, createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.Key => AzDataTableService.CreateWithStorageKey(context.StorageAccountName, context.TableName, context.StorageAccountKey, createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.Token => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, context.Token, createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName), createIfNotExists, cancellationToken),
+                _ => throw new ArgumentException($"Unknown connection type {context.ConnectionType} was used!"),
+            };
+        }
+        catch (AzDataTableException ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(
+                ex.ErrorRecord.Exception,
+                $"ConnectByContextWith{context.ConnectionType}Error",
+                ErrorCategory.InvalidOperation,
+                null));
+        }
     }
 
     /// <summary>
@@ -81,7 +99,7 @@ Example of first entity provided
                 }
                 catch (Exception ex)
                 {
-                    WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                    WriteError(new ErrorRecord(ex, "EntityTypeHashtableValidationFailed", ErrorCategory.InvalidData, firstEntity));
                 }
                 break;
             case PSObject firstEntity:
@@ -105,7 +123,7 @@ Example of first entity provided
                 }
                 catch (Exception ex)
                 {
-                    WriteError(new ErrorRecord(ex, "EntityTypeValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                    WriteError(new ErrorRecord(ex, "EntityTypePSObjectValidationFailed", ErrorCategory.InvalidData, firstEntity));
                 }
                 break;
             default:

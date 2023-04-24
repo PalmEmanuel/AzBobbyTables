@@ -14,5 +14,15 @@ public class ClearAzDataTable : AzDataTableOperationCommand
     [Parameter(Mandatory = true)]
     public AzDataTableContext Context { get; set; }
 
-    protected override void EndProcessing() => tableService.ClearTable();
+    protected override void EndProcessing()
+    {
+        try
+        {
+            tableService.ClearTable();
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
+        }
+    }
 }

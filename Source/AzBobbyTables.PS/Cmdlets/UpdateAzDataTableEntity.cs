@@ -31,16 +31,23 @@ public class UpdateAzDataTableEntity : AzDataTableOperationCommand
     /// </summary>
     protected override void ProcessRecord()
     {
-        switch (Entity.First())
+        try
         {
-            case Hashtable:
-                tableService.UpdateEntitiesInTable(Entity.Cast<Hashtable>());
-                break;
-            case PSObject:
-                tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>());
-                break;
-            default:
-                throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            switch (Entity.First())
+            {
+                case Hashtable:
+                    tableService.UpdateEntitiesInTable(Entity.Cast<Hashtable>());
+                    break;
+                case PSObject:
+                    tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>());
+                    break;
+                default:
+                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            }
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
         }
     }
 }

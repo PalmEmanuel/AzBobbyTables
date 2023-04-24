@@ -9,9 +9,8 @@ param(
     [Switch]
     $NoClean,
 
-    [Parameter(Mandatory)]
     [ValidateSet('All','SkipIntegration','None')]
-    $RunTests
+    $RunTests = 'All'
 )
 
 Push-Location 'Source'

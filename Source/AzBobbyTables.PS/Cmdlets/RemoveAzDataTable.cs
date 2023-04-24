@@ -14,5 +14,15 @@ public class RemoveAzDataTable : AzDataTableOperationCommand
     [Parameter(Mandatory = true)]
     public AzDataTableContext Context { get; set; }
 
-    protected override void EndProcessing() => tableService.RemoveTable();
+    protected override void EndProcessing()
+    {
+        try
+        {
+            tableService.RemoveTable();
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
+        }
+    }
 }

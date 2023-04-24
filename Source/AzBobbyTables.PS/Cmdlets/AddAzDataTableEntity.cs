@@ -42,16 +42,23 @@ public class AddAzDataTableEntity : AzDataTableOperationCommand
     /// The process step of the pipeline.
     /// </summary>
     protected override void ProcessRecord() {
-        switch (Entity.First())
+        try
         {
-            case Hashtable:
-                tableService.AddEntitiesToTable(Entity.Cast<Hashtable>(), Force.IsPresent);
-                break;
-            case PSObject:
-                tableService.AddEntitiesToTable(Entity.Cast<PSObject>(), Force.IsPresent);
-                break;
-            default:
-                throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            switch (Entity.First())
+            {
+                case Hashtable:
+                    tableService.AddEntitiesToTable(Entity.Cast<Hashtable>(), Force.IsPresent);
+                    break;
+                case PSObject:
+                    tableService.AddEntitiesToTable(Entity.Cast<PSObject>(), Force.IsPresent);
+                    break;
+                default:
+                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            }
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
         }
     }
 }

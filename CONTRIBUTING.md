@@ -13,7 +13,7 @@ You are more than welcome to contribute to the module, whether it is [Pull Reque
 The repository is organized as below:
 
 - **Docs** (`Docs/Help`): Help documentation for the module. Used by `platyPS` to generate help files.
-- **Tests**: Test files used for [Pester](https://github.com/pester/Pester) tests, partly using [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=npm) for integration tests.
+- **Tests**: Test files used for [Pester](https://github.com/pester/Pester) tests, also utilizing [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=npm) for integration tests.
 - **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
 - **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The compiled PowerShell module with commands and parameters.
 - **build.ps1**: The script that builds the module from source, generates documentation and runs the `Pester` tests.

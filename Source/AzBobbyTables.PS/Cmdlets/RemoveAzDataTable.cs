@@ -1,4 +1,5 @@
-﻿using System.Management.Automation;
+﻿using System;
+using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets;
 
@@ -16,6 +17,12 @@ public class RemoveAzDataTable : AzDataTableOperationCommand
 
     protected override void EndProcessing()
     {
+        if (tableService is null)
+        {
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
         try
         {
             tableService.RemoveTable();

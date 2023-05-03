@@ -13,26 +13,26 @@ public class AzDataTableOperationCommand : AzDataTableCommand
     {
         base.BeginProcessing();
 
-        var parameters = MyInvocation.BoundParameters;
-
-        // If the user specified the -Entity parameter, validate the data types of input
-        if (parameters.ContainsKey("Entity"))
-        {
-            // Only writes a warning to the user if it doesn't match expected types
-            ValidateEntitiesAndWarn();
-        }
-
-        // Mandatory
-        AzDataTableContext context = (AzDataTableContext)parameters["Context"];
-
-        // If switch was provided and true, or if command is New-AzDataTable, create table
-        bool createIfNotExists = (
-                parameters.ContainsKey("CreateTableIfNotExists") &&
-                ((SwitchParameter)parameters["CreateTableIfNotExists"]).IsPresent
-            ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
-
         try
         {
+            var parameters = MyInvocation.BoundParameters;
+
+            // If the user specified the -Entity parameter, validate the data types of input
+            if (parameters.ContainsKey("Entity"))
+            {
+                // Only writes a warning to the user if it doesn't match expected types
+                ValidateEntitiesAndWarn();
+            }
+
+            // Mandatory
+            AzDataTableContext context = (AzDataTableContext)parameters["Context"];
+
+            // If switch was provided and true, or if command is New-AzDataTable, create table
+            bool createIfNotExists = (
+                    parameters.ContainsKey("CreateTableIfNotExists") &&
+                    ((SwitchParameter)parameters["CreateTableIfNotExists"]).IsPresent
+                ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
+
             tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token);
         }
         catch (AzDataTableException ex)
@@ -99,7 +99,7 @@ Example of first entity provided
                 }
                 catch (Exception ex)
                 {
-                    WriteError(new ErrorRecord(ex, "EntityTypeHashtableValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                    WriteError(new ErrorRecord(ex, "EntityTypeHashtableValidationError", ErrorCategory.InvalidData, firstEntity));
                 }
                 break;
             case PSObject firstEntity:
@@ -123,7 +123,7 @@ Example of first entity provided
                 }
                 catch (Exception ex)
                 {
-                    WriteError(new ErrorRecord(ex, "EntityTypePSObjectValidationFailed", ErrorCategory.InvalidData, firstEntity));
+                    WriteError(new ErrorRecord(ex, "EntityTypePSObjectValidationError", ErrorCategory.InvalidData, firstEntity));
                 }
                 break;
             default:

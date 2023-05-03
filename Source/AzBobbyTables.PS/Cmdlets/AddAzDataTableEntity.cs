@@ -41,7 +41,14 @@ public class AddAzDataTableEntity : AzDataTableOperationCommand
     /// <summary>
     /// The process step of the pipeline.
     /// </summary>
-    protected override void ProcessRecord() {
+    protected override void ProcessRecord()
+    {
+        if (tableService is null)
+        {
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
         try
         {
             switch (Entity.First())

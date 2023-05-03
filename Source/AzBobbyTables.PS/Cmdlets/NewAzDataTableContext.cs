@@ -67,15 +67,17 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
     public SwitchParameter ManagedIdentity { get; set; }
 
     /// <summary>
-    /// The begin step of the pipeline.
+    /// The end step of the pipeline.
     /// </summary>
     protected override void EndProcessing()
     {
         // Try parsing ParameterSetName to enum AzDataTableConnectionType, write error if it fails
         if (!Enum.TryParse(ParameterSetName, out AzDataTableConnectionType connectionType))
-            WriteError(new ErrorRecord(new ArgumentException("Incorrect connection type!"), "InvalidConnectionType", ErrorCategory.InvalidType, connectionType));
+            WriteError(new ErrorRecord(new ArgumentException("Incorrect connection type!"), "ConnectionTypeError", ErrorCategory.InvalidType, connectionType));
 
         // Output the AzDataTableContext to user for further operations
         WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, Token));
+
+        base.EndProcessing();
     }
 }

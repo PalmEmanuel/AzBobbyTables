@@ -52,106 +52,102 @@ public class AzDataTableService
 
     public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists, CancellationToken cancellationToken)
     {
-        var dataTableService = new AzDataTableService(cancellationToken);
-        
-        TableClient client;
         try
         {
-            client = new TableClient(connectionString, tableName);
+            var dataTableService = new AzDataTableService(cancellationToken);
+        
+            TableClient client = new TableClient(connectionString, tableName);
+
+            if (createIfNotExists)
+            {
+                CreateIfNotExists(client, cancellationToken);
+            }
+
+            dataTableService.tableClient = client;
+            return dataTableService;
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithConnectionStringError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithConnectionStringError", ErrorCategory.ConnectionError, null));
         }
-
-        if (createIfNotExists)
-        {
-            CreateIfNotExists(client, cancellationToken);
-        }
-
-        dataTableService.tableClient = client;
-        return dataTableService;
     }
 
     public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists, CancellationToken cancellationToken)
     {
-        var bobbyService = new AzDataTableService(cancellationToken);
-        var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
-        
-        TableClient client;
         try
         {
-            client = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+            var bobbyService = new AzDataTableService(cancellationToken);
+            var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
+        
+            TableClient client = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+
+            if (createIfNotExists)
+            {
+                CreateIfNotExists(client, cancellationToken);
+            }
+
+            bobbyService.tableClient = client;
+            return bobbyService;
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithStorageKeyError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithStorageKeyError", ErrorCategory.ConnectionError, null));
         }
-
-        if (createIfNotExists)
-        {
-            CreateIfNotExists(client, cancellationToken);
-        }
-
-        bobbyService.tableClient = client;
-        return bobbyService;
     }
 
     public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists, CancellationToken cancellationToken)
     {
-        var bobbyService = new AzDataTableService(cancellationToken);
-        var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
-
-        TableClient client;
         try
         {
-            client = new TableClient(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+            var bobbyService = new AzDataTableService(cancellationToken);
+            var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
+
+            TableClient client = new TableClient(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+
+            if (createIfNotExists)
+            {
+                CreateIfNotExists(client, cancellationToken);
+            }
+
+            bobbyService.tableClient = client;
+            return bobbyService;
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithTokenError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithTokenError", ErrorCategory.ConnectionError, null));
         }
-
-        if (createIfNotExists)
-        {
-            CreateIfNotExists(client, cancellationToken);
-        }
-
-        bobbyService.tableClient = client;
-        return bobbyService;
     }
 
     public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists, CancellationToken cancellationToken)
     {
-        var dataTableService = new AzDataTableService(cancellationToken);
-        // The credential is built only using the token
-        var sasCredential = new AzureSasCredential(sasUrl.Query);
-
-        // If the user did not specify a full endpoint to the table
-        if (!sasUrl.ToString().Contains($"/{tableName}?"))
-        {
-            // Insert the table name before the URL parameters
-            var urlParts = sasUrl.ToString().Split('?');
-            sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
-        }
-        
-        TableClient client;
         try
         {
-            client = new TableClient(sasUrl, sasCredential);
+            var dataTableService = new AzDataTableService(cancellationToken);
+            // The credential is built only using the token
+            var sasCredential = new AzureSasCredential(sasUrl.Query);
+
+            // If the user did not specify a full endpoint to the table
+            if (!sasUrl.ToString().Contains($"/{tableName}?"))
+            {
+                // Insert the table name before the URL parameters
+                var urlParts = sasUrl.ToString().Split('?');
+                sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
+            }
+        
+            TableClient client = new TableClient(sasUrl, sasCredential);
+
+            if (createIfNotExists)
+            {
+                CreateIfNotExists(client, cancellationToken);
+            }
+
+            dataTableService.tableClient = client;
+            return dataTableService;
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithSASError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "ConnectWithSASError", ErrorCategory.ConnectionError, null));
         }
-
-        if (createIfNotExists)
-        {
-            CreateIfNotExists(client, cancellationToken);
-        }
-
-        dataTableService.tableClient = client;
-        return dataTableService;
     }
 
     public void RemoveTable()
@@ -173,17 +169,17 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = hashtables.Select(r =>
-        {
-            return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
-        });
-
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = hashtables.Select(r =>
+            {
+                return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -199,20 +195,20 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = psobjects.Select(e =>
-        {
-            return new TableEntity(
-                e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
-                e.Properties.First(p => p.Name == "RowKey").Value.ToString()
-            );
-        });
-
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = psobjects.Select(e =>
+            {
+                return new TableEntity(
+                    e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
+                    e.Properties.First(p => p.Name == "RowKey").Value.ToString()
+                );
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -229,26 +225,26 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = hashtables.Select(e =>
-        {
-            TableEntity entity = new();
-            foreach (string key in e.Keys)
-            {
-                if (key != "ETag" && key != "Timestamp")
-                {
-                    entity.Add(key, e[key]);
-                }
-            }
-            return entity;
-        });
-
-        TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = hashtables.Select(e =>
+            {
+                TableEntity entity = new();
+                foreach (string key in e.Keys)
+                {
+                    if (key != "ETag" && key != "Timestamp")
+                    {
+                        entity.Add(key, e[key]);
+                    }
+                }
+                return entity;
+            });
+
+            TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -265,26 +261,26 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, bool overwrite = false)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = psobjects.Select(e =>
-        {
-            TableEntity entity = new();
-            foreach (var prop in e.Properties)
-            {
-                if (prop.Name != "ETag" && prop.Name != "Timestamp")
-                {
-                    entity.Add(prop.Name, prop.Value);
-                }
-            }
-            return entity;
-        });
-
-        TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = psobjects.Select(e =>
+            {
+                TableEntity entity = new();
+                foreach (var prop in e.Properties)
+                {
+                    if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                    {
+                        entity.Add(prop.Name, prop.Value);
+                    }
+                }
+                return entity;
+            });
+
+            TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -300,25 +296,25 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = hashtables.Select(e =>
-        {
-            TableEntity entity = new();
-            foreach (string key in e.Keys)
-            {
-                if (key != "ETag" && key != "Timestamp")
-                {
-                    entity.Add(key, e[key]);
-                }
-            }
-            return entity;
-        });
-
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = hashtables.Select(e =>
+            {
+                TableEntity entity = new();
+                foreach (string key in e.Keys)
+                {
+                    if (key != "ETag" && key != "Timestamp")
+                    {
+                        entity.Add(key, e[key]);
+                    }
+                }
+                return entity;
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -334,25 +330,25 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects)
     {
-        var transactions = new List<TableTransactionAction>();
-
-        var entities = psobjects.Select(e =>
-        {
-            TableEntity entity = new();
-            foreach (var prop in e.Properties)
-            {
-                if (prop.Name != "ETag" && prop.Name != "Timestamp")
-                {
-                    entity.Add(prop.Name, prop.Value);
-                }
-            }
-            return entity;
-        });
-
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
-
         try
         {
+            var transactions = new List<TableTransactionAction>();
+
+            var entities = psobjects.Select(e =>
+            {
+                TableEntity entity = new();
+                foreach (var prop in e.Properties)
+                {
+                    if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                    {
+                        entity.Add(prop.Name, prop.Value);
+                    }
+                }
+                return entity;
+            });
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
@@ -424,14 +420,14 @@ public class AzDataTableService
     /// </summary>
     public void ClearTable()
     {
-        var entities = tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
-
-        var transactions = new List<TableTransactionAction>();
-
-        transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
-
         try
         {
+            var entities = tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
+
+            var transactions = new List<TableTransactionAction>();
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+
             SubmitTransaction(transactions);
         }
         catch (Exception ex)

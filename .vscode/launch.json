@@ -14,13 +14,20 @@
                 "-NoExit",
                 "-NoProfile",
                 "-Command",
-                "Import-Module ${workspaceFolder}/AzBobbyTables",
+                "Import-Module ${workspaceFolder}/out/AzBobbyTables.psd1",
             ],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "integratedTerminal",
             "justMyCode": false,
             "requireExactSource": false
+        },
+        {
+          "name": "PowerShell: Binary Module Interactive Session",
+          "type": "PowerShell",
+          "request": "launch",
+          "createTemporaryIntegratedConsole": true,
+          "attachDotnetDebugger": true,
         }
     ]
 }

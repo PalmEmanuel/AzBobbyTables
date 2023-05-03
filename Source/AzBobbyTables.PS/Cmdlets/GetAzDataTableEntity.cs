@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets;
@@ -69,6 +70,12 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
     /// </summary>
     protected override void ProcessRecord()
     {
+        if (tableService is null)
+        {
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
         try
         {
             if (Count.IsPresent)

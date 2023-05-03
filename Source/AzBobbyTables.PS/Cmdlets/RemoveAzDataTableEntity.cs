@@ -31,16 +31,29 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
     /// </summary>
     protected override void ProcessRecord()
     {
-        switch (Entity.First())
+        if (tableService is null)
         {
-            case Hashtable:
-                tableService.RemoveEntitiesFromTable(Entity.Cast<Hashtable>());
-                break;
-            case PSObject:
-                tableService.RemoveEntitiesFromTable(Entity.Cast<PSObject>());
-                break;
-            default:
-                throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
+        try
+        {
+            switch (Entity.First())
+            {
+                case Hashtable:
+                    tableService.RemoveEntitiesFromTable(Entity.Cast<Hashtable>());
+                    break;
+                case PSObject:
+                    tableService.RemoveEntitiesFromTable(Entity.Cast<PSObject>());
+                    break;
+                default:
+                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
+            }
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
         }
     }
 }

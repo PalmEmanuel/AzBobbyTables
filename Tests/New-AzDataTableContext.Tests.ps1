@@ -124,22 +124,27 @@ Describe 'New-AzDataTableContext' {
             { New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString } | Should -Not -Throw
             New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString | Should -BeOfType 'PipeHow.AzBobbyTables.AzDataTableContext'
         }
+        
         It 'returns a AzDataTableContext when used with SAS' {
             { New-AzDataTableContext -TableName $FakeTableName -SharedAccessSignature $FakeSAS } | Should -Not -Throw
             New-AzDataTableContext -TableName $FakeTableName -SharedAccessSignature $FakeSAS | Should -BeOfType 'PipeHow.AzBobbyTables.AzDataTableContext'
         }
+
         It 'returns a AzDataTableContext when used with StorageAccountKey' {
             { New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -StorageAccountKey $FakeStorageName } | Should -Not -Throw
             New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -StorageAccountKey $FakeStorageName | Should -BeOfType 'PipeHow.AzBobbyTables.AzDataTableContext'
         }
+
         It 'returns a AzDataTableContext when used with Token' {
             { New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -Token $FakeToken } | Should -Not -Throw
             New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -Token $FakeToken | Should -BeOfType 'PipeHow.AzBobbyTables.AzDataTableContext'
         }
+
         It 'returns a AzDataTableContext when used with ManagedIdentity' {
             { New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -ManagedIdentity } | Should -Not -Throw
             New-AzDataTableContext -TableName $FakeTableName -StorageAccountName $FakeStorageName -ManagedIdentity | Should -BeOfType 'PipeHow.AzBobbyTables.AzDataTableContext'
         }
+
         It 'does not expose authentication info as properties outside of module assembly' {
             New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString |
             Get-Member -MemberType Property |

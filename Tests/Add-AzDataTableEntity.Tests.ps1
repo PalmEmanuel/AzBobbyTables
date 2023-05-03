@@ -48,7 +48,6 @@ BeforeDiscovery {
 
 Describe 'Add-AzDataTableEntity' {
     Context 'parameters' {
-
         It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
             $Command.Parameters.GetEnumerator() | Where-Object {
                 $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and

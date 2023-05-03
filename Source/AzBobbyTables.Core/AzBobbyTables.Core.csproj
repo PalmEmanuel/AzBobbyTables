@@ -3,9 +3,6 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <DebugSymbols>false</DebugSymbols>
-    <DebugType>None</DebugType>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
     <RootNamespace>PipeHow.$(MSBuildProjectName.Replace(" ", "_").TrimEnd(".Core"))</RootNamespace>
   </PropertyGroup>
 

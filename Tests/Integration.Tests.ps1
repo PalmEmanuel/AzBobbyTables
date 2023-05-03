@@ -91,15 +91,16 @@ Describe 'Integration Tests' -Tag 'Integration' {
             }
 
             $TableName = 'AzBobbyTablesHashtable'
+            $ConnectionString = 'UseDevelopmentStorage=true'
         }
 
         It 'can create table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             New-AzDataTable -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'can add data' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Add-AzDataTableEntity -Context $Context -Entity $UsersHashtable | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp','ETag'
             foreach ($User in $Result) {
@@ -109,7 +110,7 @@ Describe 'Integration Tests' -Tag 'Integration' {
         }
 
         It 'can update entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111").Count | Should -BeExactly $UsersHashtable.Count
             Update-AzDataTableEntity -Context $Context -Entity $UpdatedUsersHashtable | Should -BeNullOrEmpty
             Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111" | Should -BeNullOrEmpty
@@ -121,35 +122,35 @@ Describe 'Integration Tests' -Tag 'Integration' {
         }
 
         It 'can get count of entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
         }
 
         It 'can remove entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTableEntity -Context $Context -Entity $UsersToRemoveHashtable | Should -BeNullOrEmpty
             (Get-AzDataTableEntity -Context $Context).Count | Should -BeExactly ($UsersHashtable.Count - $UsersToRemoveHashtable.Count)
         }
 
         It 'can clear table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context | Should -Not -BeNullOrEmpty
             Clear-AzDataTable -Context $Context
             Get-AzDataTableEntity -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'can remove table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTable -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'cannot use removed table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             { Get-AzDataTableEntity -Context $Context } | Should -Throw
         }
 
         It 'can add data to new table when forcing creation' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Add-AzDataTableEntity -Context $Context -Entity $UsersHashtable -CreateTableIfNotExists | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp','ETag'
             foreach ($User in $Result) {
@@ -198,15 +199,16 @@ Describe 'Integration Tests' -Tag 'Integration' {
             }
 
             $TableName = 'AzBobbyTablesPSObject'
+            $ConnectionString = 'UseDevelopmentStorage=true'
         }
 
         It 'can create table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             New-AzDataTable -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'can add data' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Add-AzDataTableEntity -Context $Context -Entity $UsersPSObjects | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp', 'ETag'
             foreach ($User in $Result) {
@@ -216,7 +218,7 @@ Describe 'Integration Tests' -Tag 'Integration' {
         }
 
         It 'can update entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111").Count | Should -BeExactly $UsersPSObjects.Count
             Update-AzDataTableEntity -Context $Context -Entity $UpdatedUsersPSObjects | Should -BeNullOrEmpty
             Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 1111111111" | Should -BeNullOrEmpty
@@ -228,35 +230,35 @@ Describe 'Integration Tests' -Tag 'Integration' {
         }
 
         It 'can get count of entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
         }
 
         It 'can remove entities' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTableEntity -Context $Context -Entity $UsersToRemovePSObjects | Should -BeNullOrEmpty
             (Get-AzDataTableEntity -Context $Context).Count | Should -BeExactly ($UsersPSObjects.Count - $UsersToRemovePSObjects.Count)
         }
 
         It 'can clear table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context | Should -Not -BeNullOrEmpty
             Clear-AzDataTable -Context $Context
             Get-AzDataTableEntity -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'can remove table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTable -Context $Context | Should -BeNullOrEmpty
         }
 
         It 'cannot use removed table' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             { Get-AzDataTableEntity -Context $Context } | Should -Throw
         }
 
         It 'can add data to new table when forcing creation' {
-            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString 'UseDevelopmentStorage=true'
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Add-AzDataTableEntity -Context $Context -Entity $UsersPSObjects -CreateTableIfNotExists | Should -BeNullOrEmpty
             $Result = Get-AzDataTableEntity -Context $Context | Select-Object -ExcludeProperty 'Timestamp', 'ETag'
             foreach ($User in $Result) {

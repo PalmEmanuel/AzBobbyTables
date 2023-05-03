@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets;
@@ -69,18 +70,31 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
     /// </summary>
     protected override void ProcessRecord()
     {
-        if (Count.IsPresent)
+        if (tableService is null)
         {
-            var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
-            WriteObject(entities.Count());
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
         }
-        else
+
+        try
         {
-            var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
-            foreach (var entity in entities)
+            if (Count.IsPresent)
             {
-                WriteObject(entity);
+                var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
+                WriteObject(entities.Count());
             }
+            else
+            {
+                var entities = tableService.GetEntitiesFromTable(Filter, Property, First, Skip, Sort);
+                foreach (var entity in entities)
+                {
+                    WriteObject(entity);
+                }
+            }
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
         }
     }
 }

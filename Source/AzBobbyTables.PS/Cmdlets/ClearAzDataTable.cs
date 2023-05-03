@@ -1,4 +1,5 @@
-﻿using System.Management.Automation;
+﻿using System;
+using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets;
 
@@ -14,5 +15,21 @@ public class ClearAzDataTable : AzDataTableOperationCommand
     [Parameter(Mandatory = true)]
     public AzDataTableContext Context { get; set; }
 
-    protected override void EndProcessing() => tableService.ClearTable();
+    protected override void EndProcessing()
+    {
+        if (tableService is null)
+        {
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
+        try
+        {
+            tableService.ClearTable();
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
+        }
+    }
 }

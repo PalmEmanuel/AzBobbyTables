@@ -55,17 +55,4 @@ Describe 'Clear-AzDataTable' {
             }
         }
     }
-
-    Context 'error handling' {
-        BeforeAll {
-            $FakeTableName = 'FakeTable'
-            $FakeConnectionString = 'FakeStorageString=true'
-        }
-
-        It 'respects ErrorAction' {
-            $Context = New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString
-            { Clear-AzDataTable -Context $Context -ErrorAction SilentlyContinue } | Should -Not -Throw
-            { Clear-AzDataTable -Context $Context -ErrorAction Stop } | Should -Throw
-        }
-    }
 }

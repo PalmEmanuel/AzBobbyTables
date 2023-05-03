@@ -78,24 +78,4 @@ Describe 'Add-AzDataTableEntity' {
             }
         }
     }
-
-    Context 'error handling' {
-        BeforeAll {
-            $FakeTableName = 'FakeTable'
-            $FakeConnectionString = 'FakeStorageString=true'
-
-            $User = @{
-                'PartitionKey' = 'AzBobbyTables'
-                'RowKey'       = "AzBobbyTables"
-                'FirstName'    = "Bobby"
-                'LastName'     = "Tables"
-            }
-        }
-
-        It 'respects ErrorAction' {
-            $Context = New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString
-            { Add-AzDataTableEntity -Context $Context -Entity $User -ErrorAction SilentlyContinue } | Should -Not -Throw
-            { Add-AzDataTableEntity -Context $Context -Entity $User -ErrorAction Stop } | Should -Throw
-        }
-    }
 }

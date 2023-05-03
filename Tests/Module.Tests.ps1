@@ -52,8 +52,8 @@ Describe "$ModuleName" {
         }
 
         # This test will run on all commands except for New-AzDataTableContext
-        It 'has parameter Context for all commands except New-AzDataTableContext' {
-            Get-Command -Module $ModuleName | Where-Object Name -NE 'New-AzDataTableContext' | Should -HaveParameter 'Context'
+        It 'has parameter Context for command <Command>' -TestCases ($CommandTestCases | Where-Object Command -ne 'New-AzDataTableContext') {
+            Get-Command $Command | Should -HaveParameter 'Context'
         }
 
         It 'has no help file with empty documentation sections' {
@@ -67,8 +67,6 @@ Describe "$ModuleName" {
         }
 
         It 'has test file for command <Command>' -TestCases $CommandTestCases {
-            $Command
-            
             "$RootDirectory\Tests\$Command.Tests.ps1" | Should -Exist
         }
 
@@ -78,6 +76,33 @@ Describe "$ModuleName" {
 
         It 'has parameter <Parameter> documented in markdown help file for command <Command>' -TestCases $ParametersTestCases {
             "$RootDirectory\Docs\Help\$Command.md" | Should -FileContentMatch $Parameter
+        }
+    }
+
+    Context 'error handling' {
+        BeforeAll {
+            $FakeTableName = 'FakeTable'
+            $FakeConnectionString = 'FakeStorageString=true'
+            
+            $User = @{
+                'PartitionKey' = 'AzBobbyTables'
+                'RowKey'       = "AzBobbyTables"
+                'FirstName'    = "Bobby"
+                'LastName'     = "Tables"
+            }
+        }
+
+        It 'has support for ErrorAction in command <Command>' -TestCases ($CommandTestCases | Where-Object Command -ne 'New-AzDataTableContext') {
+            $Context = New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString
+            
+            if ((Get-Command $Command).Parameters.ContainsKey('Entity')) {
+                { & $Command -Context $Context -Entity $User -ErrorAction SilentlyContinue } | Should -Not -Throw
+                { & $Command -Context $Context -Entity $User -ErrorAction Stop } | Should -Throw
+            }
+            else {
+                { & $Command -Context $Context -ErrorAction SilentlyContinue } | Should -Not -Throw
+                { & $Command -Context $Context -ErrorAction Stop } | Should -Throw
+            }
         }
     }
 }

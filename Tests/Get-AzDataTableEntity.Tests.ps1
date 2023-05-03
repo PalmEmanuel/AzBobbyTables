@@ -104,17 +104,4 @@ Describe 'Get-AzDataTableEntity' {
             }
         }
     }
-
-    Context 'error handling' {
-        BeforeAll {
-            $FakeTableName = 'FakeTable'
-            $FakeConnectionString = 'FakeStorageString=true'
-        }
-
-        It 'respects ErrorAction' {
-            $Context = New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString
-            { Get-AzDataTableEntity -Context $Context -ErrorAction SilentlyContinue } | Should -Not -Throw
-            { Get-AzDataTableEntity -Context $Context -ErrorAction Stop } | Should -Throw
-        }
-    }
 }

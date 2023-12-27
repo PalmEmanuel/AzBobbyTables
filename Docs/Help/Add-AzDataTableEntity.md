@@ -127,4 +127,10 @@ This cmdlet takes either an array of hashtables or psobjects as input to the Ent
 
 ## NOTES
 
+### Regarding Dates, DateTime, and DateTimeOffset
+
+The underlying Azure.Data.Tables SDK expects to work with DateTime fields in UTC format for conversion to DateTimeOffset objects. When submitting a DateTimeOffset object to the SDK, it will be converted to UTC timezone rather than preserving the existing timezone/offset info. Similarly, if a `DateTime` object is submitted in the entity with its Kind set to "local" or "unspecified", the SDK will return an error and state that `Azure SDK requires it to be UTC`. While there isn't any change needed to get `DateTimeOffset` objects to work with AzBobbyTables, the workaround for `DateTime` objects is to set the property to a new `DateTime` object with its `Kind` property set to `Utc`. e.g. `$obj.Time = $obj.Time.ToUniversalFormat()`. [Related issue](https://github.com/Azure/azure-sdk-for-net/issues/30644).
+
+It is possible via the Azure Storage Explorer to set DateTime fields with offsets other than UTC/+00:00. Note that searches with queries set to type `DateTime` do properly calculate to a specific moment, and find equivilent moments. e.g. a `-Filter` set to `Time eq datetime'2023-12-26T18:05:40.5345634+00:00'` will match an entry where the Time property is set to `2023-12-26T17:05:40.5345634-01:00`.
+
 ## RELATED LINKS

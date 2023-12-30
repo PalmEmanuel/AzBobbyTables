@@ -15,12 +15,14 @@ Creates a context object with authentication information for the table to operat
 
 ### ConnectionString
 ```
-New-AzDataTableContext -TableName <String> -ConnectionString <String> [<CommonParameters>]
+New-AzDataTableContext -TableName <String> -ConnectionString <String>
+ [<CommonParameters>]
 ```
 
 ### SAS
 ```
-New-AzDataTableContext -TableName <String> -SharedAccessSignature <Uri> [<CommonParameters>]
+New-AzDataTableContext -TableName <String> -SharedAccessSignature <Uri>
+ [<CommonParameters>]
 ```
 
 ### Key
@@ -31,12 +33,14 @@ New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Storage
 
 ### Token
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Token <String> [<CommonParameters>]
+New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Token <String>
+ [<CommonParameters>]
 ```
 
 ### ManagedIdentity
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity] [<CommonParameters>]
+New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -200,7 +204,7 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutBuffer, -OutVariable, -PipelineVariable, -ProgressAction, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 

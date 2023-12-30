@@ -40,7 +40,7 @@ $PullRequest = Invoke-RestMethod -Uri "$URL/pulls/$PRNumber"
 $PRLabels = $PullRequest.labels.name
 Write-Verbose 'Found Pull Request'
 Write-Verbose "PR Number: $($PullRequest.number)" 
-Write-Verbose "PR Label: $PRLabel"
+Write-Verbose "PR Label: $PRLabels"
 Write-Verbose "PR Author: $($PullRequest.user.login)"
 
 # Commit details

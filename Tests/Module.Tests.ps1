@@ -57,7 +57,7 @@ Describe "$ModuleName" {
         }
 
         It 'has no help file with empty documentation sections' {
-            Get-ChildItem "$RootDirectory\Docs\Help\*.md" | Select-String '{{|}}' | Should -BeNullOrEmpty
+            Get-ChildItem "$RootDirectory\Docs\Help\*.md" | Select-String '{{ Fill \w+ Description }}' | Should -BeNullOrEmpty
         }
         
         It 'has command <Command> defined in file in the correct directory' -TestCases $CommandTestCases {

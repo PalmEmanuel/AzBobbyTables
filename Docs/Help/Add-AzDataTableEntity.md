@@ -113,7 +113,7 @@ Accept wildcard characters: False
 ```
 
 ### CommonParameters
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutBuffer, -OutVariable, -PipelineVariable, -ProgressAction, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 
@@ -127,7 +127,7 @@ This cmdlet takes either an array of hashtables or psobjects as input to the Ent
 
 ## NOTES
 
-### Regarding Dates, DateTime, and DateTimeOffset
+Regarding Dates, DateTime, and DateTimeOffset:
 
 The underlying Azure.Data.Tables SDK expects to work with DateTime fields in UTC format for conversion to DateTimeOffset objects. When submitting a DateTimeOffset object to the SDK, it will be converted to UTC timezone rather than preserving the existing timezone/offset info. Similarly, if a `DateTime` object is submitted in the entity with its Kind set to "local" or "unspecified", the SDK will return an error and state that `Azure SDK requires it to be UTC`. While there isn't any change needed to get `DateTimeOffset` objects to work with AzBobbyTables, the workaround for `DateTime` objects is to set the property to a new `DateTime` object with its `Kind` property set to `Utc`. e.g. `$obj.Time = $obj.Time.ToUniversalFormat()`. [Related issue](https://github.com/Azure/azure-sdk-for-net/issues/30644).
 

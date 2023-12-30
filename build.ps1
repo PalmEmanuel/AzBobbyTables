@@ -76,6 +76,11 @@ Pop-Location
 
 # Run markdown file updates and tests in separate PowerShell sessions to avoid module load assembly locking
 & pwsh -c "Import-Module '$OutDir\$ModuleName.psd1'; Update-MarkdownHelpModule -Path '$PSScriptRoot\Docs\Help'"
+
+# Workaround to run post-build to avoid platyPS generating documentation for common parameter ProgressAction
+. "$PSScriptRoot\Scripts\PlatyPSWorkaround.ps1"
+Repair-PlatyPSMarkdown -Path (Get-ChildItem "$PSScriptRoot\Docs\Help") -ParameterName 'ProgressAction'
+
 if ($RunTests -ne 'None') {
     & pwsh -c ".\Tests\TestRunner.ps1 -SkipIntegration:`$$($RunTests -eq 'SkipIntegration')"
 }

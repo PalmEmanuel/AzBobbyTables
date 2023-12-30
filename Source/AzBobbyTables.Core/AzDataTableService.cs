@@ -11,12 +11,12 @@ namespace PipeHow.AzBobbyTables.Core;
 
 public class AzDataTableService
 {
-    private TableClient tableClient { get; set; }
+    private TableClient TableClient { get; set; }
 
     /// <summary>
     /// Cancellation token used within the AzDataTableService.
     /// </summary>
-    private CancellationToken cancellationToken { get; }
+    private CancellationToken CancellationToken { get; }
 
     /// <summary>
     /// List of supported data types for the table.
@@ -36,7 +36,7 @@ public class AzDataTableService
         "string"
     };
 
-    private AzDataTableService(CancellationToken cancellationToken) => this.cancellationToken = cancellationToken;
+    private AzDataTableService(CancellationToken cancellationToken) => CancellationToken = cancellationToken;
 
     private static void CreateIfNotExists(TableClient client, CancellationToken cancellationToken)
     {
@@ -56,14 +56,14 @@ public class AzDataTableService
         {
             var dataTableService = new AzDataTableService(cancellationToken);
         
-            TableClient client = new TableClient(connectionString, tableName);
+            TableClient client = new(connectionString, tableName);
 
             if (createIfNotExists)
             {
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            dataTableService.tableClient = client;
+            dataTableService.TableClient = client;
             return dataTableService;
         }
         catch (Exception ex)
@@ -79,14 +79,14 @@ public class AzDataTableService
             var bobbyService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
         
-            TableClient client = new TableClient(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
+            TableClient client = new(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
 
             if (createIfNotExists)
             {
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            bobbyService.tableClient = client;
+            bobbyService.TableClient = client;
             return bobbyService;
         }
         catch (Exception ex)
@@ -102,14 +102,14 @@ public class AzDataTableService
             var bobbyService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
 
-            TableClient client = new TableClient(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+            TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
 
             if (createIfNotExists)
             {
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            bobbyService.tableClient = client;
+            bobbyService.TableClient = client;
             return bobbyService;
         }
         catch (Exception ex)
@@ -134,14 +134,14 @@ public class AzDataTableService
                 sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
             }
         
-            TableClient client = new TableClient(sasUrl, sasCredential);
+            TableClient client = new(sasUrl, sasCredential);
 
             if (createIfNotExists)
             {
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            dataTableService.tableClient = client;
+            dataTableService.TableClient = client;
             return dataTableService;
         }
         catch (Exception ex)
@@ -154,7 +154,7 @@ public class AzDataTableService
     {
         try
         {
-            tableClient.Delete();
+            TableClient.Delete();
         }
         catch (Exception ex)
         {
@@ -368,7 +368,7 @@ public class AzDataTableService
         try
         {
             // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
-            IAsyncEnumerable<TableEntity> entities = tableClient.QueryAsync<TableEntity>(query, null, properties, cancellationToken);
+            IAsyncEnumerable<TableEntity> entities = TableClient.QueryAsync<TableEntity>(query, null, properties, CancellationToken);
 
             // If user specified one or more properties to sort list by
             // This may slow the query down a lot with a lot of results
@@ -422,7 +422,7 @@ public class AzDataTableService
     {
         try
         {
-            var entities = tableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
+            var entities = TableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
 
             var transactions = new List<TableTransactionAction>();
 
@@ -448,7 +448,11 @@ public class AzDataTableService
             // Loop through each group and submit up to 100 at a time
             for (int i = 0; i < group.Count(); i += 100)
             {
-                tableClient.SubmitTransaction(group.Skip(i).Take(100), cancellationToken);
+                var response = TableClient.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
+                foreach (var transactionResult in response.Value)
+                {
+                    Console.WriteLine(transactionResult.Content.ToString());
+                }
             }
         }
     }

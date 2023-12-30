@@ -1,10 +1,5 @@
 env:
-    COMMIT_MESSAGE:     ${{ github.event.head_commit.message }}
-    GITHUB_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
-    GITHUB_REPOSITORY:  ${{ github.repository }}
-
-permissions:
-  contents: write
+  GITHUB_TOKEN:       ${{ secrets.GITHUB_TOKEN }}
 
 name: CreateOrUpdateRelease
 on:
@@ -16,6 +11,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: CreateOrUpdateRelease
+    
+    - name: Set Module Version in Environment Variable
       shell: pwsh
-      run: ./scripts/SetReleaseDraft.ps1 -CommitMessage $env:COMMIT_MESSAGE -Token $env:GITHUB_TOKEN -Repository $env:GITHUB_REPOSITORY -Verbose
+      run: |
+        $ModuleVersion = [version](Import-PowerShellDataFile '.\Source\AzBobbyTables.PS\Manifest\AzBobbyTables.psd1').ModuleVersion
+        $BumpedVersion = "$($ModuleVersion.Major).$($ModuleVersion.Minor).$($ModuleVersion.Build + 1)"
+        "RELEASE_VERSION=$BumpedVersion" >> $env:GITHUB_ENV
+
+    - uses: meeDamian/github-release@2.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ env.RELEASE_VERSION }}
+        draft: true

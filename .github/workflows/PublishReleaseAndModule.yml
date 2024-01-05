@@ -24,8 +24,7 @@ jobs:
     - uses: meeDamian/github-release@2.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag: ${{ github.ref }}
-        name: ${{ github.ref }}
+        name: ${{ github.ref_name }}
         draft: true
         body: ${{ steps.get-changelog.outputs.release-notes }}
 
@@ -33,3 +32,9 @@ jobs:
       uses: thomaseizinger/keep-a-changelog-new-release@v1
       with:
         tag: ${{ github.ref }}
+
+    - name: Push changelog
+      run: |
+        git add CHANGELOG.md
+        git commit -m "docs: Update changelog for ${{ github.ref_name }}"
+        git push

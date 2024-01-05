@@ -20,6 +20,12 @@ jobs:
         ref: main
         fetch-depth: 2
 
+    - name: Configure Git Actor
+      run: |
+        # Configure git with github-actions bot to make commits more pretty
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
     - name: Get changelog
       id: get-changelog
       uses: release-flow/keep-a-changelog-action@v2
@@ -27,27 +33,18 @@ jobs:
         command: query
         version: unreleased
 
-    - uses: meeDamian/github-release@2.0
+    - name: Create Release
+      uses: meeDamian/github-release@2.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         name: ${{ github.ref_name }}
         draft: true
         body: ${{ steps.get-changelog.outputs.release-notes }}
 
-    - name: Update changelog
+    - name: Update Changelog
       uses: thomaseizinger/keep-a-changelog-new-release@v1
       with:
         tag: ${{ github.ref }}
-
-    - name: Push changelog
-      run: |
-        # Configure git with github-actions bot to make commits more pretty
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-        git checkout -b changelog/${{ github.ref_name }}
-        git add CHANGELOG.md
-        git commit -m "docs: update changelog for ${{ github.ref_name }}"
 
     - name: Create Pull Request
       id: create-pull-request

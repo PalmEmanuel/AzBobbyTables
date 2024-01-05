@@ -1,0 +1,24 @@
+name: GetModuleVersion
+
+on:
+  workflow_call:
+    outputs:
+      moduleversion:
+        description: "The module version."
+        value: ${{ jobs.get-version.outputs.moduleversion }}
+
+jobs:
+  get-version:
+    name: Get Module Version
+    runs-on: ubuntu-latest
+    outputs:
+      moduleversion: ${{ steps.get-version.outputs.moduleversion }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set Module Version in Environment Variable
+      id: get-version
+      shell: pwsh
+      run: |
+        $ModuleVersion = [version](Import-PowerShellDataFile '.\Source\AzBobbyTables.PS\Manifest\AzBobbyTables.psd1').ModuleVersion
+        "moduleversion=$ModuleVersion" >> $env:GITHUB_OUTPUT

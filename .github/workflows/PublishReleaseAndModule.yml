@@ -48,7 +48,6 @@ jobs:
         git checkout -b changelog/${{ github.ref_name }}
         git add CHANGELOG.md
         git commit -m "docs: update changelog for ${{ github.ref_name }}"
-        git push origin changelog/${{ github.ref_name }}
 
     - name: Create Pull Request
       id: create-pull-request
@@ -62,7 +61,6 @@ jobs:
         labels: documentation
         author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-        base: changelog/${{ github.ref_name }}
     
     - name: Merge Pull Request
       uses: juliangruber/merge-pull-request-action@v1

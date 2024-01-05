@@ -9,6 +9,9 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
 
     steps:
@@ -38,9 +41,27 @@ jobs:
 
     - name: Push changelog
       run: |
-        git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
-        git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
+        # Configure git with github-actions bot to make commits more pretty
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
         git add CHANGELOG.md
-        git commit -m "docs: Update changelog for ${{ github.ref_name }}"
-        git push origin main
+        git commit -m "docs: update changelog for ${{ github.ref_name }}"
+        git push
+
+    - name: Create Pull Request
+      id: create-pull-request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "docs: update changelog for ${{ github.ref_name }}"
+        title: Update changelog for ${{ github.ref_name }}
+        body: Automatic update of changelog for release ${{ github.ref_name }}.
+        branch: changelog/${{ github.ref_name }}
+        labels: documentation
+    
+    - name: Merge Pull Request
+      uses: juliangruber/merge-pull-request-action@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        number: ${{ steps.create-pull-request.outputs.pull-request-number }}

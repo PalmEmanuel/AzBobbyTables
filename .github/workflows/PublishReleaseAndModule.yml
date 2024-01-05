@@ -57,6 +57,7 @@ jobs:
         labels: documentation
         author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+        branch: changelog-${{ github.ref_name }}
     
     - name: Approve Pull Request
       uses: juliangruber/approve-pull-request-action@v2.0.0

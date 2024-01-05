@@ -14,4 +14,4 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ### Removed
 
-## [3.1.1] - 2023-05-03
+## 3.1.1 - 2023-05-03

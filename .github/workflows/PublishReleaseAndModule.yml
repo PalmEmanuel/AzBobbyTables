@@ -28,7 +28,7 @@ jobs:
 
     - name: Get changelog
       id: get-changelog
-      uses: release-flow/keep-a-changelog-action@v2
+      uses: release-flow/keep-a-changelog-action@v2.0.0
       with:
         command: query
         version: unreleased
@@ -44,11 +44,11 @@ jobs:
     - name: Update Changelog
       uses: thomaseizinger/keep-a-changelog-new-release@v1
       with:
-        tag: ${{ github.ref }}
+        tag: ${{ github.ref_name }}
 
     - name: Create Pull Request
       id: create-pull-request
-      uses: peter-evans/create-pull-request@v5
+      uses: peter-evans/create-pull-request@v5.0.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: "docs: update changelog for ${{ github.ref_name }}"
@@ -58,8 +58,14 @@ jobs:
         author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
     
+    - name: Approve Pull Request
+      uses: juliangruber/approve-pull-request-action@v2.0.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        number: ${{ steps.create-pull-request.outputs.pull-request-number }}
+
     - name: Merge Pull Request
-      uses: juliangruber/merge-pull-request-action@v1
+      uses: juliangruber/merge-pull-request-action@v1.0.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         number: ${{ steps.create-pull-request.outputs.pull-request-number }}

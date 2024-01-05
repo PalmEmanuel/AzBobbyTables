@@ -45,9 +45,10 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+        git checkout -b changelog/${{ github.ref_name }}
         git add CHANGELOG.md
         git commit -m "docs: update changelog for ${{ github.ref_name }}"
-        git push
+        git push origin changelog/${{ github.ref_name }}
 
     - name: Create Pull Request
       id: create-pull-request

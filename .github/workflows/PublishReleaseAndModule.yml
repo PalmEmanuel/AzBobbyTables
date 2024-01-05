@@ -58,11 +58,11 @@ jobs:
         commit-message: "docs: update changelog for ${{ github.ref_name }}"
         title: Update changelog for ${{ github.ref_name }}
         body: Automatic update of changelog for release ${{ github.ref_name }}.
-        branch: changelog/${{ github.ref_name }}
+        branch: main
         labels: documentation
         author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
         committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-        base: main
+        base: changelog/${{ github.ref_name }}
     
     - name: Merge Pull Request
       uses: juliangruber/merge-pull-request-action@v1

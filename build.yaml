@@ -55,9 +55,10 @@ BuildWorkflow:
 
   build:
     - Clean
-    - dotnetBuild
+    - compile
     - Build_Module_ModuleBuilder
-    - Build_NestedModules_ModuleBuilder
+    # - Build_NestedModules_ModuleBuilder
+    - setupALC
     - updateMarkdownHelp
     - updateExternalHelp
     - Create_changelog_release_output

@@ -4,9 +4,11 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.1.2] - 2024-01-05
+
 ### Added
 
-- Help documentation for a DateTime problem caused by the SDK (#43).
+-   Help documentation for a DateTime problem caused by the SDK (#43).
 
 ### Fixed
 
@@ -15,3 +17,7 @@ The format is based on and uses the types of changes according to [Keep a Change
 ### Removed
 
 ## 3.1.1 - 2023-05-03
+
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.2...HEAD
+
+[3.1.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/d854153aca6c5cce35a123deb86653a0d3289b07...v3.1.2

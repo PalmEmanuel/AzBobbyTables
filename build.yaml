@@ -3,14 +3,14 @@
 #          ModuleBuilder Configuration             #
 ####################################################
 # Path to the Module Manifest to build (where path will be resolved from)
-SourcePath: Source/AzBobbyTables.PS/Manifest/AzBobbyTables.psd1
+SourcePath: Source/AzBobbyTables.psd1
 # Output Directory where ModuleBuilder will build the Module, relative to module manifest
 OutputDirectory: ../../output/AzBobbyTables
 # BuiltModuleSubdirectory: module
 CopyPaths:
-  - en-US
-  - ../AzBobbyTables.Core/bin/AzBobbyTables.Core
-  - ../AzBobbyTables.PS/bin/AzBobbyTables.PS
+  # - en-US
+  - ../Source/AzBobbyTables.Core/bin/AzBobbyTables.Core
+  - ../Source/AzBobbyTables.PS/bin/AzBobbyTables.PS
   - ../LICENSE
   - ../CHANGELOG.md
 
@@ -55,7 +55,7 @@ BuildWorkflow:
 
   build:
     - Clean
-    - compile
+    - dotnetBuild
     - Build_Module_ModuleBuilder
     - Build_NestedModules_ModuleBuilder
     - updateMarkdownHelp
@@ -72,7 +72,7 @@ BuildWorkflow:
   # Defining test task to be run when invoking `./build.ps1 -Tasks test`
   test:
     # Uncomment to modify the PSModulePath in the test pipeline (also requires the build configuration section SetPSModulePath).
-    - Set_PSModulePath
+    # - Set_PSModulePath
     - Pester_Tests_Stop_On_Fail
     # Use this task if pipeline uses code coverage and the module is using the
     # pattern of Public, Private, Enum, Classes.
@@ -90,37 +90,42 @@ BuildWorkflow:
     # - Publish_GitHub_Wiki_Content
 
 
+####################################################
+#          PlatyPS Configuration                   #
+####################################################
+PlatyPS:
+  HelpOutputFolder: en-US
+  HelpMarkdownFolder: ../Docs/Help
 
 ####################################################
 #       PESTER  Configuration                      #
 ####################################################
-
 Pester:
-  OutputFormat: NUnitXML
-  # Excludes one or more paths from being used to calculate code coverage.
-  ExcludeFromCodeCoverage:
+  Configuration:
+    Run:
+      Path:
+        - Tests
+      ExcludePath:
 
-  # If no scripts are defined the default is to use all the tests under the project's
-  # tests folder or source folder (if present). Test script paths can be defined to
-  # only run tests in certain folders, or run specific test files, or can be use to
-  # specify the order tests are run.
-  Script:
-  # - tests/QA/module.tests.ps1
-  # - tests/QA
-  # - tests/Unit
-  # - tests/Integration
-  ExcludeTag:
-  #  - helpQuality
-  #  - FunctionalQuality
-  #  - TestQuality
-  Tag:
-  CodeCoverageThreshold: 0 # Set to 0 to bypass
-  #CodeCoverageOutputFile: JaCoCo_$OsShortName.xml
-  #CodeCoverageOutputFileEncoding: ascii
-  # Use this if code coverage should be merged from several pipeline test jobs.
-  # Any existing keys above should be replaced. See also CodeCoverage below.
-  # CodeCoverageOutputFile is the file that is created for each pipeline test job.
-  #CodeCoverageOutputFile: JaCoCo_Merge.xml
+      Filter:
+        Tag:
+
+        ExcludeTag:
+
+      Output:
+        Verbosity: Detailed
+      CodeCoverage:
+        Path:
+        OutputFormat:
+        CoveragePercentage: 0
+        OutputPath:
+        OutputEncoding:
+        ExcludeTests:
+      TestResult:
+        OutputFormat: NUnitXML
+        OutputPath:
+        OutputEncoding: UTF8
+        TestSuiteName:
 
 # Use this to merged code coverage from several pipeline test jobs.
 # CodeCoverageFilePattern      - the pattern used to search all pipeline test job artifacts

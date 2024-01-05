@@ -1,6 +1,6 @@
 param(
     [string[]]
-    $ProjectPath = @('AzBobbyTables.Core', 'AzBobbyTables.PS'),
+    $ProjectPath = @('Source/AzBobbyTables.Core', 'Source/AzBobbyTables.PS'),
 
     [ValidateSet('Debug', 'Release')]
     [string]

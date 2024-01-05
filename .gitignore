@@ -361,3 +361,5 @@ __*
 *.local.*
 **.bak
 markdownissues.txt
+
+output/

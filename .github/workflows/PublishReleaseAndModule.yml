@@ -14,6 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        ref: main
         fetch-depth: 2
 
     - name: Get changelog
@@ -42,4 +43,4 @@ jobs:
 
         git add CHANGELOG.md
         git commit -m "docs: Update changelog for ${{ github.ref_name }}"
-        git push
+        git push origin main

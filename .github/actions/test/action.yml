@@ -9,11 +9,16 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
+        
     - name: Download Build Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v3
       with:
         name: ${{ env.buildArtifactName }}
-        path: ${{ env.buildFolderName }}/
+        path: ${{ env.buildFolderName }}
   
     - name: Cache Azurite
       id: azurite-cache

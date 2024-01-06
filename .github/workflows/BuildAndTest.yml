@@ -62,6 +62,7 @@ jobs:
   publish-test-results:
     permissions:
       checks: write
+      pull-requests: write
 
     name: Publish Test Results
     if: success() || failure()

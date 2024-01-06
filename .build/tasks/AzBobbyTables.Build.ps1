@@ -1,7 +1,7 @@
 param(
     [string[]]
     # Naming this $ProjectPath would cause it to overwrite the variable passed to Pester
-    $Paths = @('Source/AzBobbyTables.Core', 'Source/AzBobbyTables.PS'),
+    $Paths = @('source/AzBobbyTables.Core', 'source/AzBobbyTables.PS'),
 
     [ValidateSet('Debug', 'Release')]
     [string]

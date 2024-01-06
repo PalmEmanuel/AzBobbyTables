@@ -8,7 +8,7 @@ SourcePath: ../source/AzBobbyTables.psd1
 OutputDirectory: ../../output/AzBobbyTables
 # BuiltModuleSubdirectory: module
 CopyPaths:
-  # - ..Source/en-US
+  # - ..source/en-US
   - ../source/AzBobbyTables.Core/bin/AzBobbyTables.Core
   - ../source/AzBobbyTables.PS/bin/AzBobbyTables.PS
   - ../LICENSE

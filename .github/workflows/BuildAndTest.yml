@@ -49,6 +49,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
       - name: 'Test Module'
         uses: ./.github/actions/test
         with:
@@ -65,5 +70,10 @@ jobs:
     - test
 
     steps:
-    - name: 'Publish Test Results'
-      uses: ./.github/actions/publish-test-results
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: 'Publish Test Results'
+        uses: ./.github/actions/publish-test-results

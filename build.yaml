@@ -89,6 +89,13 @@ BuildWorkflow:
     # - Publish_GitHub_Wiki_Content
 
 ####################################################
+#          PlatyPS Configuration                   #
+####################################################
+PlatyPS:
+  HelpOutputFolder: en-US
+  HelpMarkdownFolder: ../Docs/Help
+
+####################################################
 #       PESTER  Configuration                      #
 ####################################################
 # Default is to use the tests folder in the project folder or source folder (if present)

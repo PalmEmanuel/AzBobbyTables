@@ -1,16 +1,15 @@
-param(
-    [Parameter()]
-    [ValidateScript({ $_ -match '\.psd1$' }, ErrorMessage = 'Please input a .psd1 file')]
-    $Manifest
-)
-
-BeforeDiscovery {
-    . "$PSScriptRoot\CommonTestLogic.ps1"
-    Invoke-ModuleReload -Manifest $Manifest
-
+BeforeDiscovery {    
     # Get command from current test file name
     $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
     $ParameterTestCases += @(
+        @{
+            Command       = $Command
+            Name          = 'Context'
+            Type          = 'PipeHow.AzBobbyTables.AzDataTableContext'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $true }
+            )
+        }
         @{
             Command       = $Command
             Name          = 'Entity'
@@ -21,18 +20,25 @@ BeforeDiscovery {
         }
         @{
             Command       = $Command
-            Name          = 'Context'
-            Type          = 'PipeHow.AzBobbyTables.AzDataTableContext'
+            Name          = 'Force'
+            Type          = 'System.Management.Automation.SwitchParameter'
             ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $true }
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'CreateTableIfNotExists'
+            Type          = 'System.Management.Automation.SwitchParameter'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
             )
         }
     )
 }
 
-Describe 'Remove-AzDataTableEntity' {
+Describe 'Add-AzDataTableEntity' {
     Context 'parameters' {
-
         It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {
             $Command.Parameters.GetEnumerator() | Where-Object {
                 $_.Key -notin [System.Management.Automation.Cmdlet]::CommonParameters -and

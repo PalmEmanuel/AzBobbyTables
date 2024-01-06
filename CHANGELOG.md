@@ -1,8 +1,12 @@
-# Changelog for Bicep
+# Changelog for the module
 
 The format is based on and uses the types of changes according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+
+- Added Sampler ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
 
 ## [3.1.2] - 2024-01-05
 

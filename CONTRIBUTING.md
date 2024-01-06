@@ -12,7 +12,7 @@ You are more than welcome to contribute to the module, whether it is [Pull Reque
 
 The repository is organized as below:
 
-- **Docs** (`Docs/Help`): Help documentation for the module. Used by `platyPS` to generate help files.
+- **Docs** (`docs/help`): Help documentation for the module. Used by `platyPS` to generate help files.
 - **Tests**: Test files used for [Pester](https://github.com/pester/Pester) tests, also utilizing [Azurite](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=npm) for integration tests.
 - **AzBobbyTables.Core** (`Source/AzBobbyTables.Core`): The assembly which wraps the SDK and provides logic and functionality.
 - **AzBobbyTables.PS** (`Source/AzBobbyTables.PS`): The compiled PowerShell module with commands and parameters.
@@ -48,10 +48,10 @@ Import-Module platyPS
 ```powershell
 # you need the module imported in the session
 Import-Module .\out\AzBobbyTables.psd1
-New-MarkdownHelp -Module AzBobbyTables -OutputFolder .\Docs\Help
+New-MarkdownHelp -Module AzBobbyTables -OutputFolder .\docs\help
 ```
 
-Edit the new markdown files in the `.\Docs\Help` folder and replace `{{ ... }}` placeholders with missing help content.
+Edit the new markdown files in the `.\docs\help` folder and replace `{{ ... }}` placeholders with missing help content.
 
 - Run the build script to update the documentation.
 
@@ -64,7 +64,7 @@ Edit the new markdown files in the `.\Docs\Help` folder and replace `{{ ... }}` 
 ```powershell
 # re-import your module with latest changes
 Import-Module .\out\AzBobbyTables.psd1 -Force
-Update-MarkdownHelp .\Docs\Help
+Update-MarkdownHelp .\docs\help
 ```
 
 ### Pester

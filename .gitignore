@@ -356,3 +356,10 @@ Test.ps1
 
 # Azurite files
 __*
+
+.kitchen/
+*.local.*
+**.bak
+markdownissues.txt
+
+output/

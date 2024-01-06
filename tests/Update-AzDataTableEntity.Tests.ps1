@@ -1,13 +1,4 @@
-param(
-    [Parameter()]
-    [ValidateScript({ $_ -match '\.psd1$' }, ErrorMessage = 'Please input a .psd1 file')]
-    $Manifest
-)
-
 BeforeDiscovery {
-    . "$PSScriptRoot\CommonTestLogic.ps1"
-    Invoke-ModuleReload -Manifest $Manifest
-    
     # Get command from current test file name
     $Command = Get-Command ((Split-Path $PSCommandPath -Leaf) -replace '.Tests.ps1')
     $ParameterTestCases += @(
@@ -16,62 +7,21 @@ BeforeDiscovery {
             Name          = 'Context'
             Type          = 'PipeHow.AzBobbyTables.AzDataTableContext'
             ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $true }
-                @{ Name = 'Count'; Mandatory = $true }
+                @{ Name = '__AllParameterSets'; Mandatory = $true }
             )
         }
         @{
             Command       = $Command
-            Name          = 'Filter'
-            Type          = 'string'
+            Name          = 'Entity'
+            Type          = 'System.Object[]'
             ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $false }
-            )
-        }
-        @{
-            Command       = $Command
-            Name          = 'Property'
-            Type          = 'string[]'
-            ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $false }
-            )
-        }
-        @{
-            Command       = $Command
-            Name          = 'First'
-            Type          = 'System.Nullable`1[System.Int32]'
-            ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $false }
-            )
-        }
-        @{
-            Command       = $Command
-            Name          = 'Skip'
-            Type          = 'System.Nullable`1[System.Int32]'
-            ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $false }
-            )
-        }
-        @{
-            Command       = $Command
-            Name          = 'Sort'
-            Type          = 'string[]'
-            ParameterSets = @(
-                @{ Name = 'TableOperation'; Mandatory = $false }
-            )
-        }
-        @{
-            Command       = $Command
-            Name          = 'Count'
-            Type          = 'System.Management.Automation.SwitchParameter'
-            ParameterSets = @(
-                @{ Name = 'Count'; Mandatory = $true }
+                @{ Name = '__AllParameterSets'; Mandatory = $true }
             )
         }
     )
 }
 
-Describe 'Get-AzDataTableEntity' {
+Describe 'Update-AzDataTableEntity' {
     Context 'parameters' {
 
         It 'only has expected parameters' -TestCases @{ Command = $Command ; Parameters = $ParameterTestCases.Name } {

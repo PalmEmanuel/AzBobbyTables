@@ -20,9 +20,9 @@ If you find a bug or have an idea for a new feature, please create an issue in t
 
 If you like AzBobbyTables and want to contribute, you are very welcome to do so! Please read the [Contribution Guide](CONTRIBUTING.md) to get started!
 
----
+<img src="./img/azbobbytables.png" width="256" height="256">
 
-Name inspired by Little Bobby Tables at [xkcd](https://xkcd.com/327/).
+Name and image inspired by Little Bobby Tables at [xkcd](https://xkcd.com/327/).
 
 ![Little Bobby Tables](https://imgs.xkcd.com/comics/exploits_of_a_mom.png)
 

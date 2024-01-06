@@ -34,7 +34,7 @@ runs:
       shell: bash
     
     - name: Start Azurite Table Service
-      run: azurite-table
+      run: azurite-table &
       shell: bash
     
     - name: Run Tests

@@ -64,7 +64,7 @@ Edit the new markdown files in the `.\docs\help` folder and replace `{{ ... }}` 
 ```powershell
 # re-import your module with latest changes
 Import-Module .\out\AzBobbyTables.psd1 -Force
-Update-MarkdownHelp .\Docs\Help
+Update-MarkdownHelp .\docs\help
 ```
 
 ### Pester

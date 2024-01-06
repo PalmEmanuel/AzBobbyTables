@@ -46,25 +46,25 @@ Describe "$ModuleName" {
         }
 
         It 'has no help file with empty documentation sections' {
-            Get-ChildItem "$BuildRoot\Docs\Help\*.md" | Select-String '{{ Fill \w+ Description }}' | Should -BeNullOrEmpty
+            Get-ChildItem "$BuildRoot\docs\help\*.md" | Select-String '{{ Fill \w+ Description }}' | Should -BeNullOrEmpty
         }
         
         It 'has command <Command> defined in file in the correct directory' -TestCases $CommandTestCases {
             $CommandFileName = $Command -replace '-'
             
-            "$BuildRoot\Source\$ModuleName.PS\Cmdlets\$CommandFileName.cs" | Should -Exist
+            "$BuildRoot\source\$ModuleName.PS\Cmdlets\$CommandFileName.cs" | Should -Exist
         }
 
         It 'has test file for command <Command>' -TestCases $CommandTestCases {
-            "$BuildRoot\Tests\$Command.Tests.ps1" | Should -Exist
+            "$BuildRoot\tests\$Command.Tests.ps1" | Should -Exist
         }
 
         It 'has markdown help file for command <Command>' -TestCases $CommandTestCases {
-            "$BuildRoot\Docs\Help\$Command.md" | Should -Exist
+            "$BuildRoot\docs\help\$Command.md" | Should -Exist
         }
 
         It 'has parameter <Parameter> documented in markdown help file for command <Command>' -TestCases $ParametersTestCases {
-            "$BuildRoot\Docs\Help\$Command.md" | Should -FileContentMatch $Parameter
+            "$BuildRoot\docs\help\$Command.md" | Should -FileContentMatch $Parameter
         }
     }
 

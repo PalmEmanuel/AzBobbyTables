@@ -19,8 +19,25 @@ runs:
       with:
         name: ${{ env.buildArtifactName }}
         path: ${{ env.buildFolderName }}
-
-    - name: Run tests
+  
+    - name: Cache Azurite
+      id: azurite-cache
+      uses: actions/cache@v3
+      with:
+        key: azurite-cache
+        path: |
+          ~/.npm
+    
+    - name: Install Azurite
+      if: steps.azurite-cache.outputs.cache-hit != 'true'
+      run: npm install -g azurite
+      shell: bash
+    
+    - name: Start Azurite Table Service
+      run: azurite-table
+      shell: bash
+    
+    - name: Run Tests
       run: .\build.ps1 -tasks test
       shell: pwsh
   

@@ -31,7 +31,7 @@ runs:
     - name: Install Azurite
       if: steps.azurite-cache.outputs.cache-hit != 'true'
       run: npm install -g azurite
-      shell: pwsh
+      shell: bash
     
     - name: Run tests
       run: .\build.ps1 -tasks test

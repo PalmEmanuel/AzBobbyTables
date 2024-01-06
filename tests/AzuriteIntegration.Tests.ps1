@@ -42,7 +42,7 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
 
     Context 'hashtable' {
         BeforeAll {
-            $null = Start-ThreadJob { & azurite --silent --location "$using:TestDrive\hashtable" } -Name 'Azurite'
+            $null = Start-ThreadJob { & azurite --silent --location "$using:TestDrive/hashtable" } -Name 'Azurite'
 
             $UsersHashtable = 1..4 | ForEach-Object {
                 @{
@@ -152,7 +152,7 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
     
     Context 'psobject' {
         BeforeAll {
-            $null = Start-ThreadJob { & azurite --silent --location "$using:TestDrive\hashtable" } -Name 'Azurite'
+            $null = Start-ThreadJob { & azurite --silent --location "$using:TestDrive/psobject" } -Name 'Azurite'
 
             $UsersPSObjects = 1..4 | ForEach-Object {
                 [pscustomobject]@{

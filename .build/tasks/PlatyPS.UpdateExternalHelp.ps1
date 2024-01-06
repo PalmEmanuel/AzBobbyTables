@@ -3,5 +3,5 @@ task updateExternalHelp {
     Import-Module 'platyPS' -ErrorAction 'Stop'
     $ModuleManifestPath = (Get-Module -ListAvailable "$BuildModuleOutput/$ProjectName" | Sort-Object Version -Descending | Select-Object -First 1).Path
     $ModuleVersionPath = Split-Path -Path $ModuleManifestPath -Parent
-    New-ExternalHelp "$HelpSourceFolder/$HelpOutputFolder" -OutputPath "$ModuleVersionPath/$HelpCultureInfo" -Force
+    New-ExternalHelp "$BuildModuleOutput/$HelpSourceFolder/$HelpOutputFolder" -OutputPath "$ModuleVersionPath/$HelpCultureInfo" -Force
 }

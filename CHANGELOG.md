@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added Sampler ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
+
 ## [3.1.2] - 2024-01-05
 
 ### Added

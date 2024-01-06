@@ -3,12 +3,12 @@
 #          ModuleBuilder Configuration             #
 ####################################################
 # Path to the Module Manifest to build (where path will be resolved from)
-SourcePath: Source/AzBobbyTables.psd1
+SourcePath: ../Source/AzBobbyTables.psd1
 # Output Directory where ModuleBuilder will build the Module, relative to module manifest
 OutputDirectory: ../../output/AzBobbyTables
 # BuiltModuleSubdirectory: module
 CopyPaths:
-  # - en-US
+  # - ..Source/en-US
   - ../Source/AzBobbyTables.Core/bin/AzBobbyTables.Core
   - ../Source/AzBobbyTables.PS/bin/AzBobbyTables.PS
   - ../LICENSE
@@ -60,15 +60,13 @@ BuildWorkflow:
     # - Build_NestedModules_ModuleBuilder
     - setupALC
     - updateMarkdownHelp
+    - repairPlatyPSHelp
     - updateExternalHelp
     - Create_changelog_release_output
-
 
   pack:
     - build
     - package_module_nupkg
-
-
 
   # Defining test task to be run when invoking `./build.ps1 -Tasks test`
   test:
@@ -90,62 +88,20 @@ BuildWorkflow:
     - Publish_Release_To_GitHub
     # - Publish_GitHub_Wiki_Content
 
-
-####################################################
-#          PlatyPS Configuration                   #
-####################################################
-PlatyPS:
-  HelpOutputFolder: en-US
-  HelpMarkdownFolder: ../Docs/Help
-
 ####################################################
 #       PESTER  Configuration                      #
 ####################################################
+# Default is to use the tests folder in the project folder or source folder (if present)
 Pester:
   Configuration:
-    Run:
-      Path:
-        - Tests
-      ExcludePath:
-
-      Filter:
-        Tag:
-
-        ExcludeTag:
-
-      Output:
-        Verbosity: Detailed
-      CodeCoverage:
-        Path:
-        OutputFormat:
-        CoveragePercentage: 0
-        OutputPath:
-        OutputEncoding:
-        ExcludeTests:
-      TestResult:
-        OutputFormat: NUnitXML
-        OutputPath:
-        OutputEncoding: UTF8
-        TestSuiteName:
-
-# Use this to merged code coverage from several pipeline test jobs.
-# CodeCoverageFilePattern      - the pattern used to search all pipeline test job artifacts
-#                                after the file specified in CodeCoverageOutputFile.
-# CodeCoverageMergedOutputFile - the file that is created by the merge build task and
-#                                is the file that should be uploaded to code coverage services.
-#CodeCoverage:
-  #CodeCoverageFilePattern: JaCoCo_Merge.xml # the pattern used to search all pipeline test job artifacts
-  #CodeCoverageMergedOutputFile: JaCoCo_coverage.xml # the file that is created for the merged code coverage
-
-# DscTest:
-#   ExcludeTag:
-#     - "Common Tests - New Error-Level Script Analyzer Rules"
-#   Tag:
-#   ExcludeSourceFile:
-#     - output
-#   ExcludeModuleFile:
-#     - Modules/DscResource.Common
-#     - Templates
+    Output:
+      Verbosity: Detailed
+      StackTraceVerbosity: Full
+      CIFormat: Auto
+    TestResult:
+      OutputFormat: NUnitXML
+      OutputEncoding: UTF8
+  # Will look at every *.ps1 & *.psm1 under ModulePath, excepts when $_.FullName -match (Join-Path $ProjectPath $ExcludeFromCodeCoverageItem)
 
 # Import ModuleBuilder tasks from a specific PowerShell module using the build
 # task's alias. Wildcard * can be used to specify all tasks that has a similar

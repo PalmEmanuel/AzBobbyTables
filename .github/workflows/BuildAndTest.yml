@@ -1,0 +1,65 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches:
+    - main
+    types:
+    - opened
+    - synchronize
+    paths-ignore:
+    - CHANGELOG.md
+
+  push:
+    branches:
+    - main
+    paths-ignore:
+    - CHANGELOG.md
+    - .github/**
+    tags: [v*]
+
+env:
+  buildFolderName: output
+  buildArtifactName: output
+  testResultFolderName: testResults
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: 'Build and Package Module'
+      uses: ./.github/actions/build
+
+  test:
+    name: Test Module on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    needs:
+    - build
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: 'Test Module'
+        uses: ./.github/actions/test
+        with:
+          os: ${{ matrix.os }}
+
+  publish-test-results:
+    permissions:
+      checks: write
+
+    name: Publish Test Results
+    if: success() || failure()
+    runs-on: ubuntu-latest
+    needs:
+    - test
+
+    steps:
+    - name: 'Publish Test Results'
+      uses: ./.github/actions/publish-test-results

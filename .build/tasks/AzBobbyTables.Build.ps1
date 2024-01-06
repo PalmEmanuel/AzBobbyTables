@@ -1,6 +1,7 @@
 param(
     [string[]]
-    $ProjectPath = @('Source/AzBobbyTables.Core', 'Source/AzBobbyTables.PS'),
+    # Naming this $ProjectPath would cause it to overwrite the variable passed to Pester
+    $Paths = @('Source/AzBobbyTables.Core', 'Source/AzBobbyTables.PS'),
 
     [ValidateSet('Debug', 'Release')]
     [string]
@@ -22,7 +23,7 @@ task dotnetBuild {
         dotnet build-server shutdown
     }
 
-    foreach ($Path in $ProjectPath) {
+    foreach ($Path in $Paths) {
         $OutPathFolder = Split-Path -Path (Resolve-Path -Path $Path) -Leaf
         Write-Host $Path
         Write-Host $OutPathFolder

@@ -19,7 +19,8 @@ runs:
       with:
         name: ${{ env.buildArtifactName }}
         path: ${{ env.buildFolderName }}
-      
+    
+    # Don't cache Azurite between different platforms
     - name: Install Azurite
       run: npm install -g azurite
       shell: bash

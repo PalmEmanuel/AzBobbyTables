@@ -30,6 +30,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
 
     - name: 'Build and Package Module'
       uses: ./.github/actions/build

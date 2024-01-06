@@ -3,14 +3,14 @@
 #          ModuleBuilder Configuration             #
 ####################################################
 # Path to the Module Manifest to build (where path will be resolved from)
-SourcePath: ../Source/AzBobbyTables.psd1
+SourcePath: ../source/AzBobbyTables.psd1
 # Output Directory where ModuleBuilder will build the Module, relative to module manifest
 OutputDirectory: ../../output/AzBobbyTables
 # BuiltModuleSubdirectory: module
 CopyPaths:
   # - ..Source/en-US
-  - ../Source/AzBobbyTables.Core/bin/AzBobbyTables.Core
-  - ../Source/AzBobbyTables.PS/bin/AzBobbyTables.PS
+  - ../source/AzBobbyTables.Core/bin/AzBobbyTables.Core
+  - ../source/AzBobbyTables.PS/bin/AzBobbyTables.PS
   - ../LICENSE
   - ../CHANGELOG.md
 

@@ -1,5 +1,4 @@
 BeforeDiscovery {
-    # Get module name from manifest
     $ModuleName = Get-SamplerProjectName -BuildRoot $BuildRoot
     
     # Get exported commands

@@ -8,11 +8,16 @@ namespace PipeHow.AzBobbyTables.Core;
 
 public static class Helpers
 {
-    public static string GetManagedIdentityToken(string accountName)
+    public static string GetManagedIdentityToken(string accountName, string? clientId = null)
     {
         // Get token for managed identity for Storage resource
         string resource = $"https://{accountName}.table.core.windows.net";
-        HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"{Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT")}?api-version=2019-08-01&resource={resource}");
+        string uri = $"{Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT")}?api-version=2019-08-01&resource={resource}";
+        if (!string.IsNullOrWhiteSpace(clientId))
+        {
+            uri += $"&client_id={clientId}";
+        }
+        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
         request.Headers["X-IDENTITY-HEADER"] = Environment.GetEnvironmentVariable("IDENTITY_HEADER");
         request.Method = "GET";
 

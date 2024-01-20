@@ -39,7 +39,7 @@ New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Token <
 
 ### ManagedIdentity
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity]
+New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity] [-ClientId <String>]
  [<CommonParameters>]
 ```
 
@@ -90,6 +90,22 @@ PS C:\> $Context = New-AzDataTableContext -TableName $TableName -StorageAccountN
 Creates a context object using the table name, storage account name and an access token.
 
 ## PARAMETERS
+
+### -ClientId
+
+Specifies the client id when using a user-assigned managed identity.
+
+```yaml
+Type: String
+Parameter Sets: ManagedIdentity
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -ConnectionString
 

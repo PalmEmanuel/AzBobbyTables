@@ -7,7 +7,7 @@ The format is based on and uses the types of changes according to [Keep a Change
 ### Added
 
 - Added Sampler ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
-- Added support for user-assigned managed identities ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
+- Added support for user-assigned managed identities ([#54](https://github.com/PalmEmanuel/AzBobbyTables/issues/54)).
 
 ## [3.1.2] - 2024-01-05
 

@@ -4,10 +4,12 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.1.3] - 2024-01-20
+
 ### Added
 
-- Added Sampler ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
-- Added support for user-assigned managed identities ([#54](https://github.com/PalmEmanuel/AzBobbyTables/issues/54)).
+-   Added Sampler ([#48](https://github.com/PalmEmanuel/AzBobbyTables/issues/48)).
+-   Added support for user-assigned managed identities ([#54](https://github.com/PalmEmanuel/AzBobbyTables/issues/54)).
 
 ## [3.1.2] - 2024-01-05
 
@@ -23,6 +25,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.2...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.3...HEAD
+
+[3.1.3]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.2...v3.1.3
 
 [3.1.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/d854153aca6c5cce35a123deb86653a0d3289b07...v3.1.2

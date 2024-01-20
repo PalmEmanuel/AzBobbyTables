@@ -11,7 +11,7 @@ namespace PipeHow.AzBobbyTables.Core;
 
 public class AzDataTableService
 {
-    private TableClient TableClient { get; set; }
+    private TableClient? TableClient { get; set; }
 
     /// <summary>
     /// Cancellation token used within the AzDataTableService.
@@ -76,7 +76,7 @@ public class AzDataTableService
     {
         try
         {
-            var bobbyService = new AzDataTableService(cancellationToken);
+            var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
         
             TableClient client = new(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
@@ -86,8 +86,8 @@ public class AzDataTableService
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            bobbyService.TableClient = client;
-            return bobbyService;
+            dataTableService.TableClient = client;
+            return dataTableService;
         }
         catch (Exception ex)
         {
@@ -99,7 +99,7 @@ public class AzDataTableService
     {
         try
         {
-            var bobbyService = new AzDataTableService(cancellationToken);
+            var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
 
             TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
@@ -109,8 +109,8 @@ public class AzDataTableService
                 CreateIfNotExists(client, cancellationToken);
             }
 
-            bobbyService.TableClient = client;
-            return bobbyService;
+            dataTableService.TableClient = client;
+            return dataTableService;
         }
         catch (Exception ex)
         {
@@ -154,7 +154,7 @@ public class AzDataTableService
     {
         try
         {
-            TableClient.Delete();
+            TableClient?.Delete();
         }
         catch (Exception ex)
         {
@@ -363,12 +363,12 @@ public class AzDataTableService
     /// <param name="query">The query to filter entities by.</param>
     /// <param name="query">The list of properties to return.</param>
     /// <returns>The result of the query.</returns>
-    public IEnumerable<PSObject> GetEntitiesFromTable(string query, string[] properties = null, int? top = null, int? skip = null, string[] orderBy = null)
+    public IEnumerable<PSObject> GetEntitiesFromTable(string query, string[] properties = null!, int? top = null, int? skip = null, string[] orderBy = null!)
     {
         try
         {
             // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
-            IAsyncEnumerable<TableEntity> entities = TableClient.QueryAsync<TableEntity>(query, null, properties, CancellationToken);
+            IAsyncEnumerable<TableEntity> entities = TableClient!.QueryAsync<TableEntity>(query, null, properties, CancellationToken);
 
             // If user specified one or more properties to sort list by
             // This may slow the query down a lot with a lot of results
@@ -422,7 +422,7 @@ public class AzDataTableService
     {
         try
         {
-            var entities = TableClient.Query<TableEntity>((string)null, null, new[] { "PartitionKey", "RowKey" });
+            var entities = TableClient!.Query<TableEntity>((string)null!, null, new[] { "PartitionKey", "RowKey" });
 
             var transactions = new List<TableTransactionAction>();
 
@@ -448,7 +448,7 @@ public class AzDataTableService
             // Loop through each group and submit up to 100 at a time
             for (int i = 0; i < group.Count(); i += 100)
             {
-                var response = TableClient.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
+                var response = TableClient!.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
                 foreach (var transactionResult in response.Value)
                 {
                     Console.WriteLine(transactionResult.Content.ToString());

@@ -78,7 +78,7 @@ BuildWorkflow:
     #- Convert_Pester_Coverage
     # - Pester_if_Code_Coverage_Under_Threshold
 
-  # Use this task when you have multiple parallel tests, which produce multiple
+  # Use this task when you have multiple parallel tests, which produce multiplehttps://riktigtkaffe.se/
   # code coverage files and needs to get merged into one file.
   #merge:
     #- Merge_CodeCoverage_Files

@@ -64,6 +64,14 @@ BeforeDiscovery {
                 @{ Name = 'ManagedIdentity'; Mandatory = $true }
             )
         }
+        @{
+            Command       = $Command
+            Name          = 'ClientId'
+            Type          = 'string'
+            ParameterSets = @(
+                @{ Name = 'ManagedIdentity'; Mandatory = $false }
+            )
+        }
     )
 }
 

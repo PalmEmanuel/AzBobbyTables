@@ -20,9 +20,10 @@ public class AzDataTableContext
     internal Uri SharedAccessSignature { get; }
     internal string StorageAccountName { get; }
     internal string StorageAccountKey { get; }
+    internal string ClientId { get; }
     internal string Token { get; }
 
-    internal AzDataTableContext(string tableName, AzDataTableConnectionType connectionType, string connectionString, string storageAccountName, string storageAccountKey, Uri sharedAccessSignature, string token)
+    internal AzDataTableContext(string tableName, AzDataTableConnectionType connectionType, string connectionString, string storageAccountName, string storageAccountKey, Uri sharedAccessSignature, string clientId, string token)
     {
         TableName = tableName;
         ConnectionType = connectionType;
@@ -31,5 +32,6 @@ public class AzDataTableContext
         StorageAccountName = storageAccountName;
         StorageAccountKey = storageAccountKey;
         Token = token;
+        ClientId = clientId;
     }
 }

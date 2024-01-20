@@ -52,7 +52,7 @@ public class AzDataTableOperationCommand : AzDataTableCommand
                 AzDataTableConnectionType.SAS => AzDataTableService.CreateWithSAS(context.SharedAccessSignature, context.TableName, createIfNotExists, cancellationToken),
                 AzDataTableConnectionType.Key => AzDataTableService.CreateWithStorageKey(context.StorageAccountName, context.TableName, context.StorageAccountKey, createIfNotExists, cancellationToken),
                 AzDataTableConnectionType.Token => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, context.Token, createIfNotExists, cancellationToken),
-                AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName), createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName, context.ClientId), createIfNotExists, cancellationToken),
                 _ => throw new ArgumentException($"Unknown connection type {context.ConnectionType} was used!"),
             };
         }

@@ -67,6 +67,12 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
     public SwitchParameter ManagedIdentity { get; set; }
 
     /// <summary>
+    /// <para type="description">Specifices the client id of a user-assigned managed identity.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "ManagedIdentity")]
+    public string ClientId { get; set; }
+
+    /// <summary>
     /// The end step of the pipeline.
     /// </summary>
     protected override void EndProcessing()
@@ -76,7 +82,7 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
             WriteError(new ErrorRecord(new ArgumentException("Incorrect connection type!"), "ConnectionTypeError", ErrorCategory.InvalidType, connectionType));
 
         // Output the AzDataTableContext to user for further operations
-        WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, Token));
+        WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, ClientId, Token));
 
         base.EndProcessing();
     }

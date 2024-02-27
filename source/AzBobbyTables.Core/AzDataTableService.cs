@@ -166,8 +166,9 @@ public class AzDataTableService
     /// Remove one or more entities from a table.
     /// </summary>
     /// <param name="hashtables">The list of entities to remove, with PartitionKey and RowKey set.</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables)
+    public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
     {
         try
         {
@@ -175,10 +176,17 @@ public class AzDataTableService
 
             var entities = hashtables.Select(r =>
             {
-                return new TableEntity(r["PartitionKey"].ToString(), r["RowKey"].ToString());
+                TableEntity entity = new()
+                {
+                    PartitionKey = r["PartitionKey"].ToString(),
+                    RowKey = r["RowKey"].ToString(),
+                    ETag = r.ContainsKey("ETag") ? new(r["ETag"].ToString()) : default,
+                    Timestamp = r.ContainsKey("Timestamp") ? (DateTimeOffset?)r["Timestamp"] : default
+                };
+                return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }
@@ -192,8 +200,9 @@ public class AzDataTableService
     /// Remove one or more entities from a table.
     /// </summary>
     /// <param name="psobjects">The list of entities to remove, with PartitionKey and RowKey set.</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects)
+    public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
     {
         try
         {
@@ -201,13 +210,25 @@ public class AzDataTableService
 
             var entities = psobjects.Select(e =>
             {
-                return new TableEntity(
-                    e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
-                    e.Properties.First(p => p.Name == "RowKey").Value.ToString()
-                );
+                TableEntity entity = new()
+                {
+                    PartitionKey = e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
+                    RowKey = e.Properties.First(p => p.Name == "RowKey").Value.ToString()
+                };
+                var eTag = e.Properties.FirstOrDefault(p => p.Name.Equals("ETag", StringComparison.OrdinalIgnoreCase));
+                if (eTag is not null)
+                {
+                    entity.ETag = new(eTag.Value.ToString());
+                }
+                var timestamp = e.Properties.FirstOrDefault(p => p.Name.Equals("Timestamp", StringComparison.OrdinalIgnoreCase));
+                if (timestamp is not null)
+                {
+                    entity.Timestamp = (DateTimeOffset?)timestamp.Value;
+                }
+                return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e)));
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }
@@ -234,9 +255,17 @@ public class AzDataTableService
                 TableEntity entity = new();
                 foreach (string key in e.Keys)
                 {
-                    if (key != "ETag" && key != "Timestamp")
+                    switch (key)
                     {
-                        entity.Add(key, e[key]);
+                        case "ETag":
+                            entity.ETag = new((string)e[key]);
+                            break;
+                        case "Timestamp":
+                            entity.Timestamp = (DateTimeOffset?)e[key];
+                            break;
+                        default:
+                            entity.Add(key, e[key]);
+                            break;
                     }
                 }
                 return entity;
@@ -270,9 +299,17 @@ public class AzDataTableService
                 TableEntity entity = new();
                 foreach (var prop in e.Properties)
                 {
-                    if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                    switch (prop.Name)
                     {
-                        entity.Add(prop.Name, prop.Value);
+                        case "ETag":
+                            entity.ETag = new((string)prop.Value);
+                            break;
+                        case "Timestamp":
+                            entity.Timestamp = (DateTimeOffset?)prop.Value;
+                            break;
+                        default:
+                            entity.Add(prop.Name, prop.Value);
+                            break;
                     }
                 }
                 return entity;
@@ -293,8 +330,9 @@ public class AzDataTableService
     /// Updates one or more entities in a table.
     /// </summary>
     /// <param name="hashtables">The entities to update.</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables)
+    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
     {
         try
         {
@@ -305,15 +343,23 @@ public class AzDataTableService
                 TableEntity entity = new();
                 foreach (string key in e.Keys)
                 {
-                    if (key != "ETag" && key != "Timestamp")
+                    switch (key)
                     {
-                        entity.Add(key, e[key]);
+                        case "ETag":
+                            entity.ETag = new((string)e[key]);
+                            break;
+                        case "Timestamp":
+                            entity.Timestamp = (DateTimeOffset?)e[key];
+                            break;
+                        default:
+                            entity.Add(key, e[key]);
+                            break;
                     }
                 }
                 return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }
@@ -327,8 +373,9 @@ public class AzDataTableService
     /// Updates one or more entities in a table.
     /// </summary>
     /// <param name="psobjects">The entities to update.</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects)
+    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
     {
         try
         {
@@ -339,15 +386,23 @@ public class AzDataTableService
                 TableEntity entity = new();
                 foreach (var prop in e.Properties)
                 {
-                    if (prop.Name != "ETag" && prop.Name != "Timestamp")
+                    switch (prop.Name)
                     {
-                        entity.Add(prop.Name, prop.Value);
+                        case "ETag":
+                            entity.ETag = new((string)prop.Value);
+                            break;
+                        case "Timestamp":
+                            entity.Timestamp = (DateTimeOffset?)prop.Value;
+                            break;
+                        default:
+                            entity.Add(prop.Name, prop.Value);
+                            break;
                     }
                 }
                 return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e)));
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }

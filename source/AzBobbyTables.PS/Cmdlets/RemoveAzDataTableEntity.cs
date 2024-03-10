@@ -27,7 +27,7 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
     public object[] Entity { get; set; }
 
     /// <summary>
-    /// <para type="description">Skips ETag validation and updates entity even if it has changed.</para>
+    /// <para type="description">Skips ETag validation and removes entity even if it has changed.</para>
     /// </summary>
     [Parameter()]
     public SwitchParameter Force { get; set; }

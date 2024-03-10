@@ -14,7 +14,7 @@ Update one or more entities in an Azure Table.
 ## SYNTAX
 
 ```
-Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]>
+Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force]
  [<CommonParameters>]
 ```
 
@@ -69,6 +69,22 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Force
+
+Skips ETag validation and updates entity even if it has changed.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

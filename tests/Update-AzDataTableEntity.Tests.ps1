@@ -18,6 +18,14 @@ BeforeDiscovery {
                 @{ Name = '__AllParameterSets'; Mandatory = $true }
             )
         }
+        @{
+            Command       = $Command
+            Name          = 'Force'
+            Type          = 'System.Management.Automation.SwitchParameter'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
+            )
+        }
     )
 }
 

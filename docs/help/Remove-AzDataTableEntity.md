@@ -14,7 +14,7 @@ Remove one or more entities from an Azure Table.
 ## SYNTAX
 
 ```
-Remove-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]>
+Remove-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force]
  [<CommonParameters>]
 ```
 
@@ -82,6 +82,22 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Force
+
+Skips ETag validation and remove entity even if it has changed.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

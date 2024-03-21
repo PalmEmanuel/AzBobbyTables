@@ -106,6 +106,25 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             }
         }
 
+        It 'cannot update changed entities without -Force' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Users1 = Get-AzDataTableEntity -Context $Context
+            $Users2 = Get-AzDataTableEntity -Context $Context
+            $Users1 = $Users1 | ForEach-Object {
+                $_.Value1 = 'Updated'
+                $_
+            }
+            $Users2 = $Users2 | ForEach-Object {
+                $_.Prop1 = 'Will conflict with update from Result1'
+                $_
+            }
+            Update-AzDataTableEntity -Context $Context -Entity $Users1 | Should -BeNullOrEmpty
+            { Update-AzDataTableEntity -Context $Context -Entity $Users2 } | Should -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be $Users1.Count
+            { Update-AzDataTableEntity -Context $Context -Entity $Users2 -Force } | Should -Not -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be 0
+        }
+
         It 'can get count of entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
@@ -115,6 +134,23 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTableEntity -Context $Context -Entity $UsersToRemoveHashtable | Should -BeNullOrEmpty
             (Get-AzDataTableEntity -Context $Context).Count | Should -BeExactly ($UsersHashtable.Count - $UsersToRemoveHashtable.Count)
+        }
+
+        It 'cannot remove changed entities without -Force' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Users1 = Get-AzDataTableEntity -Context $Context
+            $Users2 = Get-AzDataTableEntity -Context $Context
+            $Users1 = $Users1 | ForEach-Object {
+                $_.Value1 = 'Updated'
+                $_
+            }
+            Update-AzDataTableEntity -Context $Context -Entity $Users1 | Should -BeNullOrEmpty
+            { Remove-AzDataTableEntity -Context $Context -Entity $Users2 } | Should -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be $Users1.Count
+            { Remove-AzDataTableEntity -Context $Context -Entity $Users2 -Force } | Should -Not -Throw
+            (Get-AzDataTableEntity -Context $Context).Count | Should -Be 0
+            # Restore table for next test
+            Add-AzDataTableEntity -Context $Context -Entity $Users2 | Should -BeNullOrEmpty
         }
 
         It 'can clear table' {
@@ -214,6 +250,25 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             }
         }
 
+        It 'cannot update changed entities without -Force' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Users1 = Get-AzDataTableEntity -Context $Context
+            $Users2 = Get-AzDataTableEntity -Context $Context
+            $Users1 = $Users1 | ForEach-Object {
+                $_.Value1 = 'Updated'
+                $_
+            }
+            $Users2 = $Users2 | ForEach-Object {
+                $_.Prop1 = 'Will conflict with update from Result1'
+                $_
+            }
+            Update-AzDataTableEntity -Context $Context -Entity $Users1 | Should -BeNullOrEmpty
+            { Update-AzDataTableEntity -Context $Context -Entity $Users2 } | Should -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be $Users1.Count
+            { Update-AzDataTableEntity -Context $Context -Entity $Users2 -Force } | Should -Not -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be 0
+        }
+
         It 'can get count of entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
@@ -223,6 +278,23 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Remove-AzDataTableEntity -Context $Context -Entity $UsersToRemovePSObjects | Should -BeNullOrEmpty
             (Get-AzDataTableEntity -Context $Context).Count | Should -BeExactly ($UsersPSObjects.Count - $UsersToRemovePSObjects.Count)
+        }
+
+        It 'cannot remove changed entities without -Force' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Users1 = Get-AzDataTableEntity -Context $Context
+            $Users2 = Get-AzDataTableEntity -Context $Context
+            $Users1 = $Users1 | ForEach-Object {
+                $_.Value1 = 'Updated'
+                $_
+            }
+            Update-AzDataTableEntity -Context $Context -Entity $Users1 | Should -BeNullOrEmpty
+            { Remove-AzDataTableEntity -Context $Context -Entity $Users2 } | Should -Throw
+            (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be $Users1.Count
+            { Remove-AzDataTableEntity -Context $Context -Entity $Users2 -Force } | Should -Not -Throw
+            (Get-AzDataTableEntity -Context $Context).Count | Should -Be 0
+            # Restore table for next test
+            Add-AzDataTableEntity -Context $Context -Entity $Users2 | Should -BeNullOrEmpty
         }
 
         It 'can clear table' {

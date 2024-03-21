@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.2.0] - 2024-03-21
+
 ## [3.1.4] - 2024-03-21
 
 ### Added
@@ -35,7 +37,9 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.4...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.0...HEAD
+
+[3.2.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.4...v3.2.0
 
 [3.1.4]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.3...v3.1.4
 

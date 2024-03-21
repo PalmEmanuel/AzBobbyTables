@@ -4,13 +4,15 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.1.4] - 2024-03-21
+
 ### Added
 
-- ETag validation for Update- & Remove-AzDataTableEntity ([#58](https://github.com/PalmEmanuel/AzBobbyTables/issues/58))
+-   ETag validation for Update- & Remove-AzDataTableEntity ([#58](https://github.com/PalmEmanuel/AzBobbyTables/issues/58))
 
 ### Fixed
 
-- Missing examples of Remove-AzDataTableEntity
+-   Missing examples of Remove-AzDataTableEntity ([#62](https://github.com/PalmEmanuel/AzBobbyTables/issues/62))
 
 ## [3.1.3] - 2024-01-20
 
@@ -33,7 +35,9 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.3...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.4...HEAD
+
+[3.1.4]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.3...v3.1.4
 
 [3.1.3]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.2...v3.1.3
 

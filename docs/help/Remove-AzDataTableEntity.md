@@ -29,7 +29,7 @@ Remove one or more entities from an Azure Table, as an array of either Hashtable
 ```powershell
 PS C:\> $Context = New-AzDataTableContext -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
 PS C:\> $Entity = @{ PartitionKey = 'Example'; RowKey = '1' }
-PS C:\> Remove-AzDataTableEntity -Entity $Entity -TableName $TableName -Context $Context
+PS C:\> Remove-AzDataTableEntity -Entity $Entity -Context $Context
 ```
 
 Remove the entity with PartitionKey "Example" and RowKey "1", using the storage account name and an access key.

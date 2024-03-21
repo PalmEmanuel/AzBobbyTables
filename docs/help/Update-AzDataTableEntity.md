@@ -31,12 +31,27 @@ The PartitionKey and RowKey cannot be updated.
 ### Example 1
 
 ```powershell
-PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby'" -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby'" -Context $Context
 PS C:\> $UserEntity['LastName'] = 'Tables'
-PS C:\> Update-AzDataTableEntity -Entity $UserEntity -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> Update-AzDataTableEntity -Entity $UserEntity -Context $Context
 ```
 
 Update the last name of the user "Bobby" to "Tables" using a connection string.
+
+### Example 2
+
+```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby'" -Context $Context
+PS C:\> $UserEntity['LastName'] = 'Tables'
+PS C:\> # Imagine that the user is updated somewhere else
+PS C:\> Update-AzDataTableEntity -Entity $UserEntity -Context $Context
+PS C:\> # ERROR - The ETag of UserEntity does not match
+PS C:\> Update-AzDataTableEntity -Entity $UserEntity -Context $Context -Force
+```
+
+Force update the last name of the user "Bobby" to "Tables" using a connection string, overriding ETag validation.
 
 ## PARAMETERS
 

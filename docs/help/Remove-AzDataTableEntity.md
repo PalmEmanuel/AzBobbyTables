@@ -54,6 +54,20 @@ PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context
 
 Gets all users with the last name "Tables" from the table using a system-assigned managed identity, then removes the users.
 
+### Example 4
+
+```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $Users = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -Context $Context
+PS C:\> # Imagine that the users are updated somewhere else
+PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context
+PS C:\> # ERROR - The ETag of Users do not match
+PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context -Force
+PS C:\> # OK - The -Force switch overrides ETag validation
+```
+
+Force remove all users with the last name Tables, overriding ETag validation.
+
 ## PARAMETERS
 
 ### -Context

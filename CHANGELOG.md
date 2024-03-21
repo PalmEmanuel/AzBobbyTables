@@ -4,6 +4,14 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- ETag validation for Update- & Remove-AzDataTableEntity ([#58](https://github.com/PalmEmanuel/AzBobbyTables/issues/58))
+
+### Fixed
+
+- Missing examples of Remove-AzDataTableEntity
+
 ## [3.1.3] - 2024-01-20
 
 ### Added

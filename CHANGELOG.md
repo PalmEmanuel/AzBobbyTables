@@ -6,8 +6,6 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [3.2.0] - 2024-03-21
 
-## [3.1.4] - 2024-03-21
-
 ### Added
 
 -   ETag validation for Update- & Remove-AzDataTableEntity ([#58](https://github.com/PalmEmanuel/AzBobbyTables/issues/58))

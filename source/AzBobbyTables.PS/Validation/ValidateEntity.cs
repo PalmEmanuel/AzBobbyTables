@@ -34,7 +34,7 @@ class ValidateEntityAttribute : ValidateArgumentsAttribute
                     throw new ArgumentException("PartitionKey must be provided in the input psobject entity in the correct casing!");
                 }
                 if (!psobject.Properties.Any(p => p.Name == "RowKey"))
-                    {
+                {
                     throw new ArgumentException("RowKey must be provided in the input psobject entity in the correct casing!");
                 }
                 break;

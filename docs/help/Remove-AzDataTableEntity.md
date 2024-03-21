@@ -14,7 +14,7 @@ Remove one or more entities from an Azure Table.
 ## SYNTAX
 
 ```
-Remove-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]>
+Remove-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force]
  [<CommonParameters>]
 ```
 
@@ -27,8 +27,9 @@ Remove one or more entities from an Azure Table, as an array of either Hashtable
 ### Example 1
 
 ```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
 PS C:\> $Entity = @{ PartitionKey = 'Example'; RowKey = '1' }
-PS C:\> Remove-AzDataTableEntity -Entity $Entity -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
+PS C:\> Remove-AzDataTableEntity -Entity $Entity -TableName $TableName -Context $Context
 ```
 
 Remove the entity with PartitionKey "Example" and RowKey "1", using the storage account name and an access key.
@@ -36,8 +37,9 @@ Remove the entity with PartitionKey "Example" and RowKey "1", using the storage 
 ### Example 2
 
 ```powershell
-PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and LastName eq 'Tables'" -TableName $TableName -ConnectionString $ConnectionString
-PS C:\> Remove-AzDataTableEntity -Entity $UserEntity -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $UserEntity = Get-AzDataTableEntity -Filter "FirstName eq 'Bobby' and LastName eq 'Tables'" -Context $Context
+PS C:\> Remove-AzDataTableEntity -Entity $UserEntity -Context $Context
 ```
 
 Get the user "Bobby Tables" from the table using a connection string, then remove the user using the storage account name and an access key.
@@ -45,11 +47,26 @@ Get the user "Bobby Tables" from the table using a connection string, then remov
 ### Example 3
 
 ```powershell
-PS C:\> $Users = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -TableName $TableName -ConnectionString $ConnectionString
-PS C:\> Remove-AzDataTableEntity -Entity $Users -TableName $TableName -StorageAccountName $Name -StorageAccountKey $Key
+PS C:\> $Context = New-AzDataTableContext -StorageAccountName $StorageName -TableName $TableName -ManagedIdentity
+PS C:\> $Users = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -Context $Context
+PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context
 ```
 
-Gets all users with the last name "Tables" from the table using a connection string, then removes the users using the storage account name and an access key.
+Gets all users with the last name "Tables" from the table using a system-assigned managed identity, then removes the users.
+
+### Example 4
+
+```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $Users = Get-AzDataTableEntity -Filter "LastName eq 'Tables'" -Context $Context
+PS C:\> # Imagine that the users are updated somewhere else
+PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context
+PS C:\> # ERROR - The ETag of Users do not match
+PS C:\> Remove-AzDataTableEntity -Entity $Users -Context $Context -Force
+PS C:\> # OK - The -Force switch overrides ETag validation
+```
+
+Force remove all users with the last name Tables, overriding ETag validation.
 
 ## PARAMETERS
 
@@ -82,6 +99,22 @@ Required: True
 Position: Named
 Default value: None
 Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Force
+
+Skips ETag validation and remove entity even if it has changed.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

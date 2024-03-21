@@ -27,6 +27,12 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
     public object[] Entity { get; set; }
 
     /// <summary>
+    /// <para type="description">Skips ETag validation and removes entity even if it has changed.</para>
+    /// </summary>
+    [Parameter()]
+    public SwitchParameter Force { get; set; }
+
+    /// <summary>
     /// The process step of the pipeline.
     /// </summary>
     protected override void ProcessRecord()
@@ -42,10 +48,10 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
             switch (Entity.First())
             {
                 case Hashtable:
-                    tableService.RemoveEntitiesFromTable(Entity.Cast<Hashtable>());
+                    tableService.RemoveEntitiesFromTable(Entity.Cast<Hashtable>(), !Force.IsPresent);
                     break;
                 case PSObject:
-                    tableService.RemoveEntitiesFromTable(Entity.Cast<PSObject>());
+                    tableService.RemoveEntitiesFromTable(Entity.Cast<PSObject>(), !Force.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");

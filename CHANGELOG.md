@@ -12,7 +12,7 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ### Fixed
 
--   Missing examples of Remove-AzDataTableEntity
+-   Missing examples of Remove-AzDataTableEntity ([#62](https://github.com/PalmEmanuel/AzBobbyTables/issues/62))
 
 ## [3.1.3] - 2024-01-20
 

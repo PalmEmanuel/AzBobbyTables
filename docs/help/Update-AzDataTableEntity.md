@@ -49,6 +49,7 @@ PS C:\> # Imagine that the user is updated somewhere else
 PS C:\> Update-AzDataTableEntity -Entity $UserEntity -Context $Context
 PS C:\> # ERROR - The ETag of UserEntity does not match
 PS C:\> Update-AzDataTableEntity -Entity $UserEntity -Context $Context -Force
+PS C:\> # OK - The -Force switch overrides ETag validation
 ```
 
 Force update the last name of the user "Bobby" to "Tables" using a connection string, overriding ETag validation.

@@ -4,9 +4,11 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.2.1] - 2024-07-09
+
 ### Fixed
 
-- Fixed bug where empty lines were written to console.
+-   Fixed bug where empty lines were written to console.
 
 ## [3.2.0] - 2024-03-21
 
@@ -33,7 +35,9 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.1...HEAD
+
+[3.2.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.0...v3.2.1
 
 [3.2.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.1.3...v3.2.0
 

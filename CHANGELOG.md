@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed bug where empty lines were written to console.
+
 ## [3.2.0] - 2024-03-21
 
 ### Added

@@ -504,10 +504,6 @@ public class AzDataTableService
             for (int i = 0; i < group.Count(); i += 100)
             {
                 var response = TableClient!.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
-                foreach (var transactionResult in response.Value)
-                {
-                    Console.WriteLine(transactionResult.Content.ToString());
-                }
             }
         }
     }

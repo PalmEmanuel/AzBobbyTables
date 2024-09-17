@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Azure.Data.Tables" Version="12.9.0" />
+	  <PackageReference Include="Azure.Data.Tables" Version="12.9.1" />
 	  <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.11.20" />
 	  <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" PrivateAssets="All" />

@@ -4,7 +4,7 @@
 RootModule = 'AzBobbyTables.PS.dll'
 
 # Version number of this module.
-ModuleVersion = '3.2.0'
+ModuleVersion = '3.3.0'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Core')

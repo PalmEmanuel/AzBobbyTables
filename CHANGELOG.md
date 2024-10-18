@@ -4,13 +4,15 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.3.0] - 2024-10-18
+
 ### Added
 
-- Added command `Get-AzDataTable` to get the names of tables in a storage account [#77](https://github.com/PalmEmanuel/AzBobbyTables/issues/77)
+-   Added command `Get-AzDataTable` to get the names of tables in a storage account [#77](https://github.com/PalmEmanuel/AzBobbyTables/issues/77)
 
 ### Changed
 
-- Implemented TableServiceClient to support operations on tables in the storage account.
+-   Implemented TableServiceClient to support operations on tables in the storage account.
 
 ## [3.2.1] - 2024-07-09
 
@@ -43,7 +45,9 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.1...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.0...HEAD
+
+[3.3.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.1...v3.3.0
 
 [3.2.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.0...v3.2.1
 

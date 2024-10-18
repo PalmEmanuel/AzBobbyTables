@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Management.Automation;
 
 namespace PipeHow.AzBobbyTables.Cmdlets;
@@ -12,11 +13,11 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
     /// <summary>
     /// <para type="description">The name of the table.</para>
     /// </summary>
-    [Parameter(Mandatory = true, ParameterSetName = "ConnectionString")]
-    [Parameter(Mandatory = true, ParameterSetName = "SAS")]
-    [Parameter(Mandatory = true, ParameterSetName = "Key")]
-    [Parameter(Mandatory = true, ParameterSetName = "Token")]
-    [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity")]
+    [Parameter(ParameterSetName = "ConnectionString")]
+    [Parameter(ParameterSetName = "SAS")]
+    [Parameter(ParameterSetName = "Key")]
+    [Parameter(ParameterSetName = "Token")]
+    [Parameter(ParameterSetName = "ManagedIdentity")]
     [ValidateNotNullOrEmpty()]
     public string TableName { get; set; }
 
@@ -80,6 +81,10 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
         // Try parsing ParameterSetName to enum AzDataTableConnectionType, write error if it fails
         if (!Enum.TryParse(ParameterSetName, out AzDataTableConnectionType connectionType))
             WriteError(new ErrorRecord(new ArgumentException("Incorrect connection type!"), "ConnectionTypeError", ErrorCategory.InvalidType, connectionType));
+
+        if (string.IsNullOrWhiteSpace(TableName)) {
+            WriteWarning("No table name was provided! This table context will not be able to operate on table data, only the storage account.");
+        }
 
         // Output the AzDataTableContext to user for further operations
         WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, ClientId, Token));

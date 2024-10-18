@@ -7,11 +7,11 @@ BeforeDiscovery {
             Name          = 'TableName'
             Type          = 'string'
             ParameterSets = @(
-                @{ Name = 'ConnectionString'; Mandatory = $true }
-                @{ Name = 'SAS'; Mandatory = $true }
-                @{ Name = 'Key'; Mandatory = $true }
-                @{ Name = 'Token'; Mandatory = $true }
-                @{ Name = 'ManagedIdentity'; Mandatory = $true }
+                @{ Name = 'ConnectionString'; Mandatory = $false }
+                @{ Name = 'SAS'; Mandatory = $false }
+                @{ Name = 'Key'; Mandatory = $false }
+                @{ Name = 'Token'; Mandatory = $false }
+                @{ Name = 'ManagedIdentity'; Mandatory = $false }
             )
         }
         @{

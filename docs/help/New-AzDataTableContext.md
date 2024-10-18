@@ -15,32 +15,32 @@ Creates a context object with authentication information for the table to operat
 
 ### ConnectionString
 ```
-New-AzDataTableContext -TableName <String> -ConnectionString <String>
+New-AzDataTableContext [-TableName <String>] -ConnectionString <String>
  [<CommonParameters>]
 ```
 
 ### SAS
 ```
-New-AzDataTableContext -TableName <String> -SharedAccessSignature <Uri>
+New-AzDataTableContext [-TableName <String>] -SharedAccessSignature <Uri>
  [<CommonParameters>]
 ```
 
 ### Key
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> -StorageAccountKey <String>
+New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> -StorageAccountKey <String>
  [<CommonParameters>]
 ```
 
 ### Token
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> -Token <String>
+New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> -Token <String>
  [<CommonParameters>]
 ```
 
 ### ManagedIdentity
 ```
-New-AzDataTableContext -TableName <String> -StorageAccountName <String> [-ManagedIdentity] [-ClientId <String>]
- [<CommonParameters>]
+New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> [-ManagedIdentity]
+ [-ClientId <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -196,7 +196,7 @@ Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

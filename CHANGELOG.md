@@ -4,6 +4,14 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added command `Get-AzDataTable` to get the names of tables in a storage account [#77](https://github.com/PalmEmanuel/AzBobbyTables/issues/77)
+
+### Changed
+
+- Implemented TableServiceClient to support operations on tables in the storage account.
+
 ## [3.2.1] - 2024-07-09
 
 ### Fixed

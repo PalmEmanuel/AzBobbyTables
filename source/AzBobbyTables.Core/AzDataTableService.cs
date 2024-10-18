@@ -12,6 +12,7 @@ namespace PipeHow.AzBobbyTables.Core;
 public class AzDataTableService
 {
     private TableClient? TableClient { get; set; }
+    private TableServiceClient? TableServiceClient { get; set; }
 
     /// <summary>
     /// Cancellation token used within the AzDataTableService.
@@ -55,15 +56,22 @@ public class AzDataTableService
         try
         {
             var dataTableService = new AzDataTableService(cancellationToken);
-        
-            TableClient client = new(connectionString, tableName);
 
-            if (createIfNotExists)
+            TableServiceClient serviceClient = new(connectionString);
+
+            if (tableName is not null)
             {
-                CreateIfNotExists(client, cancellationToken);
+                TableClient client = new(connectionString, tableName);
+
+                if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
+                {
+                    CreateIfNotExists(client, cancellationToken);
+                }
+
+                dataTableService.TableClient = client;
             }
 
-            dataTableService.TableClient = client;
+            dataTableService.TableServiceClient = serviceClient;
             return dataTableService;
         }
         catch (Exception ex)
@@ -78,15 +86,24 @@ public class AzDataTableService
         {
             var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
-        
-            TableClient client = new(tableEndpoint, tableName, new TableSharedKeyCredential(storageAccountName, storageAccountKey));
 
-            if (createIfNotExists)
+            var sasCredential = new TableSharedKeyCredential(storageAccountName, storageAccountKey);
+
+            TableServiceClient serviceClient = new(tableEndpoint, sasCredential);
+
+            if (tableName is not null)
             {
-                CreateIfNotExists(client, cancellationToken);
+                TableClient client = new(tableEndpoint, tableName, sasCredential);
+
+                if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
+                {
+                    CreateIfNotExists(client, cancellationToken);
+                }
+
+                dataTableService.TableClient = client;
             }
 
-            dataTableService.TableClient = client;
+            dataTableService.TableServiceClient = serviceClient;
             return dataTableService;
         }
         catch (Exception ex)
@@ -102,14 +119,20 @@ public class AzDataTableService
             var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
 
-            TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+            TableServiceClient serviceClient = new(tableEndpoint, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
 
-            if (createIfNotExists)
+            if (tableName is not null)
             {
-                CreateIfNotExists(client, cancellationToken);
-            }
+                TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
 
-            dataTableService.TableClient = client;
+                if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
+                {
+                    CreateIfNotExists(client, cancellationToken);
+                }
+
+                dataTableService.TableClient = client;
+            }
+            dataTableService.TableServiceClient = serviceClient;
             return dataTableService;
         }
         catch (Exception ex)
@@ -126,22 +149,30 @@ public class AzDataTableService
             // The credential is built only using the token
             var sasCredential = new AzureSasCredential(sasUrl.Query);
 
+            // Extract the base URL (without the table name)
+            var baseUrl = new Uri(sasUrl.GetLeftPart(UriPartial.Authority));
+
             // If the user did not specify a full endpoint to the table
             if (!sasUrl.ToString().Contains($"/{tableName}?"))
             {
                 // Insert the table name before the URL parameters
                 var urlParts = sasUrl.ToString().Split('?');
-                sasUrl = new Uri($"{urlParts.First()}{tableName}?{urlParts.Last()}");
+                sasUrl = new Uri($"{urlParts.First().TrimEnd('/')}/{tableName}?{urlParts.Last()}");
             }
-        
-            TableClient client = new(sasUrl, sasCredential);
 
-            if (createIfNotExists)
+            TableServiceClient serviceClient = new TableServiceClient(baseUrl, sasCredential);
+            if (tableName is not null)
             {
-                CreateIfNotExists(client, cancellationToken);
-            }
+                TableClient client = new(sasUrl, sasCredential);
 
-            dataTableService.TableClient = client;
+                if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
+                {
+                    CreateIfNotExists(client, cancellationToken);
+                }
+
+                dataTableService.TableClient = client;
+            }
+            dataTableService.TableServiceClient = serviceClient;
             return dataTableService;
         }
         catch (Exception ex)
@@ -150,8 +181,32 @@ public class AzDataTableService
         }
     }
 
+    /// <summary>
+    /// Get a list of tables from the storage account.
+    /// </summary>
+    /// <param name="filter">The filter string to use in the query.</param>
+    /// <returns>The list of tables as strings.</returns>
+    public IEnumerable<string> GetTables(string filter)
+    {
+        try
+        {
+            var tables = TableServiceClient!.Query(filter, null, CancellationToken);
+            // Return Name property of each table
+            return tables.Select(t => t.Name);
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "GetTablesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Remove a table from the storage account.
+    /// </summary>
     public void RemoveTable()
     {
+        ValidateTableClient();
+
         try
         {
             TableClient?.Delete();
@@ -170,6 +225,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -204,6 +261,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -246,6 +305,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -290,6 +351,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, bool overwrite = false)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -334,6 +397,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -377,6 +442,8 @@ public class AzDataTableService
     /// <returns>The result of the transaction.</returns>
     public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
     {
+        ValidateTableClient();
+
         try
         {
             var transactions = new List<TableTransactionAction>();
@@ -420,6 +487,8 @@ public class AzDataTableService
     /// <returns>The result of the query.</returns>
     public IEnumerable<PSObject> GetEntitiesFromTable(string query, string[] properties = null!, int? top = null, int? skip = null, string[] orderBy = null!)
     {
+        ValidateTableClient();
+
         try
         {
             // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
@@ -475,6 +544,8 @@ public class AzDataTableService
     /// </summary>
     public void ClearTable()
     {
+        ValidateTableClient();
+
         try
         {
             var entities = TableClient!.Query<TableEntity>((string)null!, null, new[] { "PartitionKey", "RowKey" });
@@ -496,6 +567,8 @@ public class AzDataTableService
     /// </summary>
     private void SubmitTransaction(IList<TableTransactionAction> transactions)
     {
+        ValidateTableClient();
+
         // Transactions only support up to 100 entities of the same partitionkey
         // Loop through transactions grouped by partitionkey
         foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
@@ -505,6 +578,17 @@ public class AzDataTableService
             {
                 var response = TableClient!.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
             }
+        }
+    }
+
+    /// <summary>
+    /// Validate that the TableName is set in the context.
+    /// </summary>
+    private void ValidateTableClient()
+    {
+        if (TableClient is null)
+        {
+            throw new AzDataTableException(new ErrorRecord(new InvalidOperationException("Table name is not set in the TableContext, please create a new context for this operation!"), "TableClientError", ErrorCategory.InvalidOperation, null));
         }
     }
 }

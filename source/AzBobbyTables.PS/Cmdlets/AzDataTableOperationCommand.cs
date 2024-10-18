@@ -44,6 +44,15 @@ public class AzDataTableOperationCommand : AzDataTableCommand
     // Determine way to create AzDataTableService by using the provided Context, created with from New-AzDataTableContext
     private AzDataTableService CreateWithContext(AzDataTableContext context, bool createIfNotExists, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(context.TableName) && createIfNotExists)
+        {
+            throw new AzDataTableException(new ErrorRecord(
+                new InvalidOperationException("The provided TableContext must have a table name specified to create it."),
+                "TableNameRequiredError",
+                ErrorCategory.InvalidArgument,
+                null));
+        }
+
         try
         {
             return context.ConnectionType switch

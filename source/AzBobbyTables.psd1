@@ -67,6 +67,7 @@ FunctionsToExport = @()
 CmdletsToExport = @(
     'Add-AzDataTableEntity'
     'Clear-AzDataTable'
+    'Get-AzDataTable'
     'Get-AzDataTableEntity'
     'Remove-AzDataTableEntity'
     'Update-AzDataTableEntity'

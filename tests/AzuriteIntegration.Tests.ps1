@@ -77,9 +77,22 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             $ConnectionString = 'UseDevelopmentStorage=true'
         }
 
-        It 'can create table' {
+        It 'can create table context with table name' {
+            { New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString } | Should -Not -Throw
+        }
+
+        It 'can create table context without table name' {
+            { New-AzDataTableContext -ConnectionString $ConnectionString } | Should -Not -Throw
+        }
+
+        It 'can create table with context containing table name' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             { $null = New-AzDataTable -Context $Context } | Should -Not -Throw
+        }
+
+        It 'cannot create table with context missing table name' {
+            $Context = New-AzDataTableContext -ConnectionString $ConnectionString
+            { $null = New-AzDataTable -Context $Context } | Should -Throw
         }
 
         It 'can add data' {
@@ -178,6 +191,38 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                 $ExpectedData = Get-ComparableHash ($UsersHashtable | Where-Object { $_['Id'] -eq $User.Id })
                 Get-ComparableHash $User | Should -Be $ExpectedData
             }
+            { Remove-AzDataTable -Context $Context } | Should -Not -Throw
+        }
+
+        It 'can get all tables from storage account with context containing table name' {
+            $Context = New-AzDataTableContext -TableName "${TableName}1" -ConnectionString $ConnectionString
+            { $null = New-AzDataTable -Context $Context } | Should -Not -Throw
+            $Context = New-AzDataTableContext -TableName "${TableName}2" -ConnectionString $ConnectionString
+            { $null = New-AzDataTable -Context $Context } | Should -Not -Throw
+            $Tables = Get-AzDataTable -Context $Context
+            $Tables | Should -Contain "${TableName}1"
+            $Tables | Should -Contain "${TableName}2"
+            $Tables.Count | Should -BeExactly 2
+        }
+
+        It 'can get all tables from storage account with context missing table name' {
+            $Context = New-AzDataTableContext -ConnectionString $ConnectionString
+            $Tables = Get-AzDataTable -Context $Context
+            $Tables | Should -Contain "${TableName}1"
+            $Tables | Should -Contain "${TableName}2"
+            $Tables.Count | Should -BeExactly 2
+        }
+
+        It 'can get specific table with filter from storage account with context containing table name' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Table = Get-AzDataTable -Context $Context -Filter "TableName eq '${TableName}1'"
+            $Table | Should -BeExactly "${TableName}1"
+        }
+
+        It 'can get specific table with filter from storage account with context missing table name' {
+            $Context = New-AzDataTableContext -ConnectionString $ConnectionString
+            $Table = Get-AzDataTable -Context $Context -Filter "TableName eq '${TableName}2'"
+            $Table | Should -BeExactly "${TableName}2"
         }
 
         AfterAll {

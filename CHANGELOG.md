@@ -6,6 +6,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [3.3.0] - 2024-10-18
 
+## [3.3.0] - 2024-10-18
+
 ### Added
 
 -   Added command `Get-AzDataTable` to get the names of tables in a storage account [#77](https://github.com/PalmEmanuel/AzBobbyTables/issues/77)
@@ -46,6 +48,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 ## 3.1.1 - 2023-05-03
 
 [Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.0...HEAD
+
+[3.3.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.0...v3.3.0
 
 [3.3.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.2.1...v3.3.0
 

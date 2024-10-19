@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added `-OperationType` parameter to `Add-AzDataTableEntity` and `Update-AzDataTableEntity` to support merge or replace operations [#81](https://github.com/PalmEmanuel/AzBobbyTables/pull/81)
+
 ## [3.3.0] - 2024-10-18
 
 ### Added

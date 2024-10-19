@@ -1,4 +1,5 @@
-﻿using PipeHow.AzBobbyTables.Validation;
+﻿using PipeHow.AzBobbyTables.Core;
+using PipeHow.AzBobbyTables.Validation;
 using System;
 using System.Collections;
 using System.Linq;
@@ -27,6 +28,13 @@ public class UpdateAzDataTableEntity : AzDataTableOperationCommand
     public object[] Entity { get; set; }
 
     /// <summary>
+    /// <para type="description">The type of operation to perform on the entities, defaults to Add.</para>
+    /// </summary>
+    [Parameter()]
+    [ValidateSet("UpdateMerge", "UpdateReplace")]
+    public string OperationType { get; set; } = "UpdateMerge";
+
+    /// <summary>
     /// <para type="description">Skips ETag validation and updates entity even if it has changed.</para>
     /// </summary>
     [Parameter()]
@@ -43,15 +51,18 @@ public class UpdateAzDataTableEntity : AzDataTableOperationCommand
             return;
         }
 
+        var operationTypeValue = Enum.TryParse<OperationTypeEnum>(OperationType, true, out var operationType)
+            ? operationType : throw new ArgumentException($"Operation type {OperationType} is not valid!");
+
         try
         {
             switch (Entity.First())
             {
                 case Hashtable:
-                    tableService.UpdateEntitiesInTable(Entity.Cast<Hashtable>(), !Force.IsPresent);
+                    tableService.UpdateEntitiesInTable(Entity.Cast<Hashtable>(), operationTypeValue, !Force.IsPresent);
                     break;
                 case PSObject:
-                    tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>(), !Force.IsPresent);
+                    tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>(), operationTypeValue, !Force.IsPresent);
                     break;
                 default:
                     throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");

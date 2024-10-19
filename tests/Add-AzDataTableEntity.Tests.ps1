@@ -7,7 +7,8 @@ BeforeDiscovery {
             Name          = 'Context'
             Type          = 'PipeHow.AzBobbyTables.AzDataTableContext'
             ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $true }
+                @{ Name = 'OperationType'; Mandatory = $true }
+                @{ Name = 'Force'; Mandatory = $true }
             )
         }
         @{
@@ -15,7 +16,16 @@ BeforeDiscovery {
             Name          = 'Entity'
             Type          = 'System.Object[]'
             ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $true }
+                @{ Name = 'OperationType'; Mandatory = $true }
+                @{ Name = 'Force'; Mandatory = $true }
+            )
+        }
+        @{
+            Command       = $Command
+            Name          = 'OperationType'
+            Type          = 'System.String'
+            ParameterSets = @(
+                @{ Name = 'OperationType'; Mandatory = $false }
             )
         }
         @{
@@ -23,7 +33,7 @@ BeforeDiscovery {
             Name          = 'Force'
             Type          = 'System.Management.Automation.SwitchParameter'
             ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $false }
+                @{ Name = 'Force'; Mandatory = $true }
             )
         }
         @{
@@ -31,7 +41,8 @@ BeforeDiscovery {
             Name          = 'CreateTableIfNotExists'
             Type          = 'System.Management.Automation.SwitchParameter'
             ParameterSets = @(
-                @{ Name = '__AllParameterSets'; Mandatory = $false }
+                @{ Name = 'OperationType'; Mandatory = $false }
+                @{ Name = 'Force'; Mandatory = $false }
             )
         }
     )

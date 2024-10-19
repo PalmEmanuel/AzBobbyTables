@@ -20,6 +20,14 @@ BeforeDiscovery {
         }
         @{
             Command       = $Command
+            Name          = 'OperationType'
+            Type          = 'System.String'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
+            )
+        }
+        @{
+            Command       = $Command
             Name          = 'Force'
             Type          = 'System.Management.Automation.SwitchParameter'
             ParameterSets = @(

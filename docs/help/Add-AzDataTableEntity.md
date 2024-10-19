@@ -13,6 +13,13 @@ Add one or more entities to an Azure Table.
 
 ## SYNTAX
 
+### OperationType (Default)
+```
+Add-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-OperationType <String>]
+ [-CreateTableIfNotExists] [<CommonParameters>]
+```
+
+### Force
 ```
 Add-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force] [-CreateTableIfNotExists]
  [<CommonParameters>]
@@ -45,6 +52,18 @@ PS C:\> Add-AzDataTableEntity -Entity $Users -Context $Context -Force
 ```
 
 Add multiple users to a table using a shared access signature URL, overwriting any existing rows.
+
+### Example 3
+
+```powershell
+PS C:\> $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+PS C:\> $Users = @(
+>>  @{ FirstName = 'Bobby'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '1' },
+>>  @{ FirstName = 'Bobby Junior'; LastName = 'Tables'; PartitionKey = 'Example'; RowKey = '2' } )
+PS C:\> Add-AzDataTableEntity -Entity $Users -Context $Context -OperationType 'UpsertMerge'
+```
+
+Add multiple users to a table using a connection string, merging entities with any existing rows.
 
 ## PARAMETERS
 
@@ -102,8 +121,27 @@ Overwrites provided entities if they exist.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: Force
 Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -OperationType
+
+The operation type to perform on the entities. See the Azure SDK documentation for more information:
+
+https://learn.microsoft.com/en-us/dotnet/api/azure.data.tables.tabletransactionactiontype
+
+```yaml
+Type: String
+Parameter Sets: OperationType
+Aliases:
+Accepted values: Add, UpsertReplace, UpsertMerge
 
 Required: False
 Position: Named

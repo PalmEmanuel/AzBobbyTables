@@ -9,6 +9,19 @@ using System.Threading;
 
 namespace PipeHow.AzBobbyTables.Core;
 
+/// <summary>
+/// An internal representation of the TableTransactionActionType enum.
+/// </summary>
+public enum OperationTypeEnum
+{
+    Add,
+    Delete,
+    UpdateMerge,
+    UpdateReplace,
+    UpsertMerge,
+    UpsertReplace
+}
+
 public class AzDataTableService
 {
     private TableClient? TableClient { get; set; }
@@ -38,6 +51,11 @@ public class AzDataTableService
     };
 
     private AzDataTableService(CancellationToken cancellationToken) => CancellationToken = cancellationToken;
+
+    private TableTransactionActionType ConvertOperationType(OperationTypeEnum operationType) =>
+        Enum.TryParse(operationType.ToString(), out TableTransactionActionType transactionType)
+            ? transactionType
+            : throw new ArgumentException($"Invalid operation type: {operationType}");
 
     private static void CreateIfNotExists(TableClient client, CancellationToken cancellationToken)
     {
@@ -303,7 +321,7 @@ public class AzDataTableService
     /// <param name="hashtables">The entities to add.</param>
     /// <param name="overwrite">Whether or not to update already existing entities.</param>
     /// <returns>The result of the transaction.</returns>
-    public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, bool overwrite = false)
+    public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, OperationTypeEnum operationType)
     {
         ValidateTableClient();
 
@@ -332,8 +350,9 @@ public class AzDataTableService
                 return entity;
             });
 
-            TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
+            var transactionType = ConvertOperationType(operationType);
+            
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e)));
 
             SubmitTransaction(transactions);
         }
@@ -347,9 +366,8 @@ public class AzDataTableService
     /// Add one or more entities to a table.
     /// </summary>
     /// <param name="psobjects">The entities to add.</param>
-    /// <param name="overwrite">Whether or not to update already existing entities.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, bool overwrite = false)
+    /// <param name="operationType">The type of operation to perform.</param>
+    public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, OperationTypeEnum operationType)
     {
         ValidateTableClient();
 
@@ -378,8 +396,8 @@ public class AzDataTableService
                 return entity;
             });
 
-            TableTransactionActionType type = overwrite ? TableTransactionActionType.UpsertReplace : TableTransactionActionType.Add;
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(type, e)));
+            var transactionType = ConvertOperationType(operationType);
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e)));
 
             SubmitTransaction(transactions);
         }
@@ -393,9 +411,10 @@ public class AzDataTableService
     /// Updates one or more entities in a table.
     /// </summary>
     /// <param name="hashtables">The entities to update.</param>
+    /// <param name="operationType">The type of operation to perform.</param>
     /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
+    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables, OperationTypeEnum operationType, bool validateEtag = true)
     {
         ValidateTableClient();
 
@@ -424,7 +443,9 @@ public class AzDataTableService
                 return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e, validateEtag ? e.ETag : default)));
+            var transactionType = ConvertOperationType(operationType);
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }
@@ -440,7 +461,7 @@ public class AzDataTableService
     /// <param name="psobjects">The entities to update.</param>
     /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
     /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
+    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects, OperationTypeEnum operationType, bool validateEtag = true)
     {
         ValidateTableClient();
 
@@ -469,7 +490,9 @@ public class AzDataTableService
                 return entity;
             });
 
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.UpdateMerge, e, validateEtag ? e.ETag : default)));
+            var transactionType = ConvertOperationType(operationType);
+
+            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }

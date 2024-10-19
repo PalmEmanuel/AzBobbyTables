@@ -14,7 +14,7 @@ Update one or more entities in an Azure Table.
 ## SYNTAX
 
 ```
-Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Force]
+Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-OperationType <String>] [-Force]
  [<CommonParameters>]
 ```
 
@@ -96,6 +96,25 @@ Skips ETag validation and updates entity even if it has changed.
 Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -OperationType
+
+The operation type to perform on the entities. See the Azure SDK documentation for more information:
+
+https://learn.microsoft.com/en-us/dotnet/api/azure.data.tables.tabletransactionactiontype
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: UpdateMerge, UpdateReplace
 
 Required: False
 Position: Named

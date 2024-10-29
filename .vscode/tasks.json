@@ -11,6 +11,9 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "args": [
+                "build",
+            ],
             "presentation": {
                 "reveal": "always"
             },

@@ -78,7 +78,7 @@ BuildWorkflow:
     #- Convert_Pester_Coverage
     # - Pester_if_Code_Coverage_Under_Threshold
 
-  # Use this task when you have multiple parallel tests, which produce multiplehttps://riktigtkaffe.se/
+  # Use this task when you have multiple parallel tests, which produce multiple
   # code coverage files and needs to get merged into one file.
   #merge:
     #- Merge_CodeCoverage_Files
@@ -113,7 +113,6 @@ ModuleBuildTasks:
   Sampler.GitHubTasks:
     - '*.ib.tasks'
 
-
 # Invoke-Build Header to be used to 'decorate' the terminal output of the tasks.
 TaskHeader: |
   param($Path)
@@ -125,9 +124,3 @@ TaskHeader: |
   Write-Build DarkGray "  $Path"
   Write-Build DarkGray "  $($Task.InvocationInfo.ScriptName):$($Task.InvocationInfo.ScriptLineNumber)"
   ""
-
-
-
-
-
-

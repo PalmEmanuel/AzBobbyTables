@@ -14,7 +14,7 @@
                 "-NoExit",
                 "-NoProfile",
                 "-Command",
-                "Import-Module ${workspaceFolder}/out/AzBobbyTables.psd1",
+                "Import-Module ${workspaceFolder}/output/AzBobbyTables -Verbose",
             ],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

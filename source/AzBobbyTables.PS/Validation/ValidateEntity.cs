@@ -19,21 +19,21 @@ class ValidateEntityAttribute : ValidateArgumentsAttribute
         switch (firstEntity)
         {
             case Hashtable hashtable:
-                if (!hashtable.ContainsKey("PartitionKey"))
-                {
-                    throw new ArgumentException("PartitionKey must be provided in the input hashtable entity in the correct casing!");
-                }
-                if (!hashtable.ContainsKey("RowKey"))
-                {
-                    throw new ArgumentException("RowKey must be provided in the input hashtable entity in the correct casing!");
-                }
-                break;
+            if (!hashtable.Keys.Cast<string>().Any(key => key.Equals("PartitionKey", StringComparison.Ordinal)))
+            {
+                throw new ArgumentException("PartitionKey must be provided in the input hashtable entity in the correct casing!");
+            }
+            if (!hashtable.Keys.Cast<string>().Any(key => key.Equals("RowKey", StringComparison.Ordinal)))
+            {
+                throw new ArgumentException("RowKey must be provided in the input hashtable entity in the correct casing!");
+            }
+            break;
             case PSObject psobject:
-                if (!psobject.Properties.Any(p => p.Name == "PartitionKey"))
+                if (!psobject.Properties.Any(p => p.Name.Equals("PartitionKey", StringComparison.Ordinal)))
                 {
                     throw new ArgumentException("PartitionKey must be provided in the input psobject entity in the correct casing!");
                 }
-                if (!psobject.Properties.Any(p => p.Name == "RowKey"))
+                if (!psobject.Properties.Any(p => p.Name.Equals("RowKey", StringComparison.Ordinal)))
                 {
                     throw new ArgumentException("RowKey must be provided in the input psobject entity in the correct casing!");
                 }

@@ -55,6 +55,37 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                     'Prop1'        = 'Lorem ipsum.'
                 }
             }
+            $MissingPartitionKeyUsersHashtable = 1..4 | ForEach-Object {
+                @{
+                    'RowKey'       = "$_"
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
+            $MissingRowKeyUsersHashtable = 1..4 | ForEach-Object {
+                @{
+                    'PartitionKey' = 'AzBobbyTables'
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
+            $InvalidCasingUsersHashtable = 1..4 | ForEach-Object {
+                @{
+                    'partitionKey' = 'AzBobbyTables'
+                    'rowkey'       = "$_"
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
             $UpdatedUsersHashtable = 1..4 | ForEach-Object {
                 @{
                     'PartitionKey' = 'AzBobbyTables'
@@ -95,6 +126,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             { $null = New-AzDataTable -Context $Context } | Should -Throw
         }
 
+        It 'cannot add invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Add-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersHashtable } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Add-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersHashtable } | Should -Throw -Because 'The data is missing RowKey'
+            { Add-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersHashtable } | Should -Throw -Because 'The keys in the data have invalid casing'
+        }
+
         It 'can add data' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             $AddResult = Add-AzDataTableEntity -Context $Context -Entity $UsersHashtable
@@ -104,6 +142,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                 $ExpectedData = Get-ComparableHash ($UsersHashtable | Where-Object { $_['Id'] -eq $User.Id })
                 Get-ComparableHash $User | Should -Be $ExpectedData
             }
+        }
+
+        It 'cannot update entities using invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Update-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersHashtable } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Update-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersHashtable } | Should -Throw -Because 'The data is missing RowKey'
+            { Update-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersHashtable } | Should -Throw -Because 'The keys in the data have invalid casing'
         }
 
         It 'can update entities' {
@@ -141,6 +186,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
         It 'can get count of entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
+        }
+
+        It 'cannot remove entities using invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Remove-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersHashtable } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Remove-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersHashtable } | Should -Throw -Because 'The data is missing RowKey'
+            { Remove-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersHashtable } | Should -Throw -Because 'The keys in the data have invalid casing'
         }
 
         It 'can remove entities' {
@@ -246,6 +298,37 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                     'Prop1'        = 'Lorem ipsum.'
                 }
             }
+            $MissingPartitionKeyUsersPSObjects = 1..4 | ForEach-Object {
+                [pscustomobject]@{
+                    'RowKey'       = "$_"
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
+            $MissingRowKeyUsersPSObjects = 1..4 | ForEach-Object {
+                [pscustomobject]@{
+                    'PartitionKey' = 'AzBobbyTables'
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
+            $InvalidCasingUsersPSObjects = 1..4 | ForEach-Object {
+                [pscustomobject]@{
+                    'partitionKey' = 'AzBobbyTables'
+                    'rowkey'       = "$_"
+                    'FirstName'    = "Bobby$_"
+                    'LastName'     = "Tables$_"
+                    'Id'           = "$_"
+                    'Value1'       = 1111111111
+                    'Prop1'        = 'Lorem ipsum.'
+                }
+            }
             $UpdatedUsersPSObjects = 1..4 | ForEach-Object {
                 [pscustomobject]@{
                     'PartitionKey' = 'AzBobbyTables'
@@ -273,6 +356,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             New-AzDataTable -Context $Context | Should -BeNullOrEmpty
         }
 
+        It 'cannot add invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Add-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersPSObjects } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Add-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersPSObjects } | Should -Throw -Because 'The data is missing RowKey'
+            { Add-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersPSObjects } | Should -Throw -Because 'The keys in the data have invalid casing'
+        }
+
         It 'can add data' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Add-AzDataTableEntity -Context $Context -Entity $UsersPSObjects | Should -BeNullOrEmpty
@@ -281,6 +371,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                 $ExpectedData = Get-ComparableHash ($UsersPSObjects | Where-Object { $_.Id -eq $User.Id })
                 Get-ComparableHash $User | Should -Be $ExpectedData
             }
+        }
+
+        It 'cannot update entities using invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Update-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersPSObjects } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Update-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersPSObjects } | Should -Throw -Because 'The data is missing RowKey'
+            { Update-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersPSObjects } | Should -Throw -Because 'The keys in the data have invalid casing'
         }
 
         It 'can update entities' {
@@ -317,6 +414,13 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
         It 'can get count of entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4
+        }
+
+        It 'cannot remove entities with invalid data' {
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            { Remove-AzDataTableEntity -Context $Context -Entity $MissingPartitionKeyUsersPSObjects } | Should -Throw -Because 'The data is missing PartitionKey'
+            { Remove-AzDataTableEntity -Context $Context -Entity $MissingRowKeyUsersPSObjects } | Should -Throw -Because 'The data is missing RowKey'
+            { Remove-AzDataTableEntity -Context $Context -Entity $InvalidCasingUsersPSObjects } | Should -Throw -Because 'The keys in the data have invalid casing'
         }
 
         It 'can remove entities' {

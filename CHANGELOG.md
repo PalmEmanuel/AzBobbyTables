@@ -6,6 +6,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [3.3.2] - 2025-02-26
 
+### Fixed
+
+- Fixed bug where validation for Partition- and RowKey was not checking case sensitivity [#68](https://github.com/PalmEmanuel/AzBobbyTables/pull/81)
+
 ## [3.3.1] - 2024-10-19
 
 ### Added

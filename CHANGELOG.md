@@ -4,6 +4,12 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.3.2] - 2025-02-26
+
+### Fixed
+
+- Fixed bug where validation for Partition- and RowKey was not checking case sensitivity [#68](https://github.com/PalmEmanuel/AzBobbyTables/pull/81)
+
 ## [3.3.1] - 2024-10-19
 
 ### Added
@@ -51,7 +57,9 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.1...HEAD
+[Unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.2...HEAD
+
+[3.3.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.1...v3.3.2
 
 [3.3.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.0...v3.3.1
 

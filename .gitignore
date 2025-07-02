@@ -363,3 +363,5 @@ __*
 markdownissues.txt
 
 output/
+
+.DS_Store

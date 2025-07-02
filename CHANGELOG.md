@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- Dependency version bumps
+
 ## [3.3.2] - 2025-02-26
 
 ### Fixed

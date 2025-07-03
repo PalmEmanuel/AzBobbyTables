@@ -1,5 +1,6 @@
 using Azure.Data.Tables;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 
@@ -30,7 +31,7 @@ public class PSObjectEntityConverter : IEntityConverter
     public TableEntity ConvertToTableEntity(object obj)
     {
         if (obj is not PSObject psobject)
-            throw new ArgumentException($"Object is not a PSObject: {obj?.GetType().FullName}");
+            throw new ArgumentException($"Object is not a PSObject, its type is '{obj?.GetType().FullName}'");
 
         var entity = new TableEntity();
         
@@ -51,5 +52,39 @@ public class PSObjectEntityConverter : IEntityConverter
         }
 
         return entity;
+    }
+
+    public bool ValidateEntityPropertyTypes(object obj, out IEnumerable<string>? unsupportedProperties)
+    {
+        if (obj is not PSObject psobject)
+        {
+            throw new ArgumentException($"Object is not a PSObject, its type is '{obj?.GetType().FullName}'");
+        }
+
+        unsupportedProperties = null;
+
+        // Ensure that all property values are of supported types
+        unsupportedProperties = psobject.Properties
+            .Where(p => p.Value is not null && !AzDataTableService.SupportedTypeList.Contains(p.Value.GetType().Name.ToLower()))
+            .Select(p => p.Name);
+
+        return !unsupportedProperties.Any();
+    }
+
+    public bool ValidateEntityPropertyValuesNotNull(object obj, out IEnumerable<string>? nullProperties)
+    {
+        if (obj is not PSObject psobject)
+        {
+            throw new ArgumentException($"Object is not a PSObject, its type is '{obj?.GetType().FullName}'");
+        }
+
+        nullProperties = null;
+
+        // Find any properties with null values
+        nullProperties = psobject.Properties
+            .Where(p => p.Value is null)
+            .Select(p => p.Name);
+        
+        return !nullProperties.Any();
     }
 }

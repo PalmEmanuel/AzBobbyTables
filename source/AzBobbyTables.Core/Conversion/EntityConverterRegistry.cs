@@ -47,6 +47,32 @@ public class EntityConverterRegistry
     }
 
     /// <summary>
+    /// Validates that the object does not contain unsupported property types.
+    /// </summary>
+    /// <param name="obj">The object to validate.</param>
+    /// <param name="unsupportedProperties">Outputs the names of unsupported properties, if any.</param>
+    /// <returns>True if the object has no unsupported property types.</returns>
+    public bool ValidateEntityPropertyTypes(object obj, out IEnumerable<string>? unsupportedProperties)
+    {
+        var converter = GetConverter(obj);
+        unsupportedProperties = null;
+        return converter?.ValidateEntityPropertyTypes(obj, out unsupportedProperties) ?? false;
+    }
+
+    /// <summary>
+    /// Validates that the object does not contain null property values.
+    /// </summary>
+    /// <param name="obj">The object to validate.</param>
+    /// <param name="nullProperties">Outputs the names of properties with null values, if any.</param>
+    /// <returns>True if the object has no property with a null value.</returns>
+    public bool ValidateEntityPropertyValuesNotNull(object obj, out IEnumerable<string>? nullProperties)
+    {
+        var converter = GetConverter(obj);
+        nullProperties = null;
+        return converter?.ValidateEntityPropertyValuesNotNull(obj, out nullProperties) ?? false;
+    }
+
+    /// <summary>
     /// Gets all registered converter type names.
     /// </summary>
     /// <returns>A list of supported type names.</returns>

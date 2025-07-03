@@ -1,6 +1,7 @@
 using Azure.Data.Tables;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PipeHow.AzBobbyTables.Core.Conversion;
@@ -30,7 +31,7 @@ public class SortedListEntityConverter : IEntityConverter
     public TableEntity ConvertToTableEntity(object obj)
     {
         if (obj is not SortedList sortedList)
-            throw new ArgumentException($"Object is not a SortedList: {obj?.GetType().FullName}");
+            throw new ArgumentException($"Object is not a SortedList, its type is '{obj?.GetType().FullName}'");
 
         var entity = new TableEntity();
         
@@ -51,5 +52,42 @@ public class SortedListEntityConverter : IEntityConverter
         }
 
         return entity;
+    }
+
+    public bool ValidateEntityPropertyTypes(object obj, out IEnumerable<string>? unsupportedProperties)
+    {
+        if (obj is not SortedList sortedList)
+        {
+            throw new ArgumentException($"Object is not a SortedList, its type is '{obj?.GetType().FullName}'");
+        }
+
+        unsupportedProperties = null;
+
+        // Ensure that all keys are strings
+        if (sortedList.Keys.Cast<object>().Any(k => k is not string))
+        {
+            throw new ArgumentException("All keys in the input SortedList must be strings.");
+        }
+
+        // Check for unsupported property types
+        unsupportedProperties = sortedList.Keys.Cast<string>().Where(k => k is not null && !AzDataTableService.SupportedTypeList.Contains(sortedList[k].GetType().Name.ToLower()));
+
+        return !unsupportedProperties.Any();
+    }
+
+    public bool ValidateEntityPropertyValuesNotNull(object obj, out IEnumerable<string>? nullProperties)
+    {
+        if (obj is not SortedList sortedList)
+        {
+            throw new ArgumentException($"Object is not a SortedList, its type is '{obj?.GetType().FullName}'");
+        }
+
+        nullProperties = null;
+
+        // Find any properties with null values
+        nullProperties = sortedList.Keys.Cast<string>()
+            .Where(key => sortedList[key] is null);
+
+        return !nullProperties.Any();
     }
 }

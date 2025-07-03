@@ -45,17 +45,7 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
 
         try
         {
-            switch (Entity.First())
-            {
-                case Hashtable:
-                    tableService.RemoveEntitiesFromTable(Entity.Cast<Hashtable>(), !Force.IsPresent);
-                    break;
-                case PSObject:
-                    tableService.RemoveEntitiesFromTable(Entity.Cast<PSObject>(), !Force.IsPresent);
-                    break;
-                default:
-                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
-            }
+            tableService.RemoveEntitiesFromTable(Entity, !Force.IsPresent);
         }
         catch (AzDataTableException ex)
         {

@@ -56,17 +56,7 @@ public class UpdateAzDataTableEntity : AzDataTableOperationCommand
 
         try
         {
-            switch (Entity.First())
-            {
-                case Hashtable:
-                    tableService.UpdateEntitiesInTable(Entity.Cast<Hashtable>(), operationTypeValue, !Force.IsPresent);
-                    break;
-                case PSObject:
-                    tableService.UpdateEntitiesInTable(Entity.Cast<PSObject>(), operationTypeValue, !Force.IsPresent);
-                    break;
-                default:
-                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
-            }
+            tableService.UpdateEntitiesInTable(Entity, operationTypeValue, !Force.IsPresent);
         }
         catch (AzDataTableException ex)
         {

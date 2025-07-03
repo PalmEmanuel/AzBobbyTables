@@ -70,17 +70,7 @@ public class AddAzDataTableEntity : AzDataTableOperationCommand
 
         try
         {
-            switch (Entity.First())
-            {
-                case Hashtable:
-                    tableService.AddEntitiesToTable(Entity.Cast<Hashtable>(), operationTypeValue);
-                    break;
-                case PSObject:
-                    tableService.AddEntitiesToTable(Entity.Cast<PSObject>(), operationTypeValue);
-                    break;
-                default:
-                    throw new ArgumentException($"Entities provided were not Hashtable or PSObject! First entity was of type {Entity.GetType().FullName}!");
-            }
+            tableService.AddEntitiesToTable(Entity, operationTypeValue);
         }
         catch (AzDataTableException ex)
         {

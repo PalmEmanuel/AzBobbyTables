@@ -1,48 +1,5 @@
 Describe 'Azurite Integration Tests' -Tag 'Integration' {
     BeforeAll {
-        function Get-ComparableHash {
-            param($InputObject)
-
-            # Convert any object to a normalized hashtable for comparison
-            $NormalizedHash = @{}
-
-            # Use PowerShell's reflection to dynamically get all properties regardless of type
-            switch ($InputObject) {
-                # Handle hashtables and similar key-value collections
-                { $_ -is [System.Collections.IDictionary] } {
-                    foreach ($key in $_.Keys) {
-                        $value = $_[$key]
-                        if ($null -ne $value -and $value -ne '') {
-                            $NormalizedHash[$key] = $value
-                        }
-                    }
-                }
-                # Handle PSObjects and any other object with properties
-                default {
-                    # Use Get-Member to dynamically discover all properties
-                    $properties = $_ | Get-Member -MemberType Properties, NoteProperty | Where-Object { $_.Name -notmatch '^PS' }
-                    foreach ($prop in $properties) {
-                        try {
-                            $value = $_.$($prop.Name)
-                            if ($null -ne $value -and $value -ne '') {
-                                $NormalizedHash[$prop.Name] = $value
-                            }
-                        }
-                        catch {
-                            # Skip properties that can't be accessed
-                            continue
-                        }
-                    }
-                }
-            }
-
-            # Create a consistent string representation by sorting keys and concatenating values
-            $sortedKeys = $NormalizedHash.Keys | Sort-Object
-            $valueString = ($sortedKeys | ForEach-Object { $NormalizedHash[$_] }) -join ''
-            
-            # Return base64 encoded hash for comparison
-            [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($valueString))
-        }
 
         function New-TestData {
             param(
@@ -144,9 +101,67 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
                 }
             }
         }
+        function Get-ComparableHash {
+            param($InputObject)
+
+            # Convert any object to a normalized hashtable for comparison
+            $NormalizedHash = @{}
+
+            # Use PowerShell's reflection to dynamically get all properties regardless of type
+            switch ($InputObject) {
+                # Handle hashtables and similar key-value collections
+                { $_ -is [System.Collections.IDictionary] } {
+                    foreach ($key in $_.Keys) {
+                        $value = $_[$key]
+                        if ($null -ne $value -and $value -ne '') {
+                            $NormalizedHash[$key] = $value
+                        }
+                    }
+                }
+                # Handle PSObjects and any other object with properties
+                default {
+                    # Use Get-Member to dynamically discover all properties
+                    $properties = $_ | Get-Member -MemberType Properties, NoteProperty | Where-Object { $_.Name -notmatch '^PS' }
+                    foreach ($prop in $properties) {
+                        try {
+                            $value = $_.$($prop.Name)
+                            if ($null -ne $value -and $value -ne '') {
+                                $NormalizedHash[$prop.Name] = $value
+                            }
+                        }
+                        catch {
+                            # Skip properties that can't be accessed
+                            continue
+                        }
+                    }
+                }
+            }
+
+            # Create a consistent string representation by sorting keys and concatenating values
+            $sortedKeys = $NormalizedHash.Keys | Sort-Object
+            $valueString = ($sortedKeys | ForEach-Object { $NormalizedHash[$_] }) -join ''
+            
+            # Return base64 encoded hash for comparison
+            [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($valueString))
+        }
 
         $EntityTypes = @('Hashtable', 'PSObject', 'SortedList')
+
+        # Start single Azurite instance for all tests
+        $AzuriteLocation = "$TestDrive/azurite"
+        if (Test-Path $AzuriteLocation) {
+            Remove-Item $AzuriteLocation -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        New-Item -Path $AzuriteLocation -ItemType Directory -Force | Out-Null
+        
+        $null = Start-ThreadJob { 
+            & azurite --silent --location $using:AzuriteLocation
+        } -Name 'Azurite'
+        
+        # Wait for Azurite to start
+        Start-Sleep -Milliseconds 1000
     }
+
     BeforeDiscovery {
         # Test cases for different entity types
         $TestCases = @(
@@ -158,8 +173,6 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
 
     Context 'Entity Type <EntityType>' -ForEach $TestCases {
         BeforeAll {
-            $null = Start-ThreadJob { & azurite --silent --location "$using:TestDrive/$($using:TypeName)" } -Name 'Azurite'
-
             # Generate test data for this entity type
             $Users = New-TestData -EntityType $EntityType -DataType 'Users'
             $MissingPartitionKeyUsers = New-TestData -EntityType $EntityType -DataType 'MissingPartitionKey'
@@ -168,7 +181,9 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             $UpdatedUsers = New-TestData -EntityType $EntityType -DataType 'Updated'
             $UsersToRemove = New-TestData -EntityType $EntityType -DataType 'ToRemove' -IdRange @(1..2)
 
+            # Use unique table name for each entity type to ensure isolation
             $TableName = "AzBobbyTables$EntityType"
+            # Single connection string for all tests
             $ConnectionString = 'UseDevelopmentStorage=true'
         }
 
@@ -363,8 +378,35 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
         }
 
         AfterAll {
-            Stop-Job -Name 'Azurite'
-            Remove-Job -Name 'Azurite'
+            # Clean up tables created by this entity type test
+            try {
+                $Context = New-AzDataTableContext -ConnectionString $ConnectionString
+                $Tables = Get-AzDataTable -Context $Context | Where-Object { $_ -like "*$EntityType*" }
+                foreach ($Table in $Tables) {
+                    try {
+                        $TableContext = New-AzDataTableContext -TableName $Table -ConnectionString $ConnectionString
+                        Remove-AzDataTable -Context $TableContext -ErrorAction SilentlyContinue
+                    }
+                    catch {
+                        # Ignore cleanup errors
+                    }
+                }
+            }
+            catch {
+                # Ignore cleanup errors
+            }
+        }
+    }
+
+    AfterAll {
+        # Stop the single Azurite instance
+        Stop-Job -Name 'Azurite' -ErrorAction SilentlyContinue
+        Remove-Job -Name 'Azurite' -ErrorAction SilentlyContinue
+        
+        # Clean up the Azurite data directory
+        $AzuriteLocation = "$TestDrive/azurite"
+        if (Test-Path $AzuriteLocation) {
+            Remove-Item $AzuriteLocation -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
 

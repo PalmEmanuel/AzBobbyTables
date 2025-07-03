@@ -1,4 +1,5 @@
 ﻿using PipeHow.AzBobbyTables.Core;
+using PipeHow.AzBobbyTables.Core.Conversion;
 using System;
 using System.Collections;
 using System.Linq;
@@ -76,67 +77,45 @@ public class AzDataTableOperationCommand : AzDataTableCommand
     }
 
     /// <summary>
-    /// Validate the data types of user input to ensure it matches the supported table data types.
+    /// Validate the data types of user input to ensure it matches the supported entity and table data types.
     /// Also warn if any value is null.
     /// </summary>
     protected void ValidateEntitiesAndWarn()
     {
-        switch (((object[])MyInvocation.BoundParameters["Entity"]).First())
+        var entities = (object[])MyInvocation.BoundParameters["Entity"];
+        var firstEntity = entities.First();
+        
+        // First, validate that the entity type itself is supported
+        var registry = EntityConverterRegistry.Instance;
+        var converter = registry.GetConverter(firstEntity);
+        
+        if (converter == null)
         {
-            case Hashtable firstEntity:
-                try
-                {
-                    // Use OfType to get an enumerable of the keys, to select all values
-                    var values = firstEntity.Values.Cast<object>();
+            var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+            throw new ArgumentException($"Entity type '{firstEntity.GetType().Name}' is not supported. Supported entity types are: {supportedTypes}");
+        }
 
-                    // ValidateEntitiesAndWarn if any null values
-                    if (values.Any(v => v is null)) {
-                        WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation.");
-                    }
+        try
+        {            
+            // Check for null values
+            if (converter.ValidateEntityPropertyValuesNotNull(firstEntity, out var nullProperties) is not true)
+            {
+                WriteWarning($"One of the provided entities has at least one null property value, which will not be included in the table operation: {string.Join(", ", nullProperties)}");
+            }
 
-                    // Write warning if any values are of unsupported datatypes
-                    if (values.Any(v => v is not null && !AzDataTableService.SupportedTypeList.Contains(v.GetType().Name.ToLower())))
-                    {
-                        string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
+            // Check for unsupported property value types
+            if (converter.ValidateEntityPropertyTypes(firstEntity, out var unsupportedProperties) is not true)
+            {
+                string warningMessage = $@"An input entity has at least one property with a potentially unsupported type, please ensure that the input entities have only supported data types. Unsupported property types found:
+{string.Join(", ", unsupportedProperties)}
 
-Example of first entity provided
---------------------------------
-{string.Join("\n", firstEntity.Keys.OfType<string>().Select(k => string.Join("\n", $"[{firstEntity[k].GetType().FullName}] {k}")))}
-";
-                        WriteWarning(warningMessage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    WriteError(new ErrorRecord(ex, "EntityTypeHashtableValidationError", ErrorCategory.InvalidData, firstEntity));
-                }
-                break;
-            case PSObject firstEntity:
-                try
-                {
-                    // Use OfType to get an enumerable of the keys, to select all values
-                    var properties = firstEntity.Properties;
-                    // ValidateEntitiesAndWarn if any null values
-                    if (properties.Any(p => p.Value is null)) { WriteWarning("One of the provided entities has a null property value, which will not be included to the table operation."); }
-
-                    if (properties.Any(p => p.Value is not null && !AzDataTableService.SupportedTypeList.Contains(p.Value.GetType().Name.ToLower())))
-                    {
-                        string warningMessage = $@"An input entity has a field with a potentially unsupported type, please ensure that the input entities have only supported data types: https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types
-
-Example of first entity provided
---------------------------------
-{string.Join("\n", firstEntity.Properties.Select(p => string.Join("\n", $"[{p.Value.GetType().FullName}] {p.Name}")))}
-";
-                        WriteWarning(warningMessage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    WriteError(new ErrorRecord(ex, "EntityTypePSObjectValidationError", ErrorCategory.InvalidData, firstEntity));
-                }
-                break;
-            default:
-                throw new ArgumentException("Entities provided were not Hashtable or PSObject!");
+https://docs.microsoft.com/en-us/rest/api/storageservices/understanding-the-table-service-data-model#property-types";
+                WriteWarning(warningMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            WriteError(new ErrorRecord(ex, $"Entity{firstEntity.GetType().Name}ValidationError", ErrorCategory.InvalidData, firstEntity));
         }
     }
 }

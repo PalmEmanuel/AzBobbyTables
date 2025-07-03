@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Linq;
 using System.Management.Automation;
+using PipeHow.AzBobbyTables.Core.Conversion;
 
 namespace PipeHow.AzBobbyTables.Validation;
 
@@ -12,34 +12,28 @@ class ValidateEntityAttribute : ValidateArgumentsAttribute
 {
     protected override void Validate(object arguments, EngineIntrinsics engineIntrinsics)
     {
-        // The input is an object array, but it must hold either Hashtables or PSObjects
-        var firstEntity = ((object[])arguments).First();
-        // Validate the first entity in the list
-        // First on type, then ensure correct values
-        switch (firstEntity)
+        // The input is an object array
+        var entities = (object[])arguments;
+        if (entities.Length == 0)
         {
-            case Hashtable hashtable:
-            if (!hashtable.Keys.Cast<string>().Any(key => key.Equals("PartitionKey", StringComparison.Ordinal)))
-            {
-                throw new ArgumentException("PartitionKey must be provided in the input hashtable entity in the correct casing!");
-            }
-            if (!hashtable.Keys.Cast<string>().Any(key => key.Equals("RowKey", StringComparison.Ordinal)))
-            {
-                throw new ArgumentException("RowKey must be provided in the input hashtable entity in the correct casing!");
-            }
-            break;
-            case PSObject psobject:
-                if (!psobject.Properties.Any(p => p.Name.Equals("PartitionKey", StringComparison.Ordinal)))
-                {
-                    throw new ArgumentException("PartitionKey must be provided in the input psobject entity in the correct casing!");
-                }
-                if (!psobject.Properties.Any(p => p.Name.Equals("RowKey", StringComparison.Ordinal)))
-                {
-                    throw new ArgumentException("RowKey must be provided in the input psobject entity in the correct casing!");
-                }
-                break;
-            default:
-                throw new ArgumentException($"Input entities have to be either Hashtable or PSObject, first entity was {firstEntity.GetType().FullName}!");
+            throw new ArgumentException("At least one entity must be provided!");
+        }
+
+        var firstEntity = entities.First();
+        var registry = EntityConverterRegistry.Instance;
+
+        // Check if we have a converter for this type
+        var converter = registry.GetConverter(firstEntity);
+        if (converter == null)
+        {
+            var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+            throw new ArgumentException($"Unsupported entity type '{firstEntity.GetType().FullName}'. Supported types are: {supportedTypes}");
+        }
+
+        // Validate that the entity has required properties
+        if (!converter.ValidateEntity(firstEntity))
+        {
+            throw new ArgumentException($"PartitionKey and RowKey must be provided in the input {converter.TypeName} entity with correct casing!");
         }
     }
 }

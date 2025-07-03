@@ -4,9 +4,17 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added SortedList as valid type for -Entity parameter [#52](https://github.com/PalmEmanuel/AzBobbyTables/issues/52)
+- New command `Get-AzDataTableSupportedEntityType` to get the supported data types for the module when using `-Entity` parameter
+
 ### Changed
 
 - Dependency version bumps
+- Rewrote core module logic to add a converter system which allows for flexible entity types
+- Updated gitversion config for build and release
+- Improved module tests for the new type converter system
 
 ## [3.3.2] - 2025-02-26
 

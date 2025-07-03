@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.Data.Tables;
+using PipeHow.AzBobbyTables.Core.Conversion;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -236,269 +237,132 @@ public class AzDataTableService
     }
 
     /// <summary>
-    /// Remove one or more entities from a table.
+    /// Add one or more entities to a table using the dynamic converter system.
     /// </summary>
-    /// <param name="hashtables">The list of entities to remove, with PartitionKey and RowKey set.</param>
-    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void RemoveEntitiesFromTable(IEnumerable<Hashtable> hashtables, bool validateEtag = true)
-    {
-        ValidateTableClient();
-
-        try
-        {
-            var transactions = new List<TableTransactionAction>();
-
-            var entities = hashtables.Select(r =>
-            {
-                TableEntity entity = new()
-                {
-                    PartitionKey = r["PartitionKey"].ToString(),
-                    RowKey = r["RowKey"].ToString(),
-                    ETag = r.ContainsKey("ETag") ? new(r["ETag"].ToString()) : default,
-                    Timestamp = r.ContainsKey("Timestamp") ? (DateTimeOffset?)r["Timestamp"] : default
-                };
-                return entity;
-            });
-
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e, validateEtag ? e.ETag : default)));
-
-            SubmitTransaction(transactions);
-        }
-        catch (Exception ex)
-        {
-            throw new AzDataTableException(new ErrorRecord(ex, "RemoveEntitiesHashtableError", ErrorCategory.InvalidOperation, null));
-        }
-    }
-
-    /// <summary>
-    /// Remove one or more entities from a table.
-    /// </summary>
-    /// <param name="psobjects">The list of entities to remove, with PartitionKey and RowKey set.</param>
-    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void RemoveEntitiesFromTable(IEnumerable<PSObject> psobjects, bool validateEtag = true)
-    {
-        ValidateTableClient();
-
-        try
-        {
-            var transactions = new List<TableTransactionAction>();
-
-            var entities = psobjects.Select(e =>
-            {
-                TableEntity entity = new()
-                {
-                    PartitionKey = e.Properties.First(p => p.Name == "PartitionKey").Value.ToString(),
-                    RowKey = e.Properties.First(p => p.Name == "RowKey").Value.ToString()
-                };
-                var eTag = e.Properties.FirstOrDefault(p => p.Name.Equals("ETag", StringComparison.OrdinalIgnoreCase));
-                if (eTag is not null)
-                {
-                    entity.ETag = new(eTag.Value.ToString());
-                }
-                var timestamp = e.Properties.FirstOrDefault(p => p.Name.Equals("Timestamp", StringComparison.OrdinalIgnoreCase));
-                if (timestamp is not null)
-                {
-                    entity.Timestamp = (DateTimeOffset?)timestamp.Value;
-                }
-                return entity;
-            });
-
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e, validateEtag ? e.ETag : default)));
-
-            SubmitTransaction(transactions);
-        }
-        catch (Exception ex)
-        {
-            throw new AzDataTableException(new ErrorRecord(ex, "RemoveEntitiesPSObjectError", ErrorCategory.InvalidOperation, null));
-        }
-    }
-
-    /// <summary>
-    /// Add one or more entities to a table.
-    /// </summary>
-    /// <param name="hashtables">The entities to add.</param>
-    /// <param name="overwrite">Whether or not to update already existing entities.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void AddEntitiesToTable(IEnumerable<Hashtable> hashtables, OperationTypeEnum operationType)
-    {
-        ValidateTableClient();
-
-        try
-        {
-            var transactions = new List<TableTransactionAction>();
-
-            var entities = hashtables.Select(e =>
-            {
-                TableEntity entity = new();
-                foreach (string key in e.Keys)
-                {
-                    switch (key)
-                    {
-                        case "ETag":
-                            entity.ETag = new((string)e[key]);
-                            break;
-                        case "Timestamp":
-                            entity.Timestamp = (DateTimeOffset?)e[key];
-                            break;
-                        default:
-                            entity.Add(key, e[key]);
-                            break;
-                    }
-                }
-                return entity;
-            });
-
-            var transactionType = ConvertOperationType(operationType);
-            
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e)));
-
-            SubmitTransaction(transactions);
-        }
-        catch (Exception ex)
-        {
-            throw new AzDataTableException(new ErrorRecord(ex, "AddEntitiesHashtableError", ErrorCategory.InvalidOperation, null));
-        }
-    }
-
-    /// <summary>
-    /// Add one or more entities to a table.
-    /// </summary>
-    /// <param name="psobjects">The entities to add.</param>
+    /// <param name="entities">The entities to add (can be any supported type).</param>
     /// <param name="operationType">The type of operation to perform.</param>
-    public void AddEntitiesToTable(IEnumerable<PSObject> psobjects, OperationTypeEnum operationType)
+    public void AddEntitiesToTable(IEnumerable<object> entities, OperationTypeEnum operationType)
     {
         ValidateTableClient();
 
         try
         {
             var transactions = new List<TableTransactionAction>();
+            var registry = EntityConverterRegistry.Instance;
 
-            var entities = psobjects.Select(e =>
+            var tableEntities = entities.Select(entity =>
             {
-                TableEntity entity = new();
-                foreach (var prop in e.Properties)
+                var converter = registry.GetConverter(entity);
+                if (converter == null)
                 {
-                    switch (prop.Name)
-                    {
-                        case "ETag":
-                            entity.ETag = new((string)prop.Value);
-                            break;
-                        case "Timestamp":
-                            entity.Timestamp = (DateTimeOffset?)prop.Value;
-                            break;
-                        default:
-                            entity.Add(prop.Name, prop.Value);
-                            break;
-                    }
+                    var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+                    throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
                 }
-                return entity;
+
+                if (!converter.ValidateEntity(entity))
+                {
+                    throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
+                }
+
+                return converter.ConvertToTableEntity(entity);
             });
 
             var transactionType = ConvertOperationType(operationType);
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e)));
+            transactions.AddRange(tableEntities.Select(e => new TableTransactionAction(transactionType, e)));
 
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "AddEntitiesPSObjectError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "AddEntitiesError", ErrorCategory.InvalidOperation, null));
         }
     }
 
     /// <summary>
-    /// Updates one or more entities in a table.
+    /// Remove one or more entities from a table using the dynamic converter system.
     /// </summary>
-    /// <param name="hashtables">The entities to update.</param>
+    /// <param name="entities">The entities to remove (can be any supported type).</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
+    public void RemoveEntitiesFromTable(IEnumerable<object> entities, bool validateEtag = true)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            var transactions = new List<TableTransactionAction>();
+            var registry = EntityConverterRegistry.Instance;
+
+            var tableEntities = entities.Select(entity =>
+            {
+                var converter = registry.GetConverter(entity);
+                if (converter == null)
+                {
+                    var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+                    throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
+                }
+
+                if (!converter.ValidateEntity(entity))
+                {
+                    throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
+                }
+
+                var tableEntity = converter.ConvertToTableEntity(entity);
+                
+                return tableEntity;
+            });
+
+            transactions.AddRange(tableEntities.Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e, validateEtag ? e.ETag : default)));
+
+            SubmitTransaction(transactions);
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "RemoveEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Update one or more entities in a table using the dynamic converter system.
+    /// </summary>
+    /// <param name="entities">The entities to update (can be any supported type).</param>
     /// <param name="operationType">The type of operation to perform.</param>
     /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<Hashtable> hashtables, OperationTypeEnum operationType, bool validateEtag = true)
+    public void UpdateEntitiesInTable(IEnumerable<object> entities, OperationTypeEnum operationType, bool validateEtag = true)
     {
         ValidateTableClient();
 
         try
         {
             var transactions = new List<TableTransactionAction>();
+            var registry = EntityConverterRegistry.Instance;
 
-            var entities = hashtables.Select(e =>
+            var tableEntities = entities.Select(entity =>
             {
-                TableEntity entity = new();
-                foreach (string key in e.Keys)
+                var converter = registry.GetConverter(entity);
+                if (converter == null)
                 {
-                    switch (key)
-                    {
-                        case "ETag":
-                            entity.ETag = new((string)e[key]);
-                            break;
-                        case "Timestamp":
-                            entity.Timestamp = (DateTimeOffset?)e[key];
-                            break;
-                        default:
-                            entity.Add(key, e[key]);
-                            break;
-                    }
+                    var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+                    throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
                 }
-                return entity;
+
+                if (!converter.ValidateEntity(entity))
+                {
+                    throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
+                }
+
+                var tableEntity = converter.ConvertToTableEntity(entity);
+                
+                return tableEntity;
             });
 
             var transactionType = ConvertOperationType(operationType);
-
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
+            transactions.AddRange(tableEntities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
 
             SubmitTransaction(transactions);
         }
         catch (Exception ex)
         {
-            throw new AzDataTableException(new ErrorRecord(ex, "UpdateEntitiesHashtableError", ErrorCategory.InvalidOperation, null));
-        }
-    }
-
-    /// <summary>
-    /// Updates one or more entities in a table.
-    /// </summary>
-    /// <param name="psobjects">The entities to update.</param>
-    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
-    /// <returns>The result of the transaction.</returns>
-    public void UpdateEntitiesInTable(IEnumerable<PSObject> psobjects, OperationTypeEnum operationType, bool validateEtag = true)
-    {
-        ValidateTableClient();
-
-        try
-        {
-            var transactions = new List<TableTransactionAction>();
-
-            var entities = psobjects.Select(e =>
-            {
-                TableEntity entity = new();
-                foreach (var prop in e.Properties)
-                {
-                    switch (prop.Name)
-                    {
-                        case "ETag":
-                            entity.ETag = new((string)prop.Value);
-                            break;
-                        case "Timestamp":
-                            entity.Timestamp = (DateTimeOffset?)prop.Value;
-                            break;
-                        default:
-                            entity.Add(prop.Name, prop.Value);
-                            break;
-                    }
-                }
-                return entity;
-            });
-
-            var transactionType = ConvertOperationType(operationType);
-
-            transactions.AddRange(entities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
-
-            SubmitTransaction(transactions);
-        }
-        catch (Exception ex)
-        {
-            throw new AzDataTableException(new ErrorRecord(ex, "UpdateEntitiesPSObjectError", ErrorCategory.InvalidOperation, null));
+            throw new AzDataTableException(new ErrorRecord(ex, "UpdateEntitiesError", ErrorCategory.InvalidOperation, null));
         }
     }
 
@@ -522,7 +386,6 @@ public class AzDataTableService
             if (orderBy is not null && orderBy.Any())
             {
                 // Must create a new variable to be able to modify it within the loop
-                // https://ericlippert.com/2009/11/12/closing-over-the-loop-variable-considered-harmful-part-one/
                 // OrderBy for the first property, ThenBy for the rest
                 var orderableEntities = entities.OrderBy(e => e[orderBy.First()]);
                 foreach (var propertyName in orderBy.Skip(1))
@@ -571,7 +434,7 @@ public class AzDataTableService
 
         try
         {
-            var entities = TableClient!.Query<TableEntity>((string)null!, null, new[] { "PartitionKey", "RowKey" });
+            var entities = TableClient!.Query<TableEntity>((string)null!, null, ["PartitionKey", "RowKey"]);
 
             var transactions = new List<TableTransactionAction>();
 
@@ -613,5 +476,14 @@ public class AzDataTableService
         {
             throw new AzDataTableException(new ErrorRecord(new InvalidOperationException("Table name is not set in the TableContext, please create a new context for this operation!"), "TableClientError", ErrorCategory.InvalidOperation, null));
         }
+    }
+
+    /// <summary>
+    /// Gets the list of supported entity type names.
+    /// </summary>
+    /// <returns>A list of supported type names.</returns>
+    public static IEnumerable<string> GetSupportedEntityTypes()
+    {
+        return EntityConverterRegistry.Instance.GetSupportedTypeNames();
     }
 }

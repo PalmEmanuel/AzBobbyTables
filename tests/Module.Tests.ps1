@@ -40,7 +40,7 @@ Describe "$ModuleName" {
         }
 
         # This test will run on all commands except for New-AzDataTableContext
-        It 'has parameter Context for command <Command>' -TestCases ($CommandTestCases | Where-Object Command -ne 'New-AzDataTableContext') {
+        It 'has parameter Context for command <Command>' -TestCases ($CommandTestCases | Where-Object { $_.Command -notin ('New-AzDataTableContext','Get-AzDataTableSupportedEntityType') }) {
             Get-Command $Command | Should -HaveParameter 'Context'
         }
 
@@ -80,7 +80,9 @@ Describe "$ModuleName" {
             }
         }
 
-        It 'has support for ErrorAction in command <Command>' -TestCases ($CommandTestCases | Where-Object Command -ne 'New-AzDataTableContext') {
+        It 'has support for ErrorAction in command <Command>' -TestCases (
+                $CommandTestCases | Where-Object { $_.Command -notin ('New-AzDataTableContext','Get-AzDataTableSupportedEntityType') }
+            ) {
             $Context = New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString
             
             if ((Get-Command $Command).Parameters.ContainsKey('Entity')) {

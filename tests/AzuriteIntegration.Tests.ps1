@@ -1,6 +1,5 @@
 Describe 'Azurite Integration Tests' -Tag 'Integration' {
     BeforeAll {
-
         function New-TestData {
             param(
                 [string]$EntityType,

@@ -65,8 +65,15 @@ public class AddAzDataTableEntity : AzDataTableOperationCommand
             OperationType = "UpsertReplace";
         }
 
-        var operationTypeValue = Enum.TryParse<OperationTypeEnum>(OperationType, true, out var operationType)
-            ? operationType : throw new ArgumentException($"Operation type {OperationType} is not valid!");
+        OperationTypeEnum operationTypeValue;
+        if (Enum.TryParse<OperationTypeEnum>(OperationType, true, out var operationType))
+        {
+            operationTypeValue = operationType;
+        }
+        else {
+            WriteError(new ErrorRecord(new ArgumentException($"Operation type {OperationType} is not valid!"), "InvalidOperationType", ErrorCategory.InvalidArgument, OperationType));
+            return;
+        }
 
         try
         {

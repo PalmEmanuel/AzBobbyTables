@@ -6,6 +6,11 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [3.4.1] - 2026-03-05
 
+### Changed
+
+- Bump System.Linq.Async from 6.0.3 to 7.0.0
+- Improved error handling to respect -ErrorAction through WriteError
+
 ## [3.4.0] - 2025-07-03
 
 ### Added

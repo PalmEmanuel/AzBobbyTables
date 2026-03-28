@@ -125,7 +125,7 @@ Accept wildcard characters: False
 
 ### -ManagedIdentity
 
-Specifies that the command is run by a managed identity (such as in an Azure Function), and authorization will be handled using that identity.
+Specifies that the command is run by a managed identity (such as in an Azure Function or VM), and authorization will be handled using that identity.
 
 ```yaml
 Type: SwitchParameter

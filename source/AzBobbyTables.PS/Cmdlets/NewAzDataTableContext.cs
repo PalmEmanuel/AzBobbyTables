@@ -61,7 +61,7 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
     public string Token { get; set; }
 
     /// <summary>
-    /// <para type="description">Specifies that the command should be run by a managed identity.</para>
+    /// <para type="description">Specifies that the command should be run by a managed identity (such as in an Azure Function or VM), and authorization will be handled using that identity.</para>
     /// </summary>
     [Parameter(Mandatory = true, ParameterSetName = "ManagedIdentity")]
     public SwitchParameter ManagedIdentity { get; set; }

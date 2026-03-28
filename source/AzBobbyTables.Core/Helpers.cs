@@ -8,17 +8,42 @@ namespace PipeHow.AzBobbyTables.Core;
 
 public static class Helpers
 {
+    private const string ImdsTokenEndpoint = "http://169.254.169.254/metadata/identity/oauth2/token";
+    private const string ImdsApiVersion = "2018-02-01";
+
     public static string GetManagedIdentityToken(string accountName, string? clientId = null)
     {
         // Get token for managed identity for Storage resource
         string resource = $"https://{accountName}.table.core.windows.net";
-        string uri = $"{Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT")}?api-version=2019-08-01&resource={resource}";
-        if (!string.IsNullOrWhiteSpace(clientId))
+
+        string? identityEndpoint = Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT");
+        string? identityHeader = Environment.GetEnvironmentVariable("IDENTITY_HEADER");
+
+        HttpWebRequest request;
+
+        // App Service / Azure Functions have IDENTITY_ENDPOINT and IDENTITY_HEADER set
+        if (!string.IsNullOrWhiteSpace(identityEndpoint) && !string.IsNullOrWhiteSpace(identityHeader))
         {
-            uri += $"&client_id={clientId}";
+            string uri = $"{identityEndpoint}?api-version=2019-08-01&resource={resource}";
+            if (!string.IsNullOrWhiteSpace(clientId))
+            {
+                uri += $"&client_id={clientId}";
+            }
+            request = (HttpWebRequest)WebRequest.Create(uri);
+            request.Headers["X-IDENTITY-HEADER"] = identityHeader;
         }
-        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-        request.Headers["X-IDENTITY-HEADER"] = Environment.GetEnvironmentVariable("IDENTITY_HEADER");
+        else
+        {
+            // Fall back to VM Instance Metadata Service (IMDS) endpoint
+            string uri = $"{ImdsTokenEndpoint}?api-version={ImdsApiVersion}&resource={resource}";
+            if (!string.IsNullOrWhiteSpace(clientId))
+            {
+                uri += $"&client_id={clientId}";
+            }
+            request = (HttpWebRequest)WebRequest.Create(uri);
+            request.Headers["Metadata"] = "true";
+        }
+
         request.Method = "GET";
 
         try

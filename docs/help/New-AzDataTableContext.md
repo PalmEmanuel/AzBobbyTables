@@ -125,7 +125,7 @@ Accept wildcard characters: False
 
 ### -ManagedIdentity
 
-Specifies that the command is run by a managed identity (such as in an Azure Function or VM), and authorization will be handled using that identity. On App Service and Azure Functions, the IDENTITY_ENDPOINT and IDENTITY_HEADER environment variables are used. On Azure VMs, the Instance Metadata Service (IMDS) endpoint is used as a fallback.
+Specifies that the command is run by a managed identity (such as in an Azure Function or VM), and authorization will be handled using that identity.
 
 ```yaml
 Type: SwitchParameter

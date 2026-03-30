@@ -4,6 +4,14 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Fixed
+
+- Support Managed Identity on Azure VMs via IMDS fallback ([#116](https://github.com/PalmEmanuel/AzBobbyTables/pull/116))
+
+### Changed
+
+- Updated documentation to include `SortedList` as a supported entity type for `Add-`, `Update-`, and `Remove-AzDataTableEntity` ([#117](https://github.com/PalmEmanuel/AzBobbyTables/pull/117))
+
 ## [3.4.1] - 2026-03-05
 
 ### Changed

@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-03-30
+
 ### Fixed
 
 - Support Managed Identity on Azure VMs via IMDS fallback ([#116](https://github.com/PalmEmanuel/AzBobbyTables/pull/116))
@@ -86,7 +88,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.1...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...HEAD
+[3.4.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.0...v3.4.1
 [3.4.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.2...v3.4.0
 [3.3.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.3.1...v3.3.2

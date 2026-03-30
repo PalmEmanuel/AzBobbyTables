@@ -20,7 +20,7 @@ Remove-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-Forc
 
 ## DESCRIPTION
 
-Remove one or more entities from an Azure Table, as an array of either Hashtables or PSObjects, based on PartitionKey and RowKey.
+Remove one or more entities from an Azure Table, as an array of either Hashtables, PSObjects, or SortedLists, based on PartitionKey and RowKey.
 
 ## EXAMPLES
 
@@ -123,9 +123,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### System.Collections.Hashtable[] or System.Management.Automation.PSObject[]
+### System.Collections.Hashtable[] or System.Management.Automation.PSObject[] or System.Collections.SortedList[]
 
-This cmdlet takes either an array of hashtables or psobjects as input to the Entity parameter, which can also be provided through the pipeline.
+This cmdlet takes either an array of hashtables, psobjects, or sorted lists as input to the Entity parameter, which can also be provided through the pipeline.
 
 ## OUTPUTS
 

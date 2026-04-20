@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
+using Azure.Core.Pipeline;
+using System.Net.Http;
 
 namespace PipeHow.AzBobbyTables.Core;
 
@@ -25,6 +27,21 @@ public enum OperationTypeEnum
 
 public class AzDataTableService
 {
+    /// <summary>
+    /// Shared HttpClient used by all TableClient/TableServiceClient instances.
+    /// Connection pooling is handled by the runtime's SocketsHttpHandler (.NET Core 3.1+).
+    /// This eliminates per-cmdlet TCP connection creation.
+    /// </summary>
+    private static readonly HttpClient SharedHttpClient = new HttpClient();
+    private static readonly HttpClientTransport SharedTransport = new HttpClientTransport(SharedHttpClient);
+
+    private static TableClientOptions CreateSharedOptions()
+    {
+        var options = new TableClientOptions();
+        options.Transport = SharedTransport;
+        return options;
+    }
+
     private TableClient? TableClient { get; set; }
     private TableServiceClient? TableServiceClient { get; set; }
 
@@ -76,11 +93,11 @@ public class AzDataTableService
         {
             var dataTableService = new AzDataTableService(cancellationToken);
 
-            TableServiceClient serviceClient = new(connectionString);
+            TableServiceClient serviceClient = new(connectionString, CreateSharedOptions());
 
             if (tableName is not null)
             {
-                TableClient client = new(connectionString, tableName);
+                TableClient client = new(connectionString, tableName, CreateSharedOptions());
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -108,11 +125,11 @@ public class AzDataTableService
 
             var sasCredential = new TableSharedKeyCredential(storageAccountName, storageAccountKey);
 
-            TableServiceClient serviceClient = new(tableEndpoint, sasCredential);
+            TableServiceClient serviceClient = new(tableEndpoint, sasCredential, CreateSharedOptions());
 
             if (tableName is not null)
             {
-                TableClient client = new(tableEndpoint, tableName, sasCredential);
+                TableClient client = new(tableEndpoint, tableName, sasCredential, CreateSharedOptions());
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -138,11 +155,11 @@ public class AzDataTableService
             var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
 
-            TableServiceClient serviceClient = new(tableEndpoint, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+            TableServiceClient serviceClient = new(tableEndpoint, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions());
 
             if (tableName is not null)
             {
-                TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))));
+                TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions());
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -179,10 +196,10 @@ public class AzDataTableService
                 sasUrl = new Uri($"{urlParts.First().TrimEnd('/')}/{tableName}?{urlParts.Last()}");
             }
 
-            TableServiceClient serviceClient = new TableServiceClient(baseUrl, sasCredential);
+            TableServiceClient serviceClient = new TableServiceClient(baseUrl, sasCredential, CreateSharedOptions());
             if (tableName is not null)
             {
-                TableClient client = new(sasUrl, sasCredential);
+                TableClient client = new(sasUrl, sasCredential, CreateSharedOptions());
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {

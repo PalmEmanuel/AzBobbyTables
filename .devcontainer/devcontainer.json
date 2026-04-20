@@ -3,16 +3,16 @@
     "image": "mcr.microsoft.com/devcontainers/dotnet:8.0",
     "features": {
         "ghcr.io/devcontainers/features/powershell:1": {},
-        "ghcr.io/devcontainers/features/node:1": {},
-        "ghcr.io/devcontainers-extra/features/azurite:1": {}
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "customizations": {
         "vscode": {
             "extensions": [
                 "ms-vscode.powershell",
-                "ms-dotnettools.csdevkit"
+                "ms-dotnettools.csdevkit",
+                "Azurite.azurite"
             ]
         }
     },
-    "postCreateCommand": "dotnet restore source/AzBobbyTables.sln && pwsh -Command './build.ps1 -ResolveDependency -Task noop'"
+    "postCreateCommand": "npm install -g azurite && dotnet restore source/AzBobbyTables.sln && pwsh -Command './build.ps1 -ResolveDependency -Task noop'"
 }

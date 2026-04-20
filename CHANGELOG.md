@@ -6,6 +6,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [3.5.0] - 2026-04-20
 
+## [3.5.0] - 2026-04-20
+
 ### Changed
 
 - Now shares a single HttpClient across all TableClient/TableServiceClient instances via HttpClientTransport, enabling TCP connection pooling and reducing socket churn in high-concurrency scenarios [#122](https://github.com/PalmEmanuel/AzBobbyTables/pull/122)
@@ -96,6 +98,7 @@ The format is based on and uses the types of changes according to [Keep a Change
 ## 3.1.1 - 2023-05-03
 
 [unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...v3.5.0
 [3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...v3.5.0
 [3.4.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.0...v3.4.1

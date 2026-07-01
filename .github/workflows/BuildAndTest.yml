@@ -31,7 +31,6 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
-        ref: ${{ github.head_ref }}
         fetch-depth: 0
 
     - name: 'Build and Package Module'
@@ -51,7 +50,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: 'Test Module'
@@ -73,7 +71,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: 'Publish Test Results'

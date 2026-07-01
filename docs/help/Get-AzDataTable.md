@@ -14,7 +14,7 @@ Get the names of all tables in the storage account.
 ## SYNTAX
 
 ```
-Get-AzDataTable -Context <AzDataTableContext> [-Filter <String>]
+Get-AzDataTable -Context <AzDataTableContext> [-Filter <String>] [-MaxRetries <Int32>]
  [<CommonParameters>]
 ```
 
@@ -70,6 +70,21 @@ https://learn.microsoft.com/en-us/rest/api/storageservices/Querying-Tables-and-E
 
 ```yaml
 Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MaxRetries
+The number of times to retry the operation when the request is throttled by the service with an HTTP 429 response. Between attempts the module waits for the duration indicated by the service's Retry-After response. Defaults to 0, which disables retries.
+
+```yaml
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 

@@ -15,7 +15,7 @@ Update one or more entities in an Azure Table.
 
 ```
 Update-AzDataTableEntity -Context <AzDataTableContext> -Entity <Object[]> [-OperationType <String>] [-Force]
- [<CommonParameters>]
+ [-MaxRetries <Int32>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -94,6 +94,21 @@ Skips ETag validation and updates entity even if it has changed.
 
 ```yaml
 Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MaxRetries
+The number of times to retry the operation when the request is throttled by the service with an HTTP 429 response. Between attempts the module waits for the duration indicated by the service's Retry-After response. Defaults to 0, which disables retries.
+
+```yaml
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 

@@ -16,12 +16,13 @@ Get one or more entities from an Azure Table.
 ### TableOperation (Default)
 ```
 Get-AzDataTableEntity -Context <AzDataTableContext> [-Filter <String>] [-Property <String[]>] [-First <Int32>]
- [-Skip <Int32>] [-Sort <String[]>] [<CommonParameters>]
+ [-Skip <Int32>] [-Sort <String[]>] [-MaxRetries <Int32>]
+ [<CommonParameters>]
 ```
 
 ### Count
 ```
-Get-AzDataTableEntity -Context <AzDataTableContext> [-Count]
+Get-AzDataTableEntity -Context <AzDataTableContext> [-Count] [-MaxRetries <Int32>]
  [<CommonParameters>]
 ```
 
@@ -128,6 +129,21 @@ Gets only the specified number of objects. Enter the number of objects to get.
 Type: Int32
 Parameter Sets: TableOperation
 Aliases: Top, Take
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MaxRetries
+The number of times to retry the operation when the request is throttled by the service with an HTTP 429 response. Between attempts the module waits for the duration indicated by the service's Retry-After response. Defaults to 0, which disables retries.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
 
 Required: False
 Position: Named

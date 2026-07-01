@@ -10,6 +10,12 @@ namespace PipeHow.AzBobbyTables.Cmdlets;
 
 public class AzDataTableOperationCommand : AzDataTableCommand
 {
+    /// <summary>
+    /// <para type="description">Number of times to retry the operation when the service throttles the request (HTTP 429). Defaults to 0 (no retries). When set, the module waits for the service's Retry-After hint between attempts.</para>
+    /// </summary>
+    [Parameter]
+    public int MaxRetries { get; set; } = 0;
+
     protected override void BeginProcessing()
     {
         base.BeginProcessing();
@@ -34,7 +40,7 @@ public class AzDataTableOperationCommand : AzDataTableCommand
                     ((SwitchParameter)parameters["CreateTableIfNotExists"]).IsPresent
                 ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
 
-            tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token);
+            tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token, MaxRetries);
         }
         catch (AzDataTableException ex)
         {
@@ -43,8 +49,14 @@ public class AzDataTableOperationCommand : AzDataTableCommand
     }
 
     // Determine way to create AzDataTableService by using the provided Context, created with from New-AzDataTableContext
-    private AzDataTableService CreateWithContext(AzDataTableContext context, bool createIfNotExists, CancellationToken cancellationToken = default)
+    private AzDataTableService CreateWithContext(AzDataTableContext context, bool createIfNotExists, CancellationToken cancellationToken = default, int maxRetries = 0)
     {
+        // Configure connection pool limit (first-caller-wins, no-op after first HttpClient creation)
+        if (context.MaxConnectionsPerServer > 0)
+        {
+            AzDataTableService.ConfigureMaxConnectionsPerServer(context.MaxConnectionsPerServer);
+        }
+
         if (string.IsNullOrWhiteSpace(context.TableName) && createIfNotExists)
         {
             throw new AzDataTableException(new ErrorRecord(
@@ -58,11 +70,11 @@ public class AzDataTableOperationCommand : AzDataTableCommand
         {
             return context.ConnectionType switch
             {
-                AzDataTableConnectionType.ConnectionString => AzDataTableService.CreateWithConnectionString(context.ConnectionString, context.TableName, createIfNotExists, cancellationToken),
-                AzDataTableConnectionType.SAS => AzDataTableService.CreateWithSAS(context.SharedAccessSignature, context.TableName, createIfNotExists, cancellationToken),
-                AzDataTableConnectionType.Key => AzDataTableService.CreateWithStorageKey(context.StorageAccountName, context.TableName, context.StorageAccountKey, createIfNotExists, cancellationToken),
-                AzDataTableConnectionType.Token => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, context.Token, createIfNotExists, cancellationToken),
-                AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName, context.ClientId), createIfNotExists, cancellationToken),
+                AzDataTableConnectionType.ConnectionString => AzDataTableService.CreateWithConnectionString(context.ConnectionString, context.TableName, createIfNotExists, cancellationToken, maxRetries),
+                AzDataTableConnectionType.SAS => AzDataTableService.CreateWithSAS(context.SharedAccessSignature, context.TableName, createIfNotExists, cancellationToken, maxRetries),
+                AzDataTableConnectionType.Key => AzDataTableService.CreateWithStorageKey(context.StorageAccountName, context.TableName, context.StorageAccountKey, createIfNotExists, cancellationToken, maxRetries),
+                AzDataTableConnectionType.Token => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, context.Token, createIfNotExists, cancellationToken, maxRetries),
+                AzDataTableConnectionType.ManagedIdentity => AzDataTableService.CreateWithToken(context.StorageAccountName, context.TableName, Helpers.GetManagedIdentityToken(context.StorageAccountName, context.ClientId), createIfNotExists, cancellationToken, maxRetries),
                 _ => throw new ArgumentException($"Unknown connection type {context.ConnectionType} was used!"),
             };
         }

@@ -15,32 +15,33 @@ Creates a context object with authentication information for the table to operat
 
 ### ConnectionString
 ```
-New-AzDataTableContext [-TableName <String>] -ConnectionString <String>
+New-AzDataTableContext [-TableName <String>] -ConnectionString <String> [-MaxConnectionsPerServer <Int32>]
  [<CommonParameters>]
 ```
 
 ### SAS
 ```
-New-AzDataTableContext [-TableName <String>] -SharedAccessSignature <Uri>
+New-AzDataTableContext [-TableName <String>] -SharedAccessSignature <Uri> [-MaxConnectionsPerServer <Int32>]
  [<CommonParameters>]
 ```
 
 ### Key
 ```
 New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> -StorageAccountKey <String>
- [<CommonParameters>]
+ [-MaxConnectionsPerServer <Int32>] [<CommonParameters>]
 ```
 
 ### Token
 ```
 New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> -Token <String>
- [<CommonParameters>]
+ [-MaxConnectionsPerServer <Int32>] [<CommonParameters>]
 ```
 
 ### ManagedIdentity
 ```
 New-AzDataTableContext [-TableName <String>] -StorageAccountName <String> [-ManagedIdentity]
- [-ClientId <String>] [<CommonParameters>]
+ [-ClientId <String>] [-MaxConnectionsPerServer <Int32>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -133,6 +134,21 @@ Parameter Sets: ManagedIdentity
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MaxConnectionsPerServer
+The maximum number of concurrent connections allowed per server endpoint on the shared HTTP client pool. Applied process-wide the first time a connection is created and cannot be changed afterwards. Defaults to unlimited.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

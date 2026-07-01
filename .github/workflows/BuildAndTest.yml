@@ -29,9 +29,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
-        ref: ${{ github.head_ref }}
         fetch-depth: 0
 
     - name: 'Build and Package Module'
@@ -49,9 +48,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: 'Test Module'
@@ -71,9 +69,8 @@ jobs:
     - test
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: 'Publish Test Results'

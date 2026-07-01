@@ -34,6 +34,14 @@ BeforeDiscovery {
                 @{ Name = '__AllParameterSets'; Mandatory = $false }
             )
         }
+        @{
+            Command       = $Command
+            Name          = 'MaxRetries'
+            Type          = 'int'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
+            )
+        }
     )
 }
 

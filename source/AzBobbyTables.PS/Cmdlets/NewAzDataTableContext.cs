@@ -73,6 +73,13 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
     public string ClientId { get; set; }
 
     /// <summary>
+    /// <para type="description">The maximum number of concurrent connections per server endpoint for the shared HTTP client pool. Applied process-wide on first use. Default is unlimited.</para>
+    /// </summary>
+    [Parameter()]
+    [ValidateRange(1, int.MaxValue)]
+    public int MaxConnectionsPerServer { get; set; }
+
+    /// <summary>
     /// The end step of the pipeline.
     /// </summary>
     protected override void EndProcessing()
@@ -86,7 +93,7 @@ public class NewAzDataTableContext : AzDataTableCommand // Inherit only base beh
         }
 
         // Output the AzDataTableContext to user for further operations
-        WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, ClientId, Token));
+        WriteObject(new AzDataTableContext(TableName, connectionType, ConnectionString, StorageAccountName, StorageAccountKey, SharedAccessSignature, ClientId, Token, MaxConnectionsPerServer));
 
         base.EndProcessing();
     }

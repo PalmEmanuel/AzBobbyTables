@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-07-01
+
 ### Added
 
 - Added a `-MaxConnectionsPerServer` parameter to `New-AzDataTableContext` to cap the number of concurrent connections per server endpoint on the shared HTTP client pool. Applied process-wide on first use; default is unlimited. ([#133](https://github.com/PalmEmanuel/AzBobbyTables/pull/122))
@@ -104,7 +106,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...v3.5.0
 [3.4.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.1...v3.4.2
 [3.4.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.0...v3.4.1

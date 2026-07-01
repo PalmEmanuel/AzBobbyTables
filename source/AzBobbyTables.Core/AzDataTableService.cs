@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
+using Azure.Core;
 using Azure.Core.Pipeline;
 using System.Net.Http;
 
@@ -27,18 +28,82 @@ public enum OperationTypeEnum
 
 public class AzDataTableService
 {
+    private static readonly object _lock = new object();
+    private static int _maxConnectionsPerServer = 0;
+    private static HttpClient _sharedHttpClient;
+    private static HttpClientTransport _sharedTransport;
+
     /// <summary>
     /// Shared HttpClient used by all TableClient/TableServiceClient instances.
     /// Connection pooling is handled by the runtime's SocketsHttpHandler (.NET Core 3.1+).
     /// This eliminates per-cmdlet TCP connection creation.
     /// </summary>
-    private static readonly HttpClient SharedHttpClient = new HttpClient();
-    private static readonly HttpClientTransport SharedTransport = new HttpClientTransport(SharedHttpClient);
+    private static HttpClient SharedHttpClient
+    {
+        get
+        {
+            if (_sharedHttpClient == null)
+            {
+                lock (_lock)
+                {
+                    if (_sharedHttpClient == null)
+                    {
+                        var handler = new HttpClientHandler();
+                        if (_maxConnectionsPerServer > 0)
+                        {
+                            handler.MaxConnectionsPerServer = _maxConnectionsPerServer;
+                        }
+                        _sharedHttpClient = new HttpClient(handler);
+                        _sharedTransport = new HttpClientTransport(_sharedHttpClient);
+                    }
+                }
+            }
+            return _sharedHttpClient;
+        }
+    }
 
-    private static TableClientOptions CreateSharedOptions()
+    private static HttpClientTransport SharedTransport
+    {
+        get
+        {
+            _ = SharedHttpClient;
+            return _sharedTransport;
+        }
+    }
+
+    /// <summary>
+    /// Configures the maximum number of connections per server for the shared HTTP client.
+    /// Must be called before any table operations. First call wins; subsequent calls are
+    /// ignored once the HttpClient has been created.
+    /// </summary>
+    /// <param name="maxConnections">Maximum concurrent connections per server endpoint.</param>
+    public static void ConfigureMaxConnectionsPerServer(int maxConnections)
+    {
+        if (_sharedHttpClient != null) return;
+        lock (_lock)
+        {
+            if (_sharedHttpClient != null) return;
+            _maxConnectionsPerServer = maxConnections;
+        }
+    }
+
+    private static TableClientOptions CreateSharedOptions(int maxRetries)
     {
         var options = new TableClientOptions();
         options.Transport = SharedTransport;
+
+        if (maxRetries > 0)
+        {
+            options.Retry.Mode = RetryMode.Fixed;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.Retry.MaxDelay = TimeSpan.FromSeconds(10);
+            options.Retry.MaxRetries = maxRetries;
+        }
+        else
+        {
+            options.Retry.MaxRetries = 0;
+        }
+
         return options;
     }
 
@@ -87,17 +152,17 @@ public class AzDataTableService
         }
     }
 
-    public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists, CancellationToken cancellationToken)
+    public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists, CancellationToken cancellationToken, int maxRetries = 0)
     {
         try
         {
             var dataTableService = new AzDataTableService(cancellationToken);
 
-            TableServiceClient serviceClient = new(connectionString, CreateSharedOptions());
+            TableServiceClient serviceClient = new(connectionString, CreateSharedOptions(maxRetries));
 
             if (tableName is not null)
             {
-                TableClient client = new(connectionString, tableName, CreateSharedOptions());
+                TableClient client = new(connectionString, tableName, CreateSharedOptions(maxRetries));
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -116,7 +181,7 @@ public class AzDataTableService
         }
     }
 
-    public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists, CancellationToken cancellationToken)
+    public static AzDataTableService CreateWithStorageKey(string storageAccountName, string tableName, string storageAccountKey, bool createIfNotExists, CancellationToken cancellationToken, int maxRetries = 0)
     {
         try
         {
@@ -125,11 +190,11 @@ public class AzDataTableService
 
             var sasCredential = new TableSharedKeyCredential(storageAccountName, storageAccountKey);
 
-            TableServiceClient serviceClient = new(tableEndpoint, sasCredential, CreateSharedOptions());
+            TableServiceClient serviceClient = new(tableEndpoint, sasCredential, CreateSharedOptions(maxRetries));
 
             if (tableName is not null)
             {
-                TableClient client = new(tableEndpoint, tableName, sasCredential, CreateSharedOptions());
+                TableClient client = new(tableEndpoint, tableName, sasCredential, CreateSharedOptions(maxRetries));
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -148,18 +213,18 @@ public class AzDataTableService
         }
     }
 
-    public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists, CancellationToken cancellationToken)
+    public static AzDataTableService CreateWithToken(string storageAccountName, string tableName, string token, bool createIfNotExists, CancellationToken cancellationToken, int maxRetries = 0)
     {
         try
         {
             var dataTableService = new AzDataTableService(cancellationToken);
             var tableEndpoint = new Uri($"https://{storageAccountName}.table.core.windows.net/{tableName}");
 
-            TableServiceClient serviceClient = new(tableEndpoint, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions());
+            TableServiceClient serviceClient = new(tableEndpoint, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions(maxRetries));
 
             if (tableName is not null)
             {
-                TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions());
+                TableClient client = new(tableEndpoint, tableName, new ExternalTokenCredential(token, DateTimeOffset.Now.Add(TimeSpan.FromHours(1))), CreateSharedOptions(maxRetries));
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {
@@ -177,7 +242,7 @@ public class AzDataTableService
         }
     }
 
-    public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists, CancellationToken cancellationToken)
+    public static AzDataTableService CreateWithSAS(Uri sasUrl, string tableName, bool createIfNotExists, CancellationToken cancellationToken, int maxRetries = 0)
     {
         try
         {
@@ -196,10 +261,10 @@ public class AzDataTableService
                 sasUrl = new Uri($"{urlParts.First().TrimEnd('/')}/{tableName}?{urlParts.Last()}");
             }
 
-            TableServiceClient serviceClient = new TableServiceClient(baseUrl, sasCredential, CreateSharedOptions());
+            TableServiceClient serviceClient = new TableServiceClient(baseUrl, sasCredential, CreateSharedOptions(maxRetries));
             if (tableName is not null)
             {
-                TableClient client = new(sasUrl, sasCredential, CreateSharedOptions());
+                TableClient client = new(sasUrl, sasCredential, CreateSharedOptions(maxRetries));
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {

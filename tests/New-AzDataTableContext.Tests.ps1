@@ -72,6 +72,14 @@ BeforeDiscovery {
                 @{ Name = 'ManagedIdentity'; Mandatory = $false }
             )
         }
+        @{
+            Command       = $Command
+            Name          = 'MaxConnectionsPerServer'
+            Type          = 'int'
+            ParameterSets = @(
+                @{ Name = '__AllParameterSets'; Mandatory = $false }
+            )
+        }
     )
 }
 
@@ -148,7 +156,7 @@ Describe 'New-AzDataTableContext' {
             New-AzDataTableContext -TableName $FakeTableName -ConnectionString $FakeConnectionString |
             Get-Member -MemberType Property |
             Select-Object -ExpandProperty Name |
-            Should -BeExactly @('ConnectionType', 'TableName') -Because 'the provided auth info is internal to the module'
+            Should -BeExactly @('ConnectionType', 'MaxConnectionsPerServer', 'TableName') -Because 'the provided auth info is internal to the module'
         }   
     }
 }

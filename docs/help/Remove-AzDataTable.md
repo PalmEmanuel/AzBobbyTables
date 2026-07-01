@@ -14,7 +14,8 @@ Delete an existing table.
 ## SYNTAX
 
 ```
-Remove-AzDataTable -Context <AzDataTableContext> [<CommonParameters>]
+Remove-AzDataTable -Context <AzDataTableContext> [-MaxRetries <Int32>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -44,6 +45,21 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MaxRetries
+The number of times to retry the operation when the request is throttled by the service with an HTTP 429 response. Between attempts the module waits for the duration indicated by the service's Retry-After response. Defaults to 0, which disables retries.
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

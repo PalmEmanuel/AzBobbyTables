@@ -15,6 +15,7 @@ public class AzDataTableContext
 {
     public string TableName { get; set; }
     public AzDataTableConnectionType ConnectionType { get; }
+    public int MaxConnectionsPerServer { get; }
 
     internal string ConnectionString { get; }
     internal Uri SharedAccessSignature { get; }
@@ -23,7 +24,7 @@ public class AzDataTableContext
     internal string ClientId { get; }
     internal string Token { get; }
 
-    internal AzDataTableContext(string tableName, AzDataTableConnectionType connectionType, string connectionString, string storageAccountName, string storageAccountKey, Uri sharedAccessSignature, string clientId, string token)
+    internal AzDataTableContext(string tableName, AzDataTableConnectionType connectionType, string connectionString, string storageAccountName, string storageAccountKey, Uri sharedAccessSignature, string clientId, string token, int maxConnectionsPerServer = 0)
     {
         TableName = tableName;
         ConnectionType = connectionType;
@@ -33,5 +34,6 @@ public class AzDataTableContext
         StorageAccountKey = storageAccountKey;
         Token = token;
         ClientId = clientId;
+        MaxConnectionsPerServer = maxConnectionsPerServer;
     }
 }

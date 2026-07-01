@@ -4,6 +4,11 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added a `-MaxConnectionsPerServer` parameter to `New-AzDataTableContext` to cap the number of concurrent connections per server endpoint on the shared HTTP client pool. Applied process-wide on first use; default is unlimited.
+- Added a `-MaxRetries` parameter to the table operation cmdlets (`Add-`, `Get-`, `Remove-`, `Update-AzDataTableEntity`, `Clear-`, `Get-`, `New-`, `Remove-AzDataTable`) to retry throttled requests (HTTP 429), waiting for the service's Retry-After hint between attempts. Defaults to `0` (no retries).
+
 ## [3.5.0] - 2026-04-20
 
 ### Changed

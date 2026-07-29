@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-07-29
+
 ### Changed
 
 - `Add-`, `Remove-` and `Update-AzDataTableEntity` now collect entities from the pipeline and submit them as batched transactions when the pipeline completes, instead of one transaction per pipeline record.
@@ -117,7 +119,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...HEAD
+[3.6.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...v3.5.0
 [3.4.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.1...v3.4.2

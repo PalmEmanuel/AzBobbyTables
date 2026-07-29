@@ -4,6 +4,17 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- `Add-`, `Remove-` and `Update-AzDataTableEntity` now collect entities from the pipeline and submit them as batched transactions when the pipeline completes, instead of one transaction per pipeline record.
+- `Get-AzDataTableEntity` passes a page-size hint to the service when `-First` is used without `-Sort`, so the service returns a bounded page instead of a full page truncated client-side.
+- `-Count` no longer projects full PSObjects in order to count them.
+- Entity validation and converter selection now run in a single pass.
+
+### Removed
+
+- Dependency on `System.Linq.Async`; queries now run synchronously.
+
 ## [3.6.0] - 2026-07-01
 
 ### Added

@@ -107,6 +107,19 @@ public class AzDataTableService
         return options;
     }
 
+    /// <summary>
+    /// The maximum number of entities Azure Table Storage accepts in a single transaction.
+    /// </summary>
+    private const int MaxTransactionSize = 100;
+
+    /// <summary>
+    /// Creates the transaction list, presized when the source count is known to avoid regrowing it.
+    /// </summary>
+    private static List<TableTransactionAction> CreateTransactionList(IEnumerable<object> entities) =>
+        entities is ICollection<object> collection
+            ? new List<TableTransactionAction>(collection.Count)
+            : new List<TableTransactionAction>();
+
     private TableClient? TableClient { get; set; }
     private TableServiceClient? TableServiceClient { get; set; }
 
@@ -329,7 +342,7 @@ public class AzDataTableService
 
         try
         {
-            var transactions = new List<TableTransactionAction>();
+            var transactions = CreateTransactionList(entities);
             var registry = EntityConverterRegistry.Instance;
 
             var tableEntities = entities.Select(entity =>
@@ -341,12 +354,19 @@ public class AzDataTableService
                     throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
                 }
 
-                if (!converter.ValidateEntity(entity))
+                // Convert first, then check the keys on the result. ValidateEntity walked every
+                // key of the input looking for the two required ones, so each entity was
+                // traversed twice. The converted entity is dictionary backed, and ContainsKey
+                // matches ordinally, so this is the same case-sensitive presence check for two
+                // lookups instead of a second full pass.
+                var tableEntity = converter.ConvertToTableEntity(entity);
+
+                if (!tableEntity.ContainsKey("PartitionKey") || !tableEntity.ContainsKey("RowKey"))
                 {
                     throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
                 }
 
-                return converter.ConvertToTableEntity(entity);
+                return tableEntity;
             });
 
             var transactionType = ConvertOperationType(operationType);
@@ -371,7 +391,7 @@ public class AzDataTableService
 
         try
         {
-            var transactions = new List<TableTransactionAction>();
+            var transactions = CreateTransactionList(entities);
             var registry = EntityConverterRegistry.Instance;
 
             var tableEntities = entities.Select(entity =>
@@ -383,13 +403,15 @@ public class AzDataTableService
                     throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
                 }
 
-                if (!converter.ValidateEntity(entity))
+                // See AddEntitiesToTable: convert once, then check the two required keys on the
+                // dictionary-backed result rather than walking the input a second time.
+                var tableEntity = converter.ConvertToTableEntity(entity);
+
+                if (!tableEntity.ContainsKey("PartitionKey") || !tableEntity.ContainsKey("RowKey"))
                 {
                     throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
                 }
 
-                var tableEntity = converter.ConvertToTableEntity(entity);
-                
                 return tableEntity;
             });
 
@@ -415,7 +437,7 @@ public class AzDataTableService
 
         try
         {
-            var transactions = new List<TableTransactionAction>();
+            var transactions = CreateTransactionList(entities);
             var registry = EntityConverterRegistry.Instance;
 
             var tableEntities = entities.Select(entity =>
@@ -427,13 +449,15 @@ public class AzDataTableService
                     throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
                 }
 
-                if (!converter.ValidateEntity(entity))
+                // See AddEntitiesToTable: convert once, then check the two required keys on the
+                // dictionary-backed result rather than walking the input a second time.
+                var tableEntity = converter.ConvertToTableEntity(entity);
+
+                if (!tableEntity.ContainsKey("PartitionKey") || !tableEntity.ContainsKey("RowKey"))
                 {
                     throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
                 }
 
-                var tableEntity = converter.ConvertToTableEntity(entity);
-                
                 return tableEntity;
             });
 
@@ -460,8 +484,22 @@ public class AzDataTableService
 
         try
         {
-            // Declare type as IAsyncEnumerable to be able to overwrite it with LINQ results further down
-            IAsyncEnumerable<TableEntity> entities = TableClient!.QueryAsync<TableEntity>(query, null, properties, CancellationToken);
+            // When the caller wants a bounded number of entities and no sorting is needed, ask the
+            // service for only that many per page. Otherwise the first page returns up to 1000
+            // entities and everything past the requested count is fetched and then discarded.
+            // Sorting has to see every entity, so it opts out of the bound.
+            int? maxPerPage = null;
+            if (top > 0 && (orderBy is null || orderBy.Length == 0))
+            {
+                // Skip is applied client side, so the page still has to cover the skipped entities.
+                var skipped = skip > 0 ? skip.Value : 0;
+                var needed = (long)skipped + top.Value;
+                maxPerPage = needed <= int.MaxValue ? (int)needed : null;
+            }
+
+            // Declare type as IEnumerable to be able to overwrite it with LINQ results further down.
+            // Query rather than QueryAsync: the result is handed back to PowerShell synchronously either way
+            IEnumerable<TableEntity> entities = TableClient!.Query<TableEntity>(query, maxPerPage, properties, CancellationToken);
 
             // If user specified one or more properties to sort list by
             // This may slow the query down a lot with a lot of results
@@ -489,7 +527,7 @@ public class AzDataTableService
 
             // Output entities as hashtables
             // We cannot output the result as TableEntity objects, since we dont (want to) expose the SDK assembly to the user session
-            return entities.ToEnumerable().Select(e =>
+            return entities.Select(e =>
             {
                 PSObject entityObject = new();
                 entityObject.Properties.Add(new PSNoteProperty("ETag", e["odata.etag"]));
@@ -500,6 +538,35 @@ public class AzDataTableService
                 }
                 return entityObject;
             });
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "GetEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Count the entities in a table matching a query.
+    /// </summary>
+    /// <param name="query">The query to filter entities by.</param>
+    /// <returns>The number of matching entities.</returns>
+    public int CountEntitiesInTable(string query)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            // Only the keys are requested, and the entities are counted without being projected
+            // into PSObjects, since the caller only wants the total.
+            var entities = TableClient!.Query<TableEntity>(query, null, ["PartitionKey", "RowKey"], CancellationToken);
+
+            var count = 0;
+            foreach (var _ in entities)
+            {
+                count++;
+            }
+
+            return count;
         }
         catch (Exception ex)
         {
@@ -542,9 +609,10 @@ public class AzDataTableService
         foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
         {
             // Loop through each group and submit up to 100 at a time
-            for (int i = 0; i < group.Count(); i += 100)
+            var count = group.Count();
+            for (int i = 0; i < count; i += MaxTransactionSize)
             {
-                var response = TableClient!.SubmitTransaction(group.Skip(i).Take(100), CancellationToken);
+                TableClient!.SubmitTransaction(group.Skip(i).Take(MaxTransactionSize), CancellationToken);
             }
         }
     }

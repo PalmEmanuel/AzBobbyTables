@@ -1,6 +1,7 @@
 ﻿using PipeHow.AzBobbyTables.Validation;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 
@@ -35,6 +36,11 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
     /// <summary>
     /// The process step of the pipeline.
     /// </summary>
+    /// <summary>
+    /// Entities gathered from the pipeline, submitted as one batch in EndProcessing.
+    /// </summary>
+    private readonly List<object> entities = new();
+
     protected override void ProcessRecord()
     {
         if (tableService is null)
@@ -43,9 +49,24 @@ public class RemoveAzDataTableEntity : AzDataTableOperationCommand
             return;
         }
 
+        // Collect rather than submit. Entity binds one pipeline record at a time, so submitting
+        // here sent a separate transaction per entity instead of batching up to 100.
+        entities.AddRange(Entity);
+    }
+
+    /// <summary>
+    /// Submit everything gathered from the pipeline as a single batched operation.
+    /// </summary>
+    protected override void EndProcessing()
+    {
+        if (tableService is null || entities.Count == 0)
+        {
+            return;
+        }
+
         try
         {
-            tableService.RemoveEntitiesFromTable(Entity, !Force.IsPresent);
+            tableService.RemoveEntitiesFromTable(entities, !Force.IsPresent);
         }
         catch (AzDataTableException ex)
         {

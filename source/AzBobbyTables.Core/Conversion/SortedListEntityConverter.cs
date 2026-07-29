@@ -20,12 +20,29 @@ public class SortedListEntityConverter : IEntityConverter
         if (obj is not SortedList sortedList)
             return false;
 
-        var hasPartitionKey = sortedList.Keys.Cast<string>()
-            .Any(key => key.Equals("PartitionKey", StringComparison.Ordinal));
-        var hasRowKey = sortedList.Keys.Cast<string>()
-            .Any(key => key.Equals("RowKey", StringComparison.Ordinal));
+        // Single pass over the keys. Cast to string rather than pattern matching so a non-string
+        // key still throws, as Cast<string>() did.
+        var hasPartitionKey = false;
+        var hasRowKey = false;
 
-        return hasPartitionKey && hasRowKey;
+        foreach (string key in sortedList.Keys)
+        {
+            if (!hasPartitionKey && key.Equals("PartitionKey", StringComparison.Ordinal))
+            {
+                hasPartitionKey = true;
+            }
+            else if (!hasRowKey && key.Equals("RowKey", StringComparison.Ordinal))
+            {
+                hasRowKey = true;
+            }
+
+            if (hasPartitionKey && hasRowKey)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public TableEntity ConvertToTableEntity(object obj)
@@ -35,7 +52,9 @@ public class SortedListEntityConverter : IEntityConverter
 
         var entity = new TableEntity();
         
-        foreach (string key in sortedList.Keys.Cast<string>())
+        // No Cast<string>() needed: the foreach already casts each key, and throws the same way
+        // on a non-string key. Cast only added a second iterator per entity.
+        foreach (string key in sortedList.Keys)
         {
             switch (key)
             {

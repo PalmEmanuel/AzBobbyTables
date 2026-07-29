@@ -80,8 +80,7 @@ public class GetAzDataTableEntity : AzDataTableOperationCommand
         {
             if (Count.IsPresent)
             {
-                var entities = tableService.GetEntitiesFromTable(Filter, new [] { "PartitionKey", "RowKey" }, null, null, null);
-                WriteObject(entities.Count());
+                WriteObject(tableService.CountEntitiesInTable(Filter));
             }
             else
             {

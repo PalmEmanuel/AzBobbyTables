@@ -32,7 +32,16 @@ public class EntityConverterRegistry
     /// <returns>A converter that can handle the object, or null if none found.</returns>
     public IEntityConverter GetConverter(object obj)
     {
-        return _converters.FirstOrDefault(c => c.CanConvert(obj));
+        // Indexed loop rather than FirstOrDefault, which boxes an enumerator on every entity.
+        for (int i = 0; i < _converters.Count; i++)
+        {
+            if (_converters[i].CanConvert(obj))
+            {
+                return _converters[i];
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

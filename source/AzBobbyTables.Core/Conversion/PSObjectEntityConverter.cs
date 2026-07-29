@@ -20,12 +20,29 @@ public class PSObjectEntityConverter : IEntityConverter
         if (obj is not PSObject psobject)
             return false;
 
-        var hasPartitionKey = psobject.Properties
-            .Any(p => p.Name.Equals("PartitionKey", StringComparison.Ordinal));
-        var hasRowKey = psobject.Properties
-            .Any(p => p.Name.Equals("RowKey", StringComparison.Ordinal));
+        // Single pass: enumerating PSObject.Properties goes through the adapter layer, so the
+        // second pass cost as much as the first.
+        var hasPartitionKey = false;
+        var hasRowKey = false;
 
-        return hasPartitionKey && hasRowKey;
+        foreach (var property in psobject.Properties)
+        {
+            if (!hasPartitionKey && property.Name.Equals("PartitionKey", StringComparison.Ordinal))
+            {
+                hasPartitionKey = true;
+            }
+            else if (!hasRowKey && property.Name.Equals("RowKey", StringComparison.Ordinal))
+            {
+                hasRowKey = true;
+            }
+
+            if (hasPartitionKey && hasRowKey)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public TableEntity ConvertToTableEntity(object obj)

@@ -20,12 +20,29 @@ public class HashtableEntityConverter : IEntityConverter
         if (obj is not Hashtable hashtable)
             return false;
 
-        var hasPartitionKey = hashtable.Keys.Cast<string>()
-            .Any(key => key.Equals("PartitionKey", StringComparison.Ordinal));
-        var hasRowKey = hashtable.Keys.Cast<string>()
-            .Any(key => key.Equals("RowKey", StringComparison.Ordinal));
+        // Single pass over the keys. Cast to string rather than pattern matching so a non-string
+        // key still throws, as Cast<string>() did.
+        var hasPartitionKey = false;
+        var hasRowKey = false;
 
-        return hasPartitionKey && hasRowKey;
+        foreach (string key in hashtable.Keys)
+        {
+            if (!hasPartitionKey && key.Equals("PartitionKey", StringComparison.Ordinal))
+            {
+                hasPartitionKey = true;
+            }
+            else if (!hasRowKey && key.Equals("RowKey", StringComparison.Ordinal))
+            {
+                hasRowKey = true;
+            }
+
+            if (hasPartitionKey && hasRowKey)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public bool ValidateEntityPropertyValuesNotNull(object obj, out IEnumerable<string>? nullProperties)

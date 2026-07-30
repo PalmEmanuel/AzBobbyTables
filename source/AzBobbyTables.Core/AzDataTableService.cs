@@ -662,4 +662,377 @@ public class AzDataTableService
     {
         return EntityConverterRegistry.Instance.GetSupportedTypeNames();
     }
+
+    #region Large entity operations
+
+    /// <summary>
+    /// Properties to request when only the row identity is needed.
+    /// </summary>
+    private static readonly string[] KeysOnlyProperties = { "PartitionKey", "RowKey" };
+
+    /// <summary>
+    /// Number of RowKeys to combine into one OData filter when looking up part rows.
+    /// </summary>
+    private const int PartLookupChunkSize = 10;
+
+    /// <summary>
+    /// Add one or more entities to a table, transparently splitting entities that
+    /// exceed the Azure Table Storage size limits across multiple properties and rows.
+    /// See <see cref="EntitySplitter"/> for the storage format.
+    ///
+    /// Entities are deduplicated by PartitionKey and RowKey (the last occurrence wins)
+    /// so one call can safely carry several versions of the same logical entity, and
+    /// leftover part rows from earlier, larger versions of a split entity are removed
+    /// after a successful write.
+    /// </summary>
+    /// <param name="entities">The entities to add (can be any supported type).</param>
+    /// <param name="operationType">The type of operation to perform.</param>
+    public void AddLargeEntitiesToTable(IEnumerable<object> entities, OperationTypeEnum operationType)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            var transactionType = ConvertOperationType(operationType);
+
+            // Deduplicate by entity identity, last one wins. A transaction containing
+            // two operations for the same key is rejected by the service outright.
+            var order = new List<(string PartitionKey, string RowKey)>();
+            var latest = new Dictionary<(string PartitionKey, string RowKey), TableEntity>();
+            foreach (var entity in entities)
+            {
+                var tableEntity = ConvertToValidatedTableEntity(entity);
+                var key = (tableEntity.PartitionKey, tableEntity.RowKey);
+                if (!latest.ContainsKey(key))
+                {
+                    order.Add(key);
+                }
+                latest[key] = tableEntity;
+            }
+
+            var actions = new List<TableTransactionAction>(order.Count);
+            var splitEntities = new List<(string PartitionKey, string RowKey, HashSet<string> LiveRowKeys)>();
+
+            foreach (var key in order)
+            {
+                var result = EntitySplitter.Split(latest[key]);
+
+                if (!result.Engaged)
+                {
+                    actions.Add(new TableTransactionAction(transactionType, result.Rows[0]));
+                    continue;
+                }
+
+                // Merging cannot remove properties from existing rows, and the
+                // property distribution over rows is not stable between writes, so a
+                // merged multi-row write would leave stale values behind on other rows
+                // and corrupt the reassembled entity. Multi-row merges are therefore
+                // promoted to full replacement.
+                var rowActionType = result.Rows.Count > 1 && transactionType == TableTransactionActionType.UpsertMerge
+                    ? TableTransactionActionType.UpsertReplace
+                    : transactionType;
+
+                foreach (var row in result.Rows)
+                {
+                    actions.Add(new TableTransactionAction(rowActionType, row));
+                }
+
+                splitEntities.Add((key.PartitionKey, key.RowKey, new HashSet<string>(result.Rows.Select(r => r.RowKey), StringComparer.Ordinal)));
+            }
+
+            SubmitTransactionSized(actions);
+
+            // Remove leftover part rows from earlier writes that used more rows than
+            // this one, so stale data cannot leak into reassembly.
+            foreach (var (partitionKey, rowKey, liveRowKeys) in splitEntities)
+            {
+                RemoveStalePartRows(partitionKey, rowKey, liveRowKeys);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "AddLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Get entities from a table based on an OData query, reassembling entities that
+    /// were split across multiple properties or rows by the large-entity write path.
+    /// See <see cref="EntitySplitter"/> for the storage format.
+    ///
+    /// Sorting, skipping and taking apply to the physical rows before reassembly, and
+    /// property selection that excludes the split markers prevents reassembly, so
+    /// filters should target the PartitionKey level when split entities are involved.
+    /// </summary>
+    /// <param name="query">The query to filter entities by.</param>
+    /// <param name="properties">The list of properties to return.</param>
+    /// <param name="top">The maximum number of physical rows to retrieve.</param>
+    /// <param name="skip">The number of physical rows to skip.</param>
+    /// <param name="orderBy">The names of one or more properties to sort by.</param>
+    /// <param name="onWarning">Called with a message when a malformed split manifest is skipped.</param>
+    /// <returns>The reassembled entities.</returns>
+    public IEnumerable<PSObject> GetLargeEntitiesFromTable(string query, string[] properties = null!, int? top = null, int? skip = null, string[] orderBy = null!, Action<string> onWarning = null!)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            // Page size hint, same reasoning as GetEntitiesFromTable.
+            var maxPerPage = CalculatePageSize(top, skip, orderBy);
+
+            IEnumerable<TableEntity> entities = TableClient!.Query<TableEntity>(query, maxPerPage, properties, CancellationToken);
+
+            if (orderBy is not null && orderBy.Any())
+            {
+                var orderableEntities = entities.OrderBy(e => e[orderBy.First()]);
+                foreach (var propertyName in orderBy.Skip(1))
+                {
+                    orderableEntities = orderableEntities.ThenBy(e => e[propertyName]);
+                }
+                entities = orderableEntities;
+            }
+            if (skip is not null)
+            {
+                entities = entities.Skip((int)skip);
+            }
+            if (top is not null)
+            {
+                entities = entities.Take((int)top);
+            }
+
+            // Reassembly needs the whole result set: part rows carry no ordering
+            // guarantee relative to their siblings once sorting or filters apply.
+            return EntitySplitter.Reassemble(entities.ToList(), onWarning)
+                .Select(ProjectToPSObject)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "GetLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Remove one or more entities from a table, including any part rows the entities
+    /// were split into by the large-entity write path. Part rows are looked up by the
+    /// OriginalEntityId marker and removed unconditionally; ETag validation, when
+    /// requested, applies to the entity's own row.
+    /// </summary>
+    /// <param name="entities">The entities to remove (can be any supported type).</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
+    public void RemoveLargeEntitiesFromTable(IEnumerable<object> entities, bool validateEtag = true)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            var mainRows = entities.Select(ConvertToValidatedTableEntity).ToList();
+            var mainKeys = new HashSet<(string PartitionKey, string RowKey)>(mainRows.Select(e => (e.PartitionKey, e.RowKey)));
+
+            var actions = new List<TableTransactionAction>(mainRows.Count);
+            foreach (var entity in mainRows)
+            {
+                actions.Add(new TableTransactionAction(TableTransactionActionType.Delete, entity, validateEtag ? entity.ETag : default));
+            }
+
+            // Find the part rows belonging to the removed entities. OriginalEntityId
+            // is matched in chunked OR filters to keep the number of queries low.
+            foreach (var partitionGroup in mainRows.GroupBy(e => e.PartitionKey))
+            {
+                var rowKeys = partitionGroup.Select(e => e.RowKey).Distinct(StringComparer.Ordinal).ToList();
+                for (var i = 0; i < rowKeys.Count; i += PartLookupChunkSize)
+                {
+                    var conditions = string.Join(" or ", rowKeys
+                        .Skip(i)
+                        .Take(PartLookupChunkSize)
+                        .Select(rowKey => $"{EntitySplitter.OriginalEntityIdKey} eq '{EscapeODataValue(rowKey)}'"));
+                    var filter = $"PartitionKey eq '{EscapeODataValue(partitionGroup.Key)}' and ({conditions})";
+
+                    foreach (var partRow in TableClient!.Query<TableEntity>(filter, null, KeysOnlyProperties, CancellationToken))
+                    {
+                        if (!mainKeys.Contains((partRow.PartitionKey, partRow.RowKey)))
+                        {
+                            actions.Add(new TableTransactionAction(TableTransactionActionType.Delete, partRow));
+                        }
+                    }
+                }
+            }
+
+            SubmitTransactionSized(actions);
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "RemoveLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Convert an input entity through the converter registry and validate that it
+    /// carries the required keys.
+    /// </summary>
+    private static TableEntity ConvertToValidatedTableEntity(object entity)
+    {
+        var registry = EntityConverterRegistry.Instance;
+        var converter = registry.GetConverter(entity);
+        if (converter == null)
+        {
+            var supportedTypes = string.Join(", ", registry.GetSupportedTypeNames());
+            throw new ArgumentException($"Unsupported entity type '{entity.GetType().FullName}'. Supported types are: {supportedTypes}");
+        }
+
+        var tableEntity = converter.ConvertToTableEntity(entity);
+
+        if (!tableEntity.ContainsKey("PartitionKey") || !tableEntity.ContainsKey("RowKey"))
+        {
+            throw new ArgumentException($"Entity of type {converter.TypeName} is missing required PartitionKey or RowKey properties!");
+        }
+
+        // Unwrap PSObject-wrapped values, which PowerShell pipelines produce readily
+        // (e.g. @{ N = $_ } inside ForEach-Object) and the SDK serializer rejects.
+        foreach (var key in tableEntity.Keys.ToList())
+        {
+            if (tableEntity[key] is PSObject wrapped)
+            {
+                tableEntity[key] = wrapped.BaseObject;
+            }
+        }
+
+        return tableEntity;
+    }
+
+    /// <summary>
+    /// Project a table entity to the PSObject shape returned to the user session.
+    /// </summary>
+    private static PSObject ProjectToPSObject(TableEntity entity)
+    {
+        PSObject entityObject = new();
+        entityObject.Properties.Add(new PSNoteProperty("ETag", entity["odata.etag"]));
+        foreach (var key in entity.Keys)
+        {
+            if (key == "odata.etag") continue;
+            entityObject.Properties.Add(new PSNoteProperty(key, entity[key]));
+        }
+        return entityObject;
+    }
+
+    /// <summary>
+    /// Submit transactions grouped by partition, packing each batch by count and by
+    /// estimated payload size. Rows produced by entity splitting approach the row
+    /// budget individually, so packing 100 of them into one transaction would exceed
+    /// the service's batch payload limit.
+    /// </summary>
+    private void SubmitTransactionSized(IList<TableTransactionAction> transactions)
+    {
+        foreach (var group in transactions.GroupBy(t => t.Entity.PartitionKey))
+        {
+            var batch = new List<TableTransactionAction>();
+            long batchSize = 0;
+
+            foreach (var action in group)
+            {
+                var actionSize = action.Entity is TableEntity tableEntity ? EntitySplitter.EstimateEntitySize(tableEntity) : 0;
+
+                if (batch.Count > 0 && (batch.Count >= MaxTransactionSize || batchSize + actionSize > EntitySplitter.MaxTransactionPayload))
+                {
+                    FlushSizedBatch(batch);
+                    batch.Clear();
+                    batchSize = 0;
+                }
+
+                batch.Add(action);
+                batchSize += actionSize;
+            }
+
+            if (batch.Count > 0)
+            {
+                FlushSizedBatch(batch);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Submit one transaction batch. When the transaction is rejected because of a
+    /// single entity, fall back to executing the actions individually so the healthy
+    /// entities still land; the first individual failure surfaces to the caller.
+    /// </summary>
+    private void FlushSizedBatch(List<TableTransactionAction> batch)
+    {
+        try
+        {
+            TableClient!.SubmitTransaction(batch, CancellationToken);
+        }
+        catch (TableTransactionFailedException)
+        {
+            foreach (var action in batch)
+            {
+                ExecuteTransactionActionIndividually(action);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Execute a single transaction action as its equivalent non-batched operation.
+    /// </summary>
+    private void ExecuteTransactionActionIndividually(TableTransactionAction action)
+    {
+        // All actions on this path are created from TableEntity instances; the SDK
+        // serializes the concrete dictionary-backed type.
+        var entity = (TableEntity)action.Entity;
+        var etag = action.ETag == default ? ETag.All : action.ETag;
+
+        switch (action.ActionType)
+        {
+            case TableTransactionActionType.Add:
+                TableClient!.AddEntity(entity, CancellationToken);
+                break;
+            case TableTransactionActionType.UpsertMerge:
+                TableClient!.UpsertEntity(entity, TableUpdateMode.Merge, CancellationToken);
+                break;
+            case TableTransactionActionType.UpsertReplace:
+                TableClient!.UpsertEntity(entity, TableUpdateMode.Replace, CancellationToken);
+                break;
+            case TableTransactionActionType.UpdateMerge:
+                TableClient!.UpdateEntity(entity, etag, TableUpdateMode.Merge, CancellationToken);
+                break;
+            case TableTransactionActionType.UpdateReplace:
+                TableClient!.UpdateEntity(entity, etag, TableUpdateMode.Replace, CancellationToken);
+                break;
+            case TableTransactionActionType.Delete:
+                try
+                {
+                    TableClient!.DeleteEntity(entity.PartitionKey, entity.RowKey, etag, CancellationToken);
+                }
+                catch (RequestFailedException ex) when (ex.Status == 404)
+                {
+                    // The row is already gone, which is the goal of a delete.
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Remove part rows of a previously split entity that are no longer used by its
+    /// current version, so their stale properties cannot resurface on reassembly.
+    /// </summary>
+    private void RemoveStalePartRows(string partitionKey, string originalRowKey, HashSet<string> liveRowKeys)
+    {
+        var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and {EntitySplitter.OriginalEntityIdKey} eq '{EscapeODataValue(originalRowKey)}'";
+
+        var staleActions = TableClient!.Query<TableEntity>(filter, null, KeysOnlyProperties, CancellationToken)
+            .Where(e => !liveRowKeys.Contains(e.RowKey))
+            .Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e))
+            .ToList();
+
+        if (staleActions.Count > 0)
+        {
+            SubmitTransactionSized(staleActions);
+        }
+    }
+
+    /// <summary>
+    /// Escape a value for use inside single quotes in an OData filter.
+    /// </summary>
+    private static string EscapeODataValue(string value) => value.Replace("'", "''");
+
+    #endregion
 }

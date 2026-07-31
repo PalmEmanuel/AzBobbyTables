@@ -113,6 +113,40 @@ public class AzDataTableService
     private const int MaxTransactionSize = 100;
 
     /// <summary>
+    /// The maximum page size Azure Table Storage accepts. A larger value is rejected with
+    /// 400 InvalidInput rather than being capped, so any page size hint must be clamped to it.
+    /// </summary>
+    public const int MaxEntitiesPerPage = 1000;
+
+    /// <summary>
+    /// Calculates the page size to request for a query, or null to accept the service default.
+    /// </summary>
+    /// <remarks>
+    /// Only a hint: it sizes each page, it does not limit the total. The caller still applies
+    /// Take, and the SDK pages through transparently when more than one page is needed.
+    /// Returns null when sorting, because ordering has to see every entity.
+    /// The result is clamped to <see cref="MaxEntitiesPerPage"/> because the service rejects a
+    /// larger page size outright with 400 InvalidInput instead of capping it. Note that Azurite
+    /// does not enforce that limit, so only a direct assertion on this value catches a regression.
+    /// </remarks>
+    /// <param name="top">Maximum number of entities the caller asked for.</param>
+    /// <param name="skip">Number of entities to skip; applied client side, so the page must cover them.</param>
+    /// <param name="orderBy">Properties to sort by, if any.</param>
+    /// <returns>The page size to request, or null for the service default.</returns>
+    public static int? CalculatePageSize(int? top, int? skip, string[] orderBy)
+    {
+        if (!(top > 0) || (orderBy is not null && orderBy.Length > 0))
+        {
+            return null;
+        }
+
+        var skipped = skip > 0 ? skip.Value : 0;
+        var needed = (long)skipped + top.Value;
+
+        return (int)Math.Min(needed, MaxEntitiesPerPage);
+    }
+
+    /// <summary>
     /// Creates the transaction list, presized when the source count is known to avoid regrowing it.
     /// </summary>
     private static List<TableTransactionAction> CreateTransactionList(IEnumerable<object> entities) =>
@@ -487,15 +521,7 @@ public class AzDataTableService
             // When the caller wants a bounded number of entities and no sorting is needed, ask the
             // service for only that many per page. Otherwise the first page returns up to 1000
             // entities and everything past the requested count is fetched and then discarded.
-            // Sorting has to see every entity, so it opts out of the bound.
-            int? maxPerPage = null;
-            if (top > 0 && (orderBy is null || orderBy.Length == 0))
-            {
-                // Skip is applied client side, so the page still has to cover the skipped entities.
-                var skipped = skip > 0 ? skip.Value : 0;
-                var needed = (long)skipped + top.Value;
-                maxPerPage = needed <= int.MaxValue ? (int)needed : null;
-            }
+            var maxPerPage = CalculatePageSize(top, skip, orderBy);
 
             // Declare type as IEnumerable to be able to overwrite it with LINQ results further down.
             // Query rather than QueryAsync: the result is handed back to PowerShell synchronously either way

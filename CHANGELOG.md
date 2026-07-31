@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Fixed
+
+- `Get-AzDataTableEntity` no longer fails with `400 InvalidInput` when `-First` is given a value above 1000. The page-size hint introduced in 3.6.1 was passed to the service unclamped, and Azure Table Storage rejects a page size over its limit of 1000 rather than capping it. The hint is now clamped to that limit. Results are unchanged: the hint only sizes each page, so requests for more than 1000 entities are served by paging, as they were before 3.6.1.
+
 ## [3.6.1] - 2026-07-29
 
 ### Changed

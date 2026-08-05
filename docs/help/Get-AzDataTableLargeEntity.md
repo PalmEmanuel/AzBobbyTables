@@ -16,12 +16,14 @@ Get one or more entities from an Azure Table, reassembling entities that were sp
 ### TableOperation (Default)
 ```
 Get-AzDataTableLargeEntity -Context <AzDataTableContext> [-Filter <String>] [-Property <String[]>]
- [-First <Int32>] [-Skip <Int32>] [-Sort <String[]>] [-MaxRetries <Int32>] [<CommonParameters>]
+ [-First <Int32>] [-Skip <Int32>] [-Sort <String[]>] [-MaxRetries <Int32>]
+ [<CommonParameters>]
 ```
 
 ### Count
 ```
-Get-AzDataTableLargeEntity -Context <AzDataTableContext> [-Count] [-MaxRetries <Int32>] [<CommonParameters>]
+Get-AzDataTableLargeEntity -Context <AzDataTableContext> [-Count] [-MaxRetries <Int32>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION

@@ -36,7 +36,7 @@ Describe 'Query page size' {
 
         It 'clamps <Description>' -TestCases @(
             @{ Description = 'a request just over the limit'; Top = 1001; Skip = $null }
-            @{ Description = 'the size that broke Push-GetPendingWebhooks'; Top = 10000; Skip = $null }
+            @{ Description = 'a request much above the limit'; Top = 10000; Skip = $null }
             @{ Description = 'a very large request'; Top = [int]::MaxValue; Skip = $null }
             @{ Description = 'a skip and top that only exceed the limit combined'; Top = 600; Skip = 600 }
             @{ Description = 'a skip and top that would overflow Int32 if added'; Top = [int]::MaxValue; Skip = [int]::MaxValue }

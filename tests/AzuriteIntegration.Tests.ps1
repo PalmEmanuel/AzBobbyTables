@@ -409,6 +409,53 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
         }
     }
 
+    Context 'Result limits across the page boundary' {
+        BeforeAll {
+            # A page holds at most 1000 entities, so this spans more than one page.
+            $Script:PagingTable = 'AzBobbyTablesPaging'
+            $Script:PagingContext = New-AzDataTableContext -TableName $Script:PagingTable -ConnectionString 'UseDevelopmentStorage=true'
+            New-AzDataTable -Context $Script:PagingContext -ErrorAction SilentlyContinue | Out-Null
+
+            $Entities = 1..1500 | ForEach-Object {
+                @{ PartitionKey = 'Paging'; RowKey = ('{0:D5}' -f $_); Value = "value-$_" }
+            }
+            for ($i = 0; $i -lt $Entities.Count; $i += 100) {
+                $End = [Math]::Min($i + 99, $Entities.Count - 1)
+                Add-AzDataTableEntity -Context $Script:PagingContext -Entity $Entities[$i..$End] -Force
+            }
+        }
+
+        It 'returns <Expected> entities for -First <First>' -TestCases @(
+            @{ First = 1; Expected = 1 }
+            @{ First = 999; Expected = 999 }
+            @{ First = 1000; Expected = 1000 }
+            @{ First = 1001; Expected = 1001 }
+            @{ First = 1500; Expected = 1500 }
+            @{ First = 10000; Expected = 1500 }   # more than exists, and more than one page
+        ) {
+            @(Get-AzDataTableEntity -Context $Script:PagingContext -First $First).Count | Should -BeExactly $Expected
+        }
+
+        It 'applies -Skip across a page boundary' {
+            @(Get-AzDataTableEntity -Context $Script:PagingContext -Skip 1400 -First 10000).Count | Should -BeExactly 100
+        }
+
+        It 'returns every entity when no limit is given' {
+            @(Get-AzDataTableEntity -Context $Script:PagingContext).Count | Should -BeExactly 1500
+        }
+
+        It 'sorts across the whole set, not just the first page' {
+            # Sorting opts out of the page bound, so the last RowKey must be reachable.
+            $Sorted = @(Get-AzDataTableEntity -Context $Script:PagingContext -Sort 'RowKey' -First 1)
+            $Sorted.Count | Should -BeExactly 1
+            $Sorted[0].RowKey | Should -BeExactly '00001'
+        }
+
+        AfterAll {
+            Remove-AzDataTable -Context $Script:PagingContext -ErrorAction SilentlyContinue
+        }
+    }
+
     Context 'Type Coverage Validation' {
         It 'should have integration tests for all supported entity types' {
             # Get the list of supported entity types from the module

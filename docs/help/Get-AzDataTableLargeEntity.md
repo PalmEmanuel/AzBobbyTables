@@ -9,7 +9,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Get one or more entities from an Azure Table, reassembling entities that were split by Add-AzDataTableLargeEntity.
+Get one or more entities from an Azure Table, reassembling large entities that were split by Add-AzDataTableLargeEntity.
 
 ## SYNTAX
 
@@ -28,13 +28,13 @@ Get-AzDataTableLargeEntity -Context <AzDataTableContext> [-Count] [-MaxRetries <
 
 ## DESCRIPTION
 
-Get one or more entities from an Azure Table, reassembling entities that were split across multiple properties or rows because they exceeded the Azure Table Storage size limits.
+Get one or more entities from an Azure Table, reassembling entities added with `Add-AzDataTableLargeEntity` that were split across multiple properties or rows because they exceeded the Azure Table Storage size limits.
 
 Rows belonging to one logical entity are recognized by their `OriginalEntityId` property and merged in `PartIndex` order, after which chunked properties recorded in the `SplitOverProps` manifest are joined back into their original single property. Entities that were never split are returned as-is.
 
 If both a plain row and leftover part rows exist for the same RowKey, the plain row wins, so an entity that was rewritten smaller after having been split still reads correctly.
 
-Since split entities span multiple physical rows, use filters that do not separate an entity from its parts; filtering on the PartitionKey level is safe. First, Skip, Sort and Count operate on physical rows, before reassembly. A Property selection that excludes the split markers (OriginalEntityId, PartIndex, SplitOverProps and the chunk properties) prevents reassembly.
+Since split entities span multiple rows, First, Skip, Sort and Count operate on rows before reassembly. If a filter matches only some rows of a split entity, the cmdlet fetches the missing rows before reassembly. A Property selection that excludes the split markers (OriginalEntityId, PartIndex, SplitOverProps, PartCount and the chunk properties) prevents reassembly.
 
 ## EXAMPLES
 
@@ -130,7 +130,7 @@ Accept wildcard characters: False
 
 ### -Property
 
-The properties to return for the entities. Selecting properties that exclude the split markers prevents reassembly of split entities.
+The properties to return for the entities. Selecting properties that exclude the split markers (OriginalEntityId, PartIndex, SplitOverProps, PartCount and chunk properties) prevents reassembly of split entities.
 
 ```yaml
 Type: String[]

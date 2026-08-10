@@ -9,7 +9,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Remove one or more entities from an Azure Table, including any part rows they were split into by Add-AzDataTableLargeEntity.
+Remove one or more entities from an Azure Table, including any part rows they were split into by `Add-AzDataTableLargeEntity`.
 
 ## SYNTAX
 
@@ -22,7 +22,7 @@ Remove-AzDataTableLargeEntity -Context <AzDataTableContext> -Entity <Object[]> [
 
 Remove one or more entities from an Azure Table, based on PartitionKey and RowKey.
 
-In addition to the entity's own row, any part rows that the entity was split into on write (rows whose `OriginalEntityId` matches the entity's RowKey) are looked up and removed as well, so no orphaned parts are left behind. Part rows are removed without ETag validation; ETag validation, when not skipped with Force, applies to the entity's own row.
+In addition to the entity's own row, any part rows that the entity was split into when added by `Add-AzDataTableLargeEntity` (rows whose `OriginalEntityId` matches the entity's RowKey) are found and removed as well, so no orphaned parts are left behind. Part rows are removed without ETag validation; ETag validation, when not skipped with the `Force` parameter, applies only to the entity's own row.
 
 ## EXAMPLES
 
@@ -34,7 +34,7 @@ PS C:\> $Entity = Get-AzDataTableLargeEntity -Context $Context -Filter "RowKey e
 PS C:\> Remove-AzDataTableLargeEntity -Entity $Entity -Context $Context -Force
 ```
 
-Remove an entity and all rows it was split into.
+Remove an entity and all rows it was split into when added by `Add-AzDataTableLargeEntity`.
 
 ## PARAMETERS
 
@@ -112,7 +112,7 @@ This cmdlet takes either an array of hashtables, psobjects, or sorted lists as i
 
 ## OUTPUTS
 
-### System.Object
+### None
 
 ## NOTES
 

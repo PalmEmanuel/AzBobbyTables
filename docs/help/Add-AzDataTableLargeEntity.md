@@ -32,11 +32,11 @@ Add one or more entities to an Azure Table, as an array of either Hashtables, PS
 Unlike Add-AzDataTableEntity, this cmdlet accepts entities that exceed the Azure Table Storage size limits (64 KiB per string property, 1 MiB per entity) and splits them transparently:
 
 - A string property larger than 32256 characters is stored as multiple chunk properties named `{Property}_Part0`, `{Property}_Part1`, and so on. A JSON manifest in the `SplitOverProps` property records which chunks belong to which original property.
-- An entity that is still too large after property splitting is distributed over multiple rows. The first row keeps the original RowKey, additional rows are named `{RowKey}-part1`, `{RowKey}-part2`, and so on. Each row carries an `OriginalEntityId` property with the original RowKey and a `PartIndex` property with the row order.
+- An entity that is still too large after property splitting is distributed over multiple rows. The first row keeps the original RowKey, additional rows are named `{RowKey}-part1`, `{RowKey}-part2`, and so on. Each row carries an `OriginalEntityId` property with the original RowKey, a `PartIndex` property with the row order, and a `PartCount` property with the total number of rows for the entity.
 
 Use Get-AzDataTableLargeEntity to read the entities back in their original shape, and Remove-AzDataTableLargeEntity to delete them including all part rows.
 
-Entities in one call are deduplicated by PartitionKey and RowKey, with the last occurrence winning, since the underlying transactions reject multiple operations on the same key. After writing a split entity, leftover part rows from an earlier larger version of the same entity are cleaned up automatically.
+If the same PartitionKey/RowKey combination appears more than once in a single call, only the last occurrence is written. This is required because Azure Table Storage rejects batch transactions that contain duplicate keys. When an entity is split across multiple rows, any part rows left from a previous larger version of that entity are deleted automatically after the new rows are written.
 
 Note that when an entity is split over multiple rows, its rows are written as full replacements even with an OperationType of UpsertMerge, since the distribution of properties over rows changes between writes and merging would leave stale values behind. Entities small enough to fit in one row are written with the requested operation type. When the sizes of entities vary between writes across the splitting threshold, prefer UpsertReplace (or Force).
 
@@ -174,13 +174,13 @@ This cmdlet takes either an array of hashtables, psobjects, or sorted lists as i
 
 ## OUTPUTS
 
-### System.Object
+### None
 
 ## NOTES
 
 Only string properties are split. A non-string property that individually exceeds the service limits, such as a byte array over 64 KiB, is rejected by the service.
 
-The storage format reserves some naming patterns in tables used with the large-entity cmdlets: property names ending in `_Part{n}` of another property, the property names `SplitOverProps`, `OriginalEntityId` and `PartIndex`, and RowKeys of the form `{OtherRowKey}-part{n}`. Entities using such names can collide with the split representation of other entities.
+The storage format reserves some naming patterns in tables used with the large-entity cmdlets: property names ending in `_Part{n}` of another property, the property names `SplitOverProps`, `OriginalEntityId`, `PartIndex` and `PartCount`, and RowKeys of the form `{OtherRowKey}-part{n}`. Entities using such names can collide with the split representation of other entities.
 
 ## RELATED LINKS
 

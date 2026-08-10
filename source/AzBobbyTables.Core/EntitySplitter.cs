@@ -136,8 +136,8 @@ public static class EntitySplitter
             return new SplitResult(new List<TableEntity> { entity }, false);
         }
 
-        // Rebuild the entity without row-scoped metadata. Split rows are new physical
-        // rows, so the source row's Timestamp and ETag do not apply to them.
+        // Rebuild the entity without row-scoped metadata. Split rows are new rows,
+        // the source row's Timestamp and ETag do not apply to them
         var working = new TableEntity(entity.PartitionKey, entity.RowKey);
         foreach (var property in entity)
         {

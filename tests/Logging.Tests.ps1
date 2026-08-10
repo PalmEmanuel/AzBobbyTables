@@ -79,6 +79,15 @@ Describe 'PSCmdletLogSink stream mapping' {
         $Script:AdapterType | Should -Not -BeNullOrEmpty
     }
 
+    It 'is a static helper that does not implement IPSLogSink' {
+        # Implementing IPSLogSink here would force Core to load during PowerShell's cmdlet type
+        # enumeration (before OnImport registers the ALC resolver) and break Import-Module.
+        # The adapter wires up via a DelegateLogSink instead — enforce that shape.
+        $Script:AdapterType.IsAbstract    | Should -BeTrue    # static class → abstract + sealed
+        $Script:AdapterType.IsSealed      | Should -BeTrue
+        $Script:AdapterType.GetInterfaces().FullName | Should -Not -Contain 'PipeHow.AzBobbyTables.Core.Logging.IPSLogSink'
+    }
+
     It 'forwards each level to the matching PowerShell stream via ICommandRuntime' {
         # The adapter calls Cmdlet.WriteVerbose/WriteWarning/... which delegate to the cmdlet's
         # ICommandRuntime. Substitute a recording runtime to observe what the adapter emits
@@ -137,12 +146,15 @@ public sealed class HostCmdlet : Cmdlet {}
         $runtime = New-Object 'RecordingRuntime'
         $cmdlet.CommandRuntime = $runtime
 
-        $adapterCtor = $Script:AdapterType.GetConstructor(@([System.Management.Automation.Cmdlet]))
-        $adapterCtor | Should -Not -BeNullOrEmpty
-        $adapter = $adapterCtor.Invoke(@([System.Management.Automation.Cmdlet]$cmdlet))
+        # Static factory returns an IPSLogSink (a DelegateLogSink from Core) that forwards to
+        # the cmdlet — exercise the full public surface the operation cmdlets rely on.
+        $createMethod = $Script:AdapterType.GetMethod('Create', [System.Management.Automation.Cmdlet])
+        $createMethod | Should -Not -BeNullOrEmpty
+        $sink = $createMethod.Invoke($null, @([System.Management.Automation.Cmdlet]$cmdlet))
+        $sink | Should -Not -BeNullOrEmpty
 
         # Null event must be a no-op.
-        { $adapter.Log($null) } | Should -Not -Throw
+        { $sink.Log($null) } | Should -Not -Throw
 
         $verbose     = [System.Enum]::Parse($Script:LogLevelType, 'Verbose')
         $warning     = [System.Enum]::Parse($Script:LogLevelType, 'Warning')
@@ -150,11 +162,11 @@ public sealed class HostCmdlet : Cmdlet {}
         $information = [System.Enum]::Parse($Script:LogLevelType, 'Information')
         $errorLevel  = [System.Enum]::Parse($Script:LogLevelType, 'Error')
 
-        $adapter.Log([System.Activator]::CreateInstance($Script:LogEventType, @($verbose,     'v-msg', $null,      $null)))
-        $adapter.Log([System.Activator]::CreateInstance($Script:LogEventType, @($warning,     'w-msg', $null,      $null)))
-        $adapter.Log([System.Activator]::CreateInstance($Script:LogEventType, @($debug,       'd-msg', $null,      $null)))
-        $adapter.Log([System.Activator]::CreateInstance($Script:LogEventType, @($information, 'i-msg', 'INFO-TAG', $null)))
-        $adapter.Log([System.Activator]::CreateInstance($Script:LogEventType, @($errorLevel,  'e-msg', 'ERR-ID',   'ctx')))
+        $sink.Log([System.Activator]::CreateInstance($Script:LogEventType, @($verbose,     'v-msg', $null,      $null)))
+        $sink.Log([System.Activator]::CreateInstance($Script:LogEventType, @($warning,     'w-msg', $null,      $null)))
+        $sink.Log([System.Activator]::CreateInstance($Script:LogEventType, @($debug,       'd-msg', $null,      $null)))
+        $sink.Log([System.Activator]::CreateInstance($Script:LogEventType, @($information, 'i-msg', 'INFO-TAG', $null)))
+        $sink.Log([System.Activator]::CreateInstance($Script:LogEventType, @($errorLevel,  'e-msg', 'ERR-ID',   'ctx')))
 
         $runtime.Verboses     | Should -Contain 'v-msg'
         $runtime.Warnings     | Should -Contain 'w-msg'

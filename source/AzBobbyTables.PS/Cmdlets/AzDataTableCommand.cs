@@ -25,6 +25,6 @@ public class AzDataTableCommand : PSCmdlet
         // Attach the cmdlet-side log sink so Core diagnostics land on the pipeline's PowerShell
         // streams. Set after construction because the Core factory methods intentionally know
         // nothing about System.Management.Automation.
-        tableService.LogSink = new PSCmdletLogSink(this);
+        tableService.LogSink = PSCmdletLogSink.Create(this);
     }
 }

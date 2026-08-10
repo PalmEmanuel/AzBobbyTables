@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-08-10
+
 ### Added
 
 - Added `Add-AzDataTableLargeEntity`, `Get-AzDataTableLargeEntity` and `Remove-AzDataTableLargeEntity` for working with entities that exceed Azure Table Storage size limits (64 KiB per string property, 1 MiB per entity):
@@ -130,7 +132,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...v3.5.0

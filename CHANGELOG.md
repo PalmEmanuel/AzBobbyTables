@@ -10,6 +10,9 @@ The format is based on and uses the types of changes according to [Keep a Change
   - `Add-AzDataTableLargeEntity` chunks oversized string properties, splits entities that exceed row limits across multiple rows, and records `PartCount` metadata on each part row.
   - `Get-AzDataTableLargeEntity` reassembles multipart entities (even when only some rows match the filter) and raises `IncompleteEntityException` if any rows or split-property chunks are missing.
   - `Remove-AzDataTableLargeEntity` removes all rows that belong to a multipart entity.
+
+### Changed
+
 - Added automatic clamping of `Get-AzDataTableEntity -First` page-size hints to Azure Table Storage's maximum of 1000, preventing `400 InvalidInput` for larger values.
 
 ## [3.6.1] - 2026-07-29

@@ -413,6 +413,24 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             Remove-AzDataTableLargeEntity -Context $Context -Entity $target -Force
             @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal2'") | Should -BeNullOrEmpty
         }
+
+        It 'rejects removal of a changed entity without -Force' {
+            # ETag validation in RemoveLargeEntitiesFromTable is distinct code from the
+            # standard remove path and would silently break if validateEtag were ignored.
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal3'; RowKey = 'etag'; V = 'original' } -Force
+
+            $stale = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal3'"
+            $fresh = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal3'"
+
+            # Mutate via the fresh handle so its ETag advances; $stale is now out of date.
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal3'; RowKey = 'etag'; V = 'updated' } -Force
+
+            { Remove-AzDataTableLargeEntity -Context $Context -Entity $stale -ErrorAction Stop } | Should -Throw
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal3'") | Should -Not -BeNullOrEmpty
+
+            { Remove-AzDataTableLargeEntity -Context $Context -Entity $stale -Force } | Should -Not -Throw
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal3'") | Should -BeNullOrEmpty
+        }
     }
 
     Context 'bulk behavior' {

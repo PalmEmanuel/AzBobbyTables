@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Data.Tables;
 using PipeHow.AzBobbyTables.Core.Conversion;
+using PipeHow.AzBobbyTables.Core.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -181,6 +182,39 @@ public class AzDataTableService
     };
 
     private AzDataTableService(CancellationToken cancellationToken) => CancellationToken = cancellationToken;
+
+    /// <summary>
+    /// Optional sink for structured log events emitted by this service. Null means "do not emit";
+    /// every emission path is null-checked so existing callers that never assign a sink see no
+    /// behavioural change. Kept as a settable property rather than a constructor argument so the
+    /// Create* factories don't need new overloads and so the cmdlet layer can attach a sink after
+    /// the fact.
+    /// </summary>
+    public IPSLogSink? LogSink { get; set; }
+
+    /// <summary>Emit an event if a sink is attached. All log helpers funnel through this.</summary>
+    private void Log(PSLogLevel level, string message, string? code = null, string? context = null)
+    {
+        var sink = LogSink;
+        if (sink is null) return;
+        sink.Log(new PSLogEvent(level, message, code, context));
+    }
+
+    internal void LogVerbose(string message, string? code = null, string? context = null) =>
+        Log(PSLogLevel.Verbose, message, code, context);
+
+    internal void LogWarning(string message, string? code = null, string? context = null) =>
+        Log(PSLogLevel.Warning, message, code, context);
+
+    internal void LogDebug(string message, string? code = null, string? context = null) =>
+        Log(PSLogLevel.Debug, message, code, context);
+
+    internal void LogInformation(string message, string? code = null, string? context = null) =>
+        Log(PSLogLevel.Information, message, code, context);
+
+    internal void LogError(string message, string? code = null, string? context = null) =>
+        Log(PSLogLevel.Error, message, code, context);
+
 
     private TableTransactionActionType ConvertOperationType(OperationTypeEnum operationType) =>
         Enum.TryParse(operationType.ToString(), out TableTransactionActionType transactionType)
@@ -405,6 +439,10 @@ public class AzDataTableService
 
             var transactionType = ConvertOperationType(operationType);
             transactions.AddRange(tableEntities.Select(e => new TableTransactionAction(transactionType, e)));
+
+            LogVerbose(
+                $"Submitting {transactions.Count} entity operation(s) of type '{operationType}'.",
+                code: "AddEntitiesToTable");
 
             SubmitTransaction(transactions);
         }

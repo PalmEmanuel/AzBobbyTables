@@ -1,5 +1,6 @@
 ﻿using PipeHow.AzBobbyTables.Core;
 using PipeHow.AzBobbyTables.Core.Conversion;
+using PipeHow.AzBobbyTables.Logging;
 using System;
 using System.Collections;
 using System.Linq;
@@ -41,6 +42,14 @@ public class AzDataTableOperationCommand : AzDataTableCommand
                 ) || MyInvocation.MyCommand.Name is "New-AzDataTable";
 
             tableService = CreateWithContext(context, createIfNotExists, cancellationTokenSource.Token, MaxRetries);
+
+            // Attach the cmdlet-side log sink so Core diagnostics land on the pipeline's PowerShell
+            // streams. Set after construction because the Core factory methods intentionally know
+            // nothing about System.Management.Automation.
+            if (tableService is not null)
+            {
+                tableService.LogSink = new PSCmdletLogSink(this);
+            }
         }
         catch (AzDataTableException ex)
         {

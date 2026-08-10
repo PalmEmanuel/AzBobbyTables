@@ -440,6 +440,83 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
         }
     }
 
+    Context 'partial queries' {
+        # A caller's filter has no reason to match the `{RowKey}-part{n}` rows an entity
+        # was split over, so reading it must not depend on that.
+        BeforeAll {
+            $PartialData = New-PatternString -Length 1500000 -Seed 'PARTIAL'
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{
+                PartitionKey = 'partial'; RowKey = 'split'; Data = $PartialData; Plain = 'kept'
+            } -Force
+
+            $PartialRows = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'partial'" -Property PartitionKey, RowKey)
+        }
+
+        It 'is a fixture that really is split over several rows' {
+            # Guards the tests below from passing trivially if the thresholds change.
+            $PartialRows.Count | Should -BeGreaterThan 1
+        }
+
+        It 'returns the whole entity when queried by its RowKey alone' {
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'partial' and RowKey eq 'split'"
+            @($result).Count | Should -Be 1
+            ($result.Data -ceq $PartialData) | Should -BeTrue -Because 'rows the filter did not match must be fetched'
+            $result.Plain | Should -Be 'kept'
+        }
+
+        It 'leaks no chunk properties or split markers when recovered' {
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'partial' and RowKey eq 'split'"
+            $result.PSObject.Properties['Data_Part0'] | Should -BeNullOrEmpty
+            $result.PSObject.Properties['SplitOverProps'] | Should -BeNullOrEmpty
+            $result.PSObject.Properties['PartCount'] | Should -BeNullOrEmpty
+            $result.PSObject.Properties['PartIndex'] | Should -BeNullOrEmpty
+        }
+
+        It 'returns the whole entity when a page boundary falls inside it' {
+            # First counts physical rows, so a value below the row count cuts the entity.
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'partial'" -First 1
+            ($result.Data -ceq $PartialData) | Should -BeTrue -Because 'paging must not truncate an entity'
+        }
+
+        It 'returns the whole entity when only a tail row matches' {
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'partial' and RowKey eq 'split-part1'"
+            ($result.Data -ceq $PartialData) | Should -BeTrue
+        }
+
+        It 'records on every row how many rows the entity was split over' {
+            $raw = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'partial'")
+            $raw | ForEach-Object { $_.PartCount | Should -Be $raw.Count }
+        }
+
+        It 'puts the manifest on the first row, the one row a reader always has' {
+            $root = Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'partial' and RowKey eq 'split'"
+            $root.SplitOverProps | Should -Not -BeNullOrEmpty
+        }
+
+        It 'fails loudly when a row is genuinely gone rather than returning a fragment' {
+            # A deleted row cannot be recovered, and what survives would be a truncated
+            # value indistinguishable from real data.
+            $orphanTable = "AzBobbyTablesLEOrphan$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+            $orphanContext = New-AzDataTableContext -TableName $orphanTable -ConnectionString $ConnectionString
+            $null = New-AzDataTable -Context $orphanContext
+            try {
+                Add-AzDataTableLargeEntity -Context $orphanContext -Entity @{
+                    PartitionKey = 'o'; RowKey = 'split'; Data = (New-PatternString -Length 1500000 -Seed 'ORPHAN')
+                } -Force
+
+                $rows = @(Get-AzDataTableEntity -Context $orphanContext -Filter "PartitionKey eq 'o'" -Property PartitionKey, RowKey)
+                $rows.Count | Should -BeGreaterThan 1
+                $tail = $rows | Sort-Object RowKey | Select-Object -Last 1
+                Remove-AzDataTableEntity -Context $orphanContext -Entity @{ PartitionKey = 'o'; RowKey = $tail.RowKey }
+
+                { Get-AzDataTableLargeEntity -Context $orphanContext -Filter "PartitionKey eq 'o'" -ErrorAction Stop } |
+                Should -Throw -Because 'a truncated entity must not be presented as a whole one'
+            } finally {
+                Remove-AzDataTable -Context $orphanContext
+            }
+        }
+    }
+
     Context 'physical row accounting' {
         It 'counts physical rows including parts, as documented' {
             # Dedicated table so the count is deterministic

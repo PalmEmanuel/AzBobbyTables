@@ -801,8 +801,11 @@ public class AzDataTableService
             }
 
             // Reassembly needs the whole result set: part rows carry no ordering
-            // guarantee relative to their siblings once sorting or filters apply.
-            return EntitySplitter.Reassemble(entities.ToList(), onWarning)
+            // guarantee relative to their siblings once sorting or filters apply, and a
+            // caller's filter has no reason to match the rows an entity was split over.
+            var rows = RecoverMissingPartRows(entities.ToList(), properties);
+
+            return EntitySplitter.Reassemble(rows, onWarning)
                 .Select(ProjectToPSObject)
                 .ToList();
         }
@@ -810,6 +813,75 @@ public class AzDataTableService
         {
             throw new AzDataTableException(new ErrorRecord(ex, "GetLargeEntitiesError", ErrorCategory.InvalidOperation, null));
         }
+    }
+
+    /// <summary>
+    /// Fetch the rows of any entity in <paramref name="rows"/> that is only partly
+    /// present, and return the set with them added.
+    /// </summary>
+    /// <remarks>
+    /// Part rows are named <c>{RowKey}-part{n}</c>, so they are matched by a RowKey
+    /// range scoped to the entity's partition: an index seek, and no dependence on the
+    /// stored type of any marker property.
+    /// </remarks>
+    /// <param name="rows">The rows returned by the caller's query.</param>
+    /// <param name="properties">The property projection the caller asked for, if any.</param>
+    private List<TableEntity> RecoverMissingPartRows(List<TableEntity> rows, string[] properties)
+    {
+        var incomplete = EntitySplitter.FindIncompleteGroups(rows);
+        if (incomplete.Count == 0)
+        {
+            return rows;
+        }
+
+        // Rows the caller already matched are not added twice.
+        var seen = new HashSet<(string PartitionKey, string RowKey)>(rows.Select(r => (r.PartitionKey, r.RowKey)));
+
+        foreach (var partitionGroup in incomplete.GroupBy(g => g.PartitionKey, StringComparer.Ordinal))
+        {
+            var partitionClause = $"PartitionKey eq '{EscapeODataValue(partitionGroup.Key)}'";
+
+            foreach (var entityId in partitionGroup.Select(g => g.EntityId).Distinct(StringComparer.Ordinal))
+            {
+                var filter = $"{partitionClause} and {BuildRowKeyPrefixClause(entityId)}";
+
+                foreach (var row in TableClient!.Query<TableEntity>(filter, null, properties, CancellationToken))
+                {
+                    if (seen.Add((row.PartitionKey, row.RowKey)))
+                    {
+                        rows.Add(row);
+                    }
+                }
+            }
+        }
+
+        return rows;
+    }
+
+    /// <summary>
+    /// An OData clause matching every RowKey beginning with <paramref name="prefix"/>.
+    /// </summary>
+    /// <remarks>
+    /// The upper bound is the prefix with its last character incremented: the smallest
+    /// string sorting above every string that starts with it.
+    /// </remarks>
+    private static string BuildRowKeyPrefixClause(string prefix)
+    {
+        var lower = $"RowKey ge '{EscapeODataValue(prefix)}'";
+
+        var bound = prefix.ToCharArray();
+        for (var i = bound.Length - 1; i >= 0; i--)
+        {
+            if (bound[i] < char.MaxValue)
+            {
+                bound[i]++;
+                var upper = new string(bound, 0, i + 1);
+                return $"({lower} and RowKey lt '{EscapeODataValue(upper)}')";
+            }
+        }
+
+        // Every character is already the maximum, so nothing sorts above the prefix.
+        return $"({lower})";
     }
 
     /// <summary>

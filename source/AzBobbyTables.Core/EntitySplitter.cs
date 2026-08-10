@@ -44,6 +44,12 @@ public static class EntitySplitter
     /// <summary>Property on part rows holding the zero-based row index.</summary>
     public const string PartIndexKey = "PartIndex";
 
+    /// <summary>
+    /// Property on part rows holding how many rows the entity was split into, so a
+    /// reader can tell a complete group from a truncated one.
+    /// </summary>
+    public const string PartCountKey = "PartCount";
+
     /// <summary>Default for <see cref="MaxPropertyChars"/>.</summary>
     public const int DefaultMaxPropertyChars = 32_256;
 
@@ -88,6 +94,7 @@ public static class EntitySplitter
     {
         OriginalEntityIdKey,
         PartIndexKey,
+        PartCountKey,
         "PartitionKey",
         "RowKey",
         "Timestamp",
@@ -210,9 +217,24 @@ public static class EntitySplitter
         var currentRow = CreateRow(rowIndex);
         var currentSize = EstimateEntitySize(currentRow);
 
+        // The manifest goes on the root row after the loop; charge it here so it cannot
+        // push that row over the limit.
+        if (working.TryGetValue(SplitOverPropsKey, out var manifestForBudget))
+        {
+            currentSize += EstimatePropertySize(SplitOverPropsKey, manifestForBudget);
+        }
+
         foreach (var property in working)
         {
             if (property.Key is "PartitionKey" or "RowKey")
+            {
+                continue;
+            }
+
+            // Placed on the root row below instead. Left to the loop it lands on the
+            // last row, and a reader holding only the first row would then have every
+            // chunk and nothing describing them.
+            if (property.Key == SplitOverPropsKey)
             {
                 continue;
             }
@@ -235,6 +257,18 @@ public static class EntitySplitter
         }
 
         rows.Add(currentRow);
+
+        if (working.TryGetValue(SplitOverPropsKey, out var manifest))
+        {
+            rows[0][SplitOverPropsKey] = manifest;
+        }
+
+        // On every row, so any subset of them knows how many there should be.
+        foreach (var row in rows)
+        {
+            row[PartCountKey] = rows.Count;
+        }
+
         return rows;
     }
 
@@ -307,7 +341,45 @@ public static class EntitySplitter
     /// <param name="onWarning">Called with a message when a malformed manifest is skipped.</param>
     public static IEnumerable<TableEntity> Reassemble(IEnumerable<TableEntity> entities, Action<string>? onWarning = null)
     {
-        // Group rows by logical identity, preserving first-seen order for output.
+        var (order, groups) = GroupRows(entities);
+
+        foreach (var key in order)
+        {
+            var group = groups[key];
+
+            TableEntity? result;
+            if (group.Root is not null)
+            {
+                result = group.Root;
+            }
+            else if (group.Parts.Count > 0)
+            {
+                if (DescribeIncompleteness(group) is { } reason)
+                {
+                    throw new IncompleteEntityException(
+                        key.PartitionKey,
+                        key.EntityId,
+                        $"Cannot reassemble entity with PartitionKey='{key.PartitionKey}' and RowKey='{key.EntityId}': {reason} The query must return every row the entity was split over.");
+                }
+
+                result = MergeParts(group.Parts, key.PartitionKey, key.EntityId);
+            }
+            else
+            {
+                continue;
+            }
+
+            JoinSplitProperties(result, onWarning);
+            yield return result;
+        }
+    }
+
+    /// <summary>
+    /// Group physical rows by the logical entity they belong to, preserving first-seen
+    /// order.
+    /// </summary>
+    private static (List<(string PartitionKey, string EntityId)> Order, Dictionary<(string PartitionKey, string EntityId), EntityGroup> Groups) GroupRows(IEnumerable<TableEntity> entities)
+    {
         var order = new List<(string PartitionKey, string EntityId)>();
         var groups = new Dictionary<(string PartitionKey, string EntityId), EntityGroup>();
 
@@ -337,27 +409,123 @@ public static class EntitySplitter
             }
         }
 
+        return (order, groups);
+    }
+
+    /// <summary>
+    /// The identities of entities that are present only in part, i.e. rows were split
+    /// over more rows than the given set contains.
+    /// </summary>
+    /// <remarks>
+    /// Lets a reader fetch the rows it is missing before reassembling, instead of
+    /// producing a truncated entity from what it has.
+    /// </remarks>
+    /// <param name="entities">The physical rows, e.g. the result of a table query.</param>
+    public static IReadOnlyList<(string PartitionKey, string EntityId)> FindIncompleteGroups(IEnumerable<TableEntity> entities)
+    {
+        var (order, groups) = GroupRows(entities);
+        var incomplete = new List<(string PartitionKey, string EntityId)>();
+
         foreach (var key in order)
         {
             var group = groups[key];
-
-            TableEntity? result;
-            if (group.Root is not null)
+            if (group.Root is null && group.Parts.Count > 0 && DescribeIncompleteness(group) is not null)
             {
-                result = group.Root;
+                incomplete.Add(key);
             }
-            else if (group.Parts.Count > 0)
-            {
-                result = MergeParts(group.Parts, key.PartitionKey, key.EntityId);
-            }
-            else
-            {
-                continue;
-            }
-
-            JoinSplitProperties(result, onWarning);
-            yield return result;
         }
+
+        return incomplete;
+    }
+
+    /// <summary>
+    /// Why a group of part rows is not the whole entity, or null when it is.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PartCountKey"/> answers this outright. Rows written before it existed
+    /// fall back to two weaker signals: indexes must run from zero without gaps, and a
+    /// group holding chunk properties must also hold the manifest describing them,
+    /// which older writers put on the last row.
+    /// </remarks>
+    private static string? DescribeIncompleteness(EntityGroup group)
+    {
+        var indexes = group.Parts.Select(GetPartIndex).OrderBy(i => i).ToList();
+
+        var declaredCount = group.Parts
+            .Select(GetPartCount)
+            .Where(c => c > 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        if (declaredCount > 0 && group.Parts.Count != declaredCount)
+        {
+            return $"the entity was split over {declaredCount} rows but only {group.Parts.Count} were returned.";
+        }
+
+        if (indexes[0] != 0)
+        {
+            return $"the first row of the entity (PartIndex 0) was not returned.";
+        }
+
+        for (var i = 1; i < indexes.Count; i++)
+        {
+            if (indexes[i] != indexes[i - 1] + 1)
+            {
+                return $"the rows returned skip from PartIndex {indexes[i - 1]} to {indexes[i]}.";
+            }
+        }
+
+        if (declaredCount == 0 &&
+            !group.Parts.Any(p => p.ContainsKey(SplitOverPropsKey)) &&
+            group.Parts.Any(p => p.Keys.Any(IsChunkPropertyName)))
+        {
+            return "the entity holds split property chunks but no manifest describing them, so the row carrying the manifest was not returned.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Whether a property name looks like one of the chunks a column-split property was
+    /// broken into, i.e. ends in <c>_Part</c> followed by digits.
+    /// </summary>
+    private static bool IsChunkPropertyName(string name)
+    {
+        var separator = name.LastIndexOf("_Part", StringComparison.Ordinal);
+        if (separator < 1 || separator + 5 >= name.Length)
+        {
+            return false;
+        }
+
+        for (var i = separator + 5; i < name.Length; i++)
+        {
+            if (name[i] < '0' || name[i] > '9')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The PartCount of a part row, tolerating the integer widening that occurs when
+    /// rows round-trip through JSON. Rows written before the property existed report 0.
+    /// </summary>
+    private static long GetPartCount(TableEntity entity)
+    {
+        if (!entity.TryGetValue(PartCountKey, out var value))
+        {
+            return 0;
+        }
+
+        return value switch
+        {
+            int i => i,
+            long l => l,
+            string s when long.TryParse(s, out var parsed) => parsed,
+            _ => 0,
+        };
     }
 
     private sealed class EntityGroup
@@ -493,10 +661,17 @@ public static class EntitySplitter
                 var joined = new StringBuilder();
                 foreach (var header in splitHeaders)
                 {
-                    if (entity.TryGetValue(header, out var chunk) && chunk is not null)
+                    // Skipping a missing chunk would store the rest as though it were the
+                    // whole value - a truncation nothing downstream can detect.
+                    if (!entity.TryGetValue(header, out var chunk) || chunk is null)
                     {
-                        joined.Append(chunk);
+                        throw new IncompleteEntityException(
+                            entity.PartitionKey,
+                            entity.RowKey,
+                            $"Cannot reassemble property '{originalHeader}' of entity with PartitionKey='{entity.PartitionKey}' and RowKey='{entity.RowKey}': chunk property '{header}' is missing. The query did not return every row the entity was split over.");
                     }
+
+                    joined.Append(chunk);
                 }
 
                 entity[originalHeader] = joined.ToString();

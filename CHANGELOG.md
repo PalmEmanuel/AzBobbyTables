@@ -4,9 +4,18 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
-### Fixed
+## [3.7.0] - 2026-08-10
 
-- `Get-AzDataTableEntity` no longer fails with `400 InvalidInput` when `-First` is given a value above 1000. The page-size hint introduced in 3.6.1 was passed to the service unclamped, and Azure Table Storage rejects a page size over its limit of 1000 rather than capping it. The hint is now clamped to that limit. Results are unchanged: the hint only sizes each page, so requests for more than 1000 entities are served by paging, as they were before 3.6.1.
+### Added
+
+- Added `Add-AzDataTableLargeEntity`, `Get-AzDataTableLargeEntity` and `Remove-AzDataTableLargeEntity` for working with entities that exceed Azure Table Storage size limits (64 KiB per string property, 1 MiB per entity):
+  - `Add-AzDataTableLargeEntity` chunks oversized string properties, splits entities that exceed row limits across multiple rows, and records `PartCount` metadata on each part row.
+  - `Get-AzDataTableLargeEntity` reassembles multipart entities (even when only some rows match the filter) and raises `IncompleteEntityException` if any rows or split-property chunks are missing.
+  - `Remove-AzDataTableLargeEntity` removes all rows that belong to a multipart entity.
+
+### Changed
+
+- Added automatic clamping of `Get-AzDataTableEntity -First` page-size hints to Azure Table Storage's maximum of 1000, preventing `400 InvalidInput` for larger values.
 
 ## [3.6.1] - 2026-07-29
 
@@ -123,7 +132,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.4.2...v3.5.0

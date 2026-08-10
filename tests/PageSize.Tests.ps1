@@ -90,4 +90,21 @@ Describe 'Query page size' {
             Get-PageSize -Top 5 -Skip $null -Sort ([string[]]@()) | Should -BeExactly 5
         }
     }
+
+    Context 'every read path uses the clamp' {
+        # CalculatePageSize being correct is not enough - a read path carrying its own copy of the
+        # page-size logic would bypass it. This is how the large-entity path shipped unclamped:
+        # it was added as a separate method with an inline duplicate, and a rebase merged cleanly
+        # while leaving it broken.
+
+        It 'routes every Query call through the calculated page size' {
+            $Source = Get-Content -Raw "$PSScriptRoot/../source/AzBobbyTables.Core/AzDataTableService.cs"
+            # Every maxPerPage assignment must come from the shared helper.
+            $Assignments = [regex]::Matches($Source, 'maxPerPage\s*=\s*(.+?);')
+            $Assignments.Count | Should -BeGreaterThan 0
+            foreach ($Match in $Assignments) {
+                $Match.Groups[1].Value | Should -BeLike '*CalculatePageSize*'
+            }
+        }
+    }
 }

@@ -1,0 +1,110 @@
+using PipeHow.AzBobbyTables.Core;
+using PipeHow.AzBobbyTables.Validation;
+using System;
+using System.Collections.Generic;
+using System.Management.Automation;
+
+namespace PipeHow.AzBobbyTables.Cmdlets;
+
+/// <summary>
+/// <para type="synopsis">Add one or more entities to an Azure Table, splitting entities that exceed the Azure Table Storage size limits across multiple properties and rows.</para>
+/// </summary>
+[Cmdlet(VerbsCommon.Add, "AzDataTableLargeEntity", DefaultParameterSetName = "OperationType")]
+public class AddAzDataTableLargeEntity : AzDataTableOperationCommand
+{
+    /// <summary>
+    /// <para type="description">The context used for the table, created with New-AzDataTableContext.</para>
+    /// </summary>
+    [Parameter(Mandatory = true, ParameterSetName = "OperationType")]
+    [Parameter(Mandatory = true, ParameterSetName = "Force")]
+    public AzDataTableContext Context { get; set; }
+
+    /// <summary>
+    /// <para type="description">The entities to add to the table.</para>
+    /// </summary>
+    [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = "OperationType")]
+    [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = "Force")]
+    [ValidateEntity]
+    [ValidateNotNullOrEmpty()]
+    public object[] Entity { get; set; }
+
+    /// <summary>
+    /// <para type="description">The type of operation to perform on the entities, defaults to Add.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "OperationType")]
+    [ValidateSet("Add", "UpsertReplace", "UpsertMerge")]
+    public string OperationType { get; set; } = "Add";
+
+    /// <summary>
+    /// <para type="description">Overwrites provided entities if they exist.</para>
+    /// </summary>
+    [Parameter(Mandatory = true, ParameterSetName = "Force")]
+    public SwitchParameter Force { get; set; }
+
+    /// <summary>
+    /// <para type="description">If the table should be created if it does not exist.</para>
+    /// </summary>
+    [Parameter(ParameterSetName = "OperationType")]
+    [Parameter(ParameterSetName = "Force")]
+    public SwitchParameter CreateTableIfNotExists { get; set; }
+
+    /// <summary>
+    /// Entities gathered from the pipeline, submitted as one batch in EndProcessing.
+    /// </summary>
+    private readonly List<object> entities = new();
+
+    /// <summary>
+    /// The process step of the pipeline.
+    /// </summary>
+    protected override void ProcessRecord()
+    {
+        if (tableService is null)
+        {
+            WriteError(new ErrorRecord(new InvalidOperationException("Could not establish connection!"), "ConnectionError", ErrorCategory.ConnectionError, null));
+            return;
+        }
+
+        if (Force.IsPresent)
+        {
+            OperationType = "UpsertReplace";
+        }
+
+        if (!Enum.TryParse<OperationTypeEnum>(OperationType, true, out _))
+        {
+            WriteError(new ErrorRecord(new ArgumentException($"Operation type {OperationType} is not valid!"), "InvalidOperationType", ErrorCategory.InvalidArgument, OperationType));
+            return;
+        }
+
+        // Collect rather than submit, so that entities from the pipeline are batched
+        // into as few transactions as possible when the pipeline completes.
+        entities.AddRange(Entity);
+    }
+
+    /// <summary>
+    /// Submit everything gathered from the pipeline as a single batched operation.
+    /// The operation type is re-parsed here rather than cached in a field: a field typed from
+    /// AzBobbyTables.Core forces that assembly to load while PowerShell inspects the cmdlet type,
+    /// which happens before OnImport registers the dependency load context.
+    /// </summary>
+    protected override void EndProcessing()
+    {
+        if (tableService is null || entities.Count == 0)
+        {
+            return;
+        }
+
+        if (!Enum.TryParse<OperationTypeEnum>(OperationType, true, out var operationTypeValue))
+        {
+            return;
+        }
+
+        try
+        {
+            tableService.AddLargeEntitiesToTable(entities, operationTypeValue);
+        }
+        catch (AzDataTableException ex)
+        {
+            WriteError(ex.ErrorRecord);
+        }
+    }
+}

@@ -456,6 +456,43 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
         }
     }
 
+    Context 'Large entity result limits across the page boundary' {
+        BeforeAll {
+            # Get-AzDataTableLargeEntity is a separate read path with its own page-size handling,
+            # so it needs its own boundary coverage - a fix applied only to Get-AzDataTableEntity
+            # would leave this one failing against the service with 400 InvalidInput.
+            $Script:LargePagingTable = 'AzBobbyTablesLargePaging'
+            $Script:LargePagingContext = New-AzDataTableContext -TableName $Script:LargePagingTable -ConnectionString 'UseDevelopmentStorage=true'
+            New-AzDataTable -Context $Script:LargePagingContext -ErrorAction SilentlyContinue | Out-Null
+
+            # Small entities on purpose: this covers paging, not splitting.
+            $Entities = 1..1200 | ForEach-Object {
+                @{ PartitionKey = 'LargePaging'; RowKey = ('{0:D5}' -f $_); Value = "value-$_" }
+            }
+            for ($i = 0; $i -lt $Entities.Count; $i += 100) {
+                $End = [Math]::Min($i + 99, $Entities.Count - 1)
+                Add-AzDataTableLargeEntity -Context $Script:LargePagingContext -Entity $Entities[$i..$End] -Force
+            }
+        }
+
+        It 'returns <Expected> entities for -First <First>' -TestCases @(
+            @{ First = 1; Expected = 1 }
+            @{ First = 1000; Expected = 1000 }
+            @{ First = 1200; Expected = 1200 }
+            @{ First = 10000; Expected = 1200 }   # the shape that fails when the page size is unclamped
+        ) {
+            @(Get-AzDataTableLargeEntity -Context $Script:LargePagingContext -First $First).Count | Should -BeExactly $Expected
+        }
+
+        It 'returns every entity when no limit is given' {
+            @(Get-AzDataTableLargeEntity -Context $Script:LargePagingContext).Count | Should -BeExactly 1200
+        }
+
+        AfterAll {
+            Remove-AzDataTable -Context $Script:LargePagingContext -ErrorAction SilentlyContinue
+        }
+    }
+
     Context 'Type Coverage Validation' {
         It 'should have integration tests for all supported entity types' {
             # Get the list of supported entity types from the module

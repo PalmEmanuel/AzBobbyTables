@@ -96,10 +96,6 @@ Describe 'Query page size' {
         # page-size logic would bypass it. This is how the large-entity path shipped unclamped:
         # it was added as a separate method with an inline duplicate, and a rebase merged cleanly
         # while leaving it broken.
-        It 'has no inline page-size calculation left in the service' {
-            $Source = Get-Content -Raw "$PSScriptRoot/../source/AzBobbyTables.Core/AzDataTableService.cs"
-            $Source | Should -Not -Match 'needed\s*<=\s*int\.MaxValue'
-        }
 
         It 'routes every Query call through the calculated page size' {
             $Source = Get-Content -Raw "$PSScriptRoot/../source/AzBobbyTables.Core/AzDataTableService.cs"

@@ -1,4 +1,5 @@
 ﻿using PipeHow.AzBobbyTables.Core;
+using PipeHow.AzBobbyTables.Logging;
 using System.Management.Automation;
 using System.Threading;
 
@@ -15,4 +16,15 @@ public class AzDataTableCommand : PSCmdlet
 
     // Cancel any operations if user presses CTRL + C
     protected override void StopProcessing() => cancellationTokenSource.Cancel();
+
+    // Intentionally run as after BeginProcessing() in child class to hook up logging
+    protected override void BeginProcessing()
+    {
+        base.BeginProcessing();
+
+        // Attach the cmdlet-side log sink so Core diagnostics land on the pipeline's PowerShell
+        // streams. Set after construction because the Core factory methods intentionally know
+        // nothing about System.Management.Automation.
+        tableService.LogSink = new PSCmdletLogSink(this);
+    }
 }

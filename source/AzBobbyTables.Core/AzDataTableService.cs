@@ -184,10 +184,9 @@ public class AzDataTableService
     private AzDataTableService(CancellationToken cancellationToken) => CancellationToken = cancellationToken;
 
     /// <summary>
-    /// Sink for structured log events emitted by this service. Required: Core is only consumed by
-    /// the AzBobbyTables PowerShell module, which attaches a sink immediately after construction,
-    /// so every emission path assumes a non-null value. Kept as a settable property rather than a
-    /// constructor argument so the Create* factories don't need new overloads.
+    /// Sink for structured log events emitted by this service.
+    /// Kept as a settable property rather than a constructor argument
+    /// so the Create* factories don't need new overloads.
     /// </summary>
     /// <remarks>
     /// Assignment is not synchronised. Assign the sink before invoking any operation and leave it

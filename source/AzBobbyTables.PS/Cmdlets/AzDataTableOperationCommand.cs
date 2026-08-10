@@ -1,7 +1,7 @@
 ﻿using PipeHow.AzBobbyTables.Core;
 using PipeHow.AzBobbyTables.Core.Conversion;
+using PipeHow.AzBobbyTables.Logging;
 using System;
-using System.Collections;
 using System.Linq;
 using System.Management.Automation;
 using System.Threading;
@@ -18,8 +18,6 @@ public class AzDataTableOperationCommand : AzDataTableCommand
 
     protected override void BeginProcessing()
     {
-        base.BeginProcessing();
-
         try
         {
             var parameters = MyInvocation.BoundParameters;
@@ -46,6 +44,9 @@ public class AzDataTableOperationCommand : AzDataTableCommand
         {
             WriteError(ex.ErrorRecord);
         }
+
+        // Run BeginProcessing at the end to hook up logging in parent class
+        base.BeginProcessing();
     }
 
     // Determine way to create AzDataTableService by using the provided Context, created with from New-AzDataTableContext

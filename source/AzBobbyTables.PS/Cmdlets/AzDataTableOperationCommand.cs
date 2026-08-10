@@ -46,10 +46,7 @@ public class AzDataTableOperationCommand : AzDataTableCommand
             // Attach the cmdlet-side log sink so Core diagnostics land on the pipeline's PowerShell
             // streams. Set after construction because the Core factory methods intentionally know
             // nothing about System.Management.Automation.
-            if (tableService is not null)
-            {
-                tableService.LogSink = new PSCmdletLogSink(this);
-            }
+            tableService.LogSink = new PSCmdletLogSink(this);
         }
         catch (AzDataTableException ex)
         {

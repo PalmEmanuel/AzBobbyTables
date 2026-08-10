@@ -201,17 +201,13 @@ Describe 'AzDataTableService log emission' {
         $Script:LogSinkProperty.PropertyType.FullName | Should -Be 'PipeHow.AzBobbyTables.Core.Logging.IPSLogSink'
     }
 
-    It 'does not throw when no sink is attached' {
-        # Explicitly null out any leftover sink state.
-        $Script:LogSinkProperty.SetValue($Script:Service, $null)
-
+    It 'rejects a null sink assignment' {
+        # Core is only consumed by the PowerShell module, which always attaches a sink; assigning
+        # null must fail fast rather than silently disable logging. TargetInvocationException wraps
+        # the ArgumentNullException raised by the setter.
         {
-            $Script:LogVerboseMethod.Invoke($Script:Service, @('msg', $null, $null))
-            $Script:LogWarningMethod.Invoke($Script:Service, @('msg', $null, $null))
-            $Script:LogDebugMethod.Invoke($Script:Service, @('msg', $null, $null))
-            $Script:LogInformationMethod.Invoke($Script:Service, @('msg', $null, $null))
-            $Script:LogErrorMethod.Invoke($Script:Service, @('msg', $null, $null))
-        } | Should -Not -Throw
+            $Script:LogSinkProperty.SetValue($Script:Service, $null)
+        } | Should -Throw
     }
 
     It 'forwards each helper call to the sink with the matching level' {

@@ -31,8 +31,7 @@ Add one or more entities to an Azure Table, as an array of either Hashtables, PS
 
 Unlike Add-AzDataTableEntity, this cmdlet accepts entities that exceed the Azure Table Storage size limits (64 KiB per string property, 1 MiB per entity) and splits them transparently:
 
-- A string property larger than 32256 characters is stored as multiple chunk properties named `{Property}_Part0`, `{Property}_Part1`, and so on. A JSON manifest in the `SplitOverProps` property records which chunks belong to which original property.
-- An entity that is still too large after property splitting is distributed over multiple rows. The first row keeps the original RowKey, additional rows are named `{RowKey}-part1`, `{RowKey}-part2`, and so on. Each row carries an `OriginalEntityId` property with the original RowKey, a `PartIndex` property with the row order, and a `PartCount` property with the total number of rows for the entity.
+- An entity that is still too large after property splitting is distributed over multiple rows. The first row keeps the original RowKey, additional rows are named `{RowKey}-part1`, `{RowKey}-part2`, and so on. Each row carries an `OriginalEntityId` property with the original RowKey, a `PartIndex` property with the row order, and a `PartCount` property with the total number of rows.
 
 Use Get-AzDataTableLargeEntity to read the entities back in their original shape, and Remove-AzDataTableLargeEntity to delete them including all part rows.
 

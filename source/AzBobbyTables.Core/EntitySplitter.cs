@@ -761,8 +761,11 @@ public static class EntitySplitter
 
     /// <summary>
     /// Estimate the stored size of a binary value in bytes: the maximum of the storage
-    /// formula and the base64 JSON wire form with its type annotation.
+    /// formula (raw bytes + 4 overhead) and the base64 JSON wire form. Base64 encodes
+    /// every 3 bytes as 4 characters; ceiling division ((length + 2) / 3 * 4)
+    /// is used so a length not divisible by 3 is not underestimated. The +44 covers
+    /// the OData type annotation property that accompanies binary values on the wire.
     /// </summary>
     private static int EstimateBinarySize(int length) =>
-        Math.Max(length + 4, length / 3 * 4 + 44);
+        Math.Max(length + 4, (length + 2) / 3 * 4 + 44);
 }

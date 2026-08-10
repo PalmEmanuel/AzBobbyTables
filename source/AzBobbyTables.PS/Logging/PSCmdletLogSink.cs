@@ -53,6 +53,9 @@ public sealed class PSCmdletLogSink : IPSLogSink
                 // The ErrorRecord requires an exception; wrap the message rather than throwing
                 // ourselves so the caller keeps control of pipeline flow. Code becomes the
                 // FullyQualifiedErrorId, which is what PowerShell users key error handling on.
+                // ErrorCategory intentionally stays NotSpecified: the Core log contract keeps
+                // events to level + message + code + context by design (the issue spec calls this
+                // out), and a stable Code is enough for consumers to categorise errors.
                 var errorId = string.IsNullOrEmpty(logEvent.Code) ? "AzBobbyTablesError" : logEvent.Code!;
                 var record = new ErrorRecord(
                     new InvalidOperationException(logEvent.Message),

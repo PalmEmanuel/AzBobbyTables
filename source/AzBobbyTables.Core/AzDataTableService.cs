@@ -190,6 +190,10 @@ public class AzDataTableService
     /// Create* factories don't need new overloads and so the cmdlet layer can attach a sink after
     /// the fact.
     /// </summary>
+    /// <remarks>
+    /// Assignment is not synchronised. Assign the sink before invoking the operation and leave it
+    /// alone for the duration; mutating it concurrently with an in-flight call is undefined.
+    /// </remarks>
     public IPSLogSink? LogSink { get; set; }
 
     /// <summary>Emit an event if a sink is attached. All log helpers funnel through this.</summary>

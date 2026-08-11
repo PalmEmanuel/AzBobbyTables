@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- `Get-AzDataTableLargeEntity` no longer fails an entire query when one entity cannot be reassembled. It skips that entity and reports it as a non-terminating error, with `IncompleteEntity` as the FullyQualifiedErrorId and `PartitionKey/RowKey` as the target, so the entities returned alongside it still come back. Previously the `IncompleteEntityException` was raised from the middle of the result set, so a single part row whose master row was missing — left behind by a delete that did not remove its parts, or by editing the table directly — discarded every other entity matched by the same filter. Use `-ErrorAction Stop` for the previous behaviour.
+
 ## [3.7.0] - 2026-08-10
 
 ### Added

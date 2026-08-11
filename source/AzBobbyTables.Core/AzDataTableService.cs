@@ -220,6 +220,12 @@ public class AzDataTableService
     internal void LogError(string message, string? code = null, string? context = null) =>
         Log(PSLogLevel.Error, message, code, context);
 
+    /// <summary>
+    /// FullyQualifiedErrorId for an entity skipped because its rows could not be reassembled.
+    /// Stable so callers can filter on it; Context carries "PartitionKey/RowKey".
+    /// </summary>
+    public const string IncompleteEntityErrorCode = "IncompleteEntity";
+
 
     private TableTransactionActionType ConvertOperationType(OperationTypeEnum operationType) =>
         Enum.TryParse(operationType.ToString(), out TableTransactionActionType transactionType)
@@ -848,7 +854,16 @@ public class AzDataTableService
             // caller's filter has no reason to match the rows an entity was split over.
             var rows = RecoverMissingPartRows(entities.ToList(), properties);
 
-            return EntitySplitter.Reassemble(rows, onWarning)
+            // An entity that cannot be reassembled is reported and left out rather than failing the
+            // query: missing rows are a property of that entity alone, and the others returned by
+            // the same filter are unaffected by it.
+            return EntitySplitter.Reassemble(
+                    rows,
+                    onWarning,
+                    incomplete => LogError(
+                        incomplete.Message,
+                        IncompleteEntityErrorCode,
+                        $"{incomplete.EntityPartitionKey}/{incomplete.EntityRowKey}"))
                 .Select(ProjectToPSObject)
                 .ToList();
         }

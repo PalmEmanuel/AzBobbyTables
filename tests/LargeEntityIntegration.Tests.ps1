@@ -511,24 +511,48 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             $root.SplitOverProps | Should -Not -BeNullOrEmpty
         }
 
-        It 'fails loudly when a row is genuinely gone rather than returning a fragment' {
-            # A deleted row cannot be recovered, and what survives would be a truncated
-            # value indistinguishable from real data.
+        It 'skips an unreconstructable entity, reports it, and still returns the rest' {
+            # A part row whose master row is gone cannot be recovered, and must not take the intact
+            # entities in the same partition with it.
             $orphanTable = "AzBobbyTablesLEOrphan$([guid]::NewGuid().ToString('N').Substring(0, 8))"
             $orphanContext = New-AzDataTableContext -TableName $orphanTable -ConnectionString $ConnectionString
             $null = New-AzDataTable -Context $orphanContext
             try {
                 Add-AzDataTableLargeEntity -Context $orphanContext -Entity @{
-                    PartitionKey = 'o'; RowKey = 'split'; Data = (New-PatternString -Length 1500000 -Seed 'ORPHAN')
+                    PartitionKey = 'o'; RowKey = 'broken'; Data = (New-PatternString -Length 1500000 -Seed 'ORPHAN')
                 } -Force
+                Add-AzDataTableLargeEntity -Context $orphanContext -Entity @{ PartitionKey = 'o'; RowKey = 'intact-a'; V = 1 } -Force
+                Add-AzDataTableLargeEntity -Context $orphanContext -Entity @{ PartitionKey = 'o'; RowKey = 'intact-b'; V = 2 } -Force
 
-                $rows = @(Get-AzDataTableEntity -Context $orphanContext -Filter "PartitionKey eq 'o'" -Property PartitionKey, RowKey)
-                $rows.Count | Should -BeGreaterThan 1
-                $tail = $rows | Sort-Object RowKey | Select-Object -Last 1
-                Remove-AzDataTableEntity -Context $orphanContext -Entity @{ PartitionKey = 'o'; RowKey = $tail.RowKey }
+                # Orphan the parts by deleting only the master row.
+                Remove-AzDataTableEntity -Context $orphanContext -Entity @{ PartitionKey = 'o'; RowKey = 'broken' }
 
-                { Get-AzDataTableLargeEntity -Context $orphanContext -Filter "PartitionKey eq 'o'" -ErrorAction Stop } |
-                Should -Throw -Because 'a truncated entity must not be presented as a whole one'
+                $result = @(Get-AzDataTableLargeEntity -Context $orphanContext -Filter "PartitionKey eq 'o'" -ErrorAction SilentlyContinue -ErrorVariable skipped)
+
+                @($result.RowKey | Sort-Object) | Should -Be @('intact-a', 'intact-b')
+                @($skipped).Count | Should -Be 1
+                $skipped[0].FullyQualifiedErrorId | Should -BeLike 'IncompleteEntity*'
+                # Context carries PartitionKey/RowKey so a caller can name the row to remove.
+                $skipped[0].TargetObject | Should -Be 'o/broken'
+            } finally {
+                Remove-AzDataTable -Context $orphanContext
+            }
+        }
+
+        It 'does not fail the query when an entity is skipped' {
+            $orphanTable = "AzBobbyTablesLENonTerm$([guid]::NewGuid().ToString('N').Substring(0, 8))"
+            $orphanContext = New-AzDataTableContext -TableName $orphanTable -ConnectionString $ConnectionString
+            $null = New-AzDataTable -Context $orphanContext
+            try {
+                Add-AzDataTableLargeEntity -Context $orphanContext -Entity @{
+                    PartitionKey = 'n'; RowKey = 'broken'; Data = (New-PatternString -Length 1500000 -Seed 'NONTERM')
+                } -Force
+                Remove-AzDataTableEntity -Context $orphanContext -Entity @{ PartitionKey = 'n'; RowKey = 'broken' }
+
+                # The report is non-terminating, so the pipeline continues unless the caller opts
+                # into -ErrorAction Stop.
+                { Get-AzDataTableLargeEntity -Context $orphanContext -Filter "PartitionKey eq 'n'" -ErrorAction SilentlyContinue } |
+                Should -Not -Throw
             } finally {
                 Remove-AzDataTable -Context $orphanContext
             }

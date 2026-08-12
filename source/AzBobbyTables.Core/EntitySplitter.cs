@@ -339,7 +339,12 @@ public static class EntitySplitter
     /// </summary>
     /// <param name="entities">The physical rows, e.g. the result of a table query.</param>
     /// <param name="onWarning">Called with a message when a malformed manifest is skipped.</param>
-    public static IEnumerable<TableEntity> Reassemble(IEnumerable<TableEntity> entities, Action<string>? onWarning = null)
+    /// <param name="onIncomplete">
+    /// Called for each entity whose rows or split-property chunks are missing. That entity
+    /// is left out of the results and the rest are still returned, so one entity with rows
+    /// missing does not hide the entities returned alongside it.
+    /// </param>
+    public static IEnumerable<TableEntity> Reassemble(IEnumerable<TableEntity> entities, Action<string>? onWarning = null, Action<IncompleteEntityException>? onIncomplete = null)
     {
         var (order, groups) = GroupRows(entities);
 
@@ -356,10 +361,11 @@ public static class EntitySplitter
             {
                 if (DescribeIncompleteness(group) is { } reason)
                 {
-                    throw new IncompleteEntityException(
+                    onIncomplete?.Invoke(new IncompleteEntityException(
                         key.PartitionKey,
                         key.EntityId,
-                        $"Cannot reassemble entity with PartitionKey='{key.PartitionKey}' and RowKey='{key.EntityId}': {reason} The query must return every row the entity was split over.");
+                        $"Skipped entity with PartitionKey='{key.PartitionKey}' and RowKey='{key.EntityId}': {reason}"));
+                    continue;
                 }
 
                 result = MergeParts(group.Parts, key.PartitionKey, key.EntityId);
@@ -369,7 +375,16 @@ public static class EntitySplitter
                 continue;
             }
 
-            JoinSplitProperties(result, onWarning);
+            try
+            {
+                JoinSplitProperties(result, onWarning);
+            }
+            catch (IncompleteEntityException ex)
+            {
+                onIncomplete?.Invoke(ex);
+                continue;
+            }
+
             yield return result;
         }
     }

@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- `Get-AzDataTableLargeEntity` no longer fails an entire query when one entity cannot be reassembled. It skips that entity and reports it as a non-terminating error. Use `-ErrorAction Stop` for the previous behavior.
+
 ## [3.7.0] - 2026-08-10
 
 ### Added

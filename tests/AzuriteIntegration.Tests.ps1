@@ -275,6 +275,17 @@ Describe 'Azurite Integration Tests' -Tag 'Integration' {
             (Get-AzDataTableEntity -Context $Context -Filter "Value1 eq 'Updated'").Count | Should -Be 0
         }
 
+        It 'cannot update entities that do not exist, even with -Force' {
+            # Regression guard: batched update actions without an If-Match header are
+            # treated by the service as insert-or-merge, so an entity without an ETag
+            # (or with -Force) was silently created instead of failing.
+            $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
+            $Ghost = @{ PartitionKey = 'nonexistent'; RowKey = 'nonexistent'; Value1 = 'ghost' }
+            { Update-AzDataTableEntity -Context $Context -Entity $Ghost -ErrorAction Stop } | Should -Throw
+            { Update-AzDataTableEntity -Context $Context -Entity $Ghost -Force -ErrorAction Stop } | Should -Throw
+            Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'nonexistent'" | Should -BeNullOrEmpty -Because 'a failed update must not create the row'
+        }
+
         It 'can get count of entities' {
             $Context = New-AzDataTableContext -TableName $TableName -ConnectionString $ConnectionString
             Get-AzDataTableEntity -Context $Context -Count | Should -BeExactly 4

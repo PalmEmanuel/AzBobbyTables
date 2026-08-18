@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-08-18
+
 ### Added
 
 - Added `Update-AzDataTableLargeEntity` for updating entities that exceed the Azure Table Storage size limits, allowing for updates of entities added by `Add-AzDataTableLargeEntity`.
@@ -146,7 +148,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.1...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.1...v3.8.0
 [3.7.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.0...v3.7.1
 [3.7.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.0...v3.6.1

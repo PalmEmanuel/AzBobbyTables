@@ -433,6 +433,171 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
         }
     }
 
+    Context 'updating' {
+        It 'fails on a missing entity and creates nothing' {
+            # An update must fail on a missing entity, never create one the way an
+            # upsert racing a concurrent delete would.
+            foreach ($operation in @('UpdateMerge', 'UpdateReplace')) {
+                { Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-missing'; RowKey = 'ghost'; Flag = $true } -OperationType $operation -ErrorAction Stop } | Should -Throw
+            }
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-missing'") | Should -BeNullOrEmpty -Because 'a failed update must not leave a partial row behind'
+        }
+
+        It 'merges a scalar onto a plain entity' {
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-plain'; RowKey = 'one'; A = 'kept' } -Force
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-plain'; RowKey = 'one'; Flag = $true }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-plain'"
+            $result.A | Should -Be 'kept'
+            $result.Flag | Should -BeTrue
+        }
+
+        It 'merges a scalar onto a split entity without corrupting chunked properties' {
+            $data = New-PatternString -Length 100000 -Seed 'UM'
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-split'; RowKey = 'one'; Data = $data; Plain = 'kept' } -Force
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-split'; RowKey = 'one'; Flag = $true }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-split'"
+            ($result.Data -ceq $data) | Should -BeTrue -Because 'a merge must not lose or corrupt the chunked value'
+            $result.Plain | Should -Be 'kept'
+            $result.Flag | Should -BeTrue
+        }
+
+        It 'merges a small value over a previously chunked property' {
+            $data = New-PatternString -Length 100000 -Seed 'OW'
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-overwrite'; RowKey = 'one'; Data = $data; Plain = 'kept' } -Force
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-overwrite'; RowKey = 'one'; Data = 'small' }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-overwrite'"
+            $result.Data | Should -Be 'small' -Because 'the merged value must win over the stale chunks'
+            $result.Plain | Should -Be 'kept'
+
+            $raw = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-overwrite'")
+            $raw[0].PSObject.Properties['Data_Part0'] | Should -BeNullOrEmpty -Because 'stale chunk properties must not survive the rewrite'
+        }
+
+        It 'merges an oversized value onto a plain entity' {
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-grow'; RowKey = 'one'; A = 'kept' } -Force
+            $data = New-PatternString -Length 100000 -Seed 'GR'
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-grow'; RowKey = 'one'; Data = $data }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-grow'"
+            ($result.Data -ceq $data) | Should -BeTrue
+            $result.A | Should -Be 'kept' -Because 'growing past the threshold must not drop the stored properties'
+        }
+
+        It 'merges onto a multi-row entity preserving properties on other rows' {
+            $v1 = @{ PartitionKey = 'update-multirow'; RowKey = 'one' }
+            1..30 | ForEach-Object { $v1["P$_"] = New-PatternString -Length 25000 -Seed "MR$_" }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $v1 -Force
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-multirow'; RowKey = 'one'; P1 = 'replaced' }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-multirow'"
+            $result.P1 | Should -Be 'replaced'
+            ($result.P30 -ceq $v1.P30) | Should -BeTrue -Because 'properties on other part rows must survive the merge'
+        }
+
+        It 'replaces a multi-row entity with a small version and removes stale part rows' {
+            $big = @{ PartitionKey = 'update-shrink'; RowKey = 'one' }
+            1..40 | ForEach-Object { $big["P$_"] = New-PatternString -Length 25000 -Seed "US$_" }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $big -Force
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-shrink'" -Property PartitionKey, RowKey).Count | Should -BeGreaterThan 1
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-shrink'; RowKey = 'one'; V = 'tiny' } -OperationType UpdateReplace
+
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-shrink'" -Property PartitionKey, RowKey).Count | Should -Be 1
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-shrink'"
+            $result.V | Should -Be 'tiny'
+            $result.PSObject.Properties['P1'] | Should -BeNullOrEmpty -Because 'a replace must not carry stored properties forward'
+        }
+
+        It 'rejects an update of a changed entity without -Force' {
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-etag'; RowKey = 'one'; V = 'original' } -Force
+
+            $stale = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-etag'"
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-etag'; RowKey = 'one'; V = 'changed' } -Force
+
+            $stale.V = 'stale write'
+            { Update-AzDataTableLargeEntity -Context $Context -Entity $stale -ErrorAction Stop } | Should -Throw
+            (Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-etag'").V | Should -Be 'changed'
+
+            { Update-AzDataTableLargeEntity -Context $Context -Entity $stale -Force } | Should -Not -Throw
+            (Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-etag'").V | Should -Be 'stale write'
+        }
+
+        It 'removes stale chunk columns when a merged value needs fewer chunks' {
+            # 100000 chars split into 4 chunks; the replacement needs only 2. A merge
+            # that left Data_Part2/3 behind would corrupt the next reassembly.
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-chunkshrink'; RowKey = 'one'; Data = (New-PatternString -Length 100000 -Seed 'C4') } -Force
+            $smaller = New-PatternString -Length 40000 -Seed 'C2'
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-chunkshrink'; RowKey = 'one'; Data = $smaller }
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-chunkshrink'"
+            ($result.Data -ceq $smaller) | Should -BeTrue
+
+            $raw = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-chunkshrink'")
+            $raw.Count | Should -Be 1
+            $chunkNames = @($raw[0].PSObject.Properties.Name | Where-Object { $_ -match '^Data_Part\d+$' })
+            $manifest = $raw[0].SplitOverProps | ConvertFrom-Json
+            ($chunkNames | Sort-Object) | Should -Be (@($manifest.SplitHeaders) | Sort-Object) -Because 'every chunk column must be listed in the manifest and vice versa'
+            $raw[0].PSObject.Properties['Data_Part2'] | Should -BeNullOrEmpty -Because 'chunks of the larger old value must not survive'
+        }
+
+        It 'leaves no residue rows across alternating grow and shrink updates' {
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-rounds'; RowKey = 'one'; Seed = 0 } -Force
+
+            $sizes = @(120000, 900, 1200000, 50000)
+            for ($i = 0; $i -lt $sizes.Count; $i++) {
+                $value = New-PatternString -Length $sizes[$i] -Seed "R$i"
+                Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-rounds'; RowKey = 'one'; Data = $value; Round = $i }
+
+                $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-rounds'"
+                ($result.Data -ceq $value) | Should -BeTrue -Because "round $i must read back exactly"
+                $result.Round | Should -Be $i
+            }
+
+            # The final 50k value fits one row: everything the 1.2M round created must be gone.
+            $raw = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'update-rounds'" -Property PartitionKey, RowKey)
+            $raw.Count | Should -Be 1 -Because 'alternating grow/shrink must not accumulate part rows'
+        }
+
+        It 'does not bleed into entities whose RowKey shares a prefix' {
+            # ReadLogicalEntity fetches by RowKey range, which also matches unrelated
+            # neighbours like 'abc2' when updating 'abc'; they must be filtered out.
+            $abc = @{ PartitionKey = 'update-prefix'; RowKey = 'abc' }
+            1..30 | ForEach-Object { $abc["P$_"] = New-PatternString -Length 25000 -Seed "PX$_" }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $abc -Force
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-prefix'; RowKey = 'abc2'; V = 'neighbor' } -Force
+
+            { Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-prefix'; RowKey = 'ab'; X = 1 } -ErrorAction Stop } | Should -Throw -Because 'a prefix of an existing key is still a missing entity'
+            Update-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-prefix'; RowKey = 'abc2'; Touched = $true }
+
+            $split = @(Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-prefix'") | Where-Object RowKey -EQ 'abc'
+            ($split.P30 -ceq $abc.P30) | Should -BeTrue
+            $split.PSObject.Properties['X'] | Should -BeNullOrEmpty
+            $split.PSObject.Properties['Touched'] | Should -BeNullOrEmpty -Because 'updating a neighbour must not touch the split entity'
+        }
+
+        It 'deduplicates duplicate keys in one call, last wins, through the split path' {
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'update-dedup'; RowKey = 'one'; Data = 'seed' } -Force
+            $first = New-PatternString -Length 90000 -Seed 'D1'
+            $second = New-PatternString -Length 90000 -Seed 'D2'
+
+            Update-AzDataTableLargeEntity -Context $Context -Entity @(
+                @{ PartitionKey = 'update-dedup'; RowKey = 'one'; Data = $first }
+                @{ PartitionKey = 'update-dedup'; RowKey = 'one'; Data = $second }
+            )
+
+            $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'update-dedup'"
+            ($result.Data -ceq $second) | Should -BeTrue
+        }
+    }
+
     Context 'bulk behavior' {
         It 'deduplicates entities with the same keys in one call, last wins' {
             Add-AzDataTableLargeEntity -Context $Context -Force -Entity @(

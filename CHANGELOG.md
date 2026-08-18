@@ -4,6 +4,14 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Added
+
+- Added `Update-AzDataTableLargeEntity` for updating entities that exceed the Azure Table Storage size limits, allowing for updates of entities added by `Add-AzDataTableLargeEntity`.
+
+### Fixed
+
+- `Update-AzDataTableEntity` no longer creates entities that do not exist when called with `-Force` or with entities that carry no ETag.
+
 ## [3.7.1] - 2026-08-12
 
 ### Changed

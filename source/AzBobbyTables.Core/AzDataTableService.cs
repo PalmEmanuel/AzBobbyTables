@@ -518,6 +518,11 @@ public class AzDataTableService
     {
         ValidateTableClient();
 
+        if (operationType is not (OperationTypeEnum.UpdateMerge or OperationTypeEnum.UpdateReplace))
+        {
+            throw new ArgumentException($"Operation type {operationType} is not valid for updates of entities, use UpdateMerge or UpdateReplace!");
+        }
+
         try
         {
             var transactions = CreateTransactionList(entities);
@@ -545,7 +550,15 @@ public class AzDataTableService
             });
 
             var transactionType = ConvertOperationType(operationType);
-            transactions.AddRange(tableEntities.Select(e => new TableTransactionAction(transactionType, e, validateEtag ? e.ETag : default)));
+
+            // Update actions must always carry If-Match; with a default ETag the
+            // service treats a batched merge or replace as an upsert and silently
+            // creates missing rows. ETag.All matches the non-batched path.
+            transactions.AddRange(tableEntities.Select(e =>
+            {
+                var etag = validateEtag && e.ETag != default ? e.ETag : ETag.All;
+                return new TableTransactionAction(transactionType, e, etag);
+            }));
 
             SubmitTransaction(transactions);
         }
@@ -994,6 +1007,222 @@ public class AzDataTableService
         {
             throw new AzDataTableException(new ErrorRecord(ex, "RemoveLargeEntitiesError", ErrorCategory.InvalidOperation, null));
         }
+    }
+
+    /// <summary>
+    /// Update one or more entities that already exist in a table, transparently
+    /// handling entities that were split across multiple properties or rows by the
+    /// large-entity write path. See <see cref="EntitySplitter"/> for the storage
+    /// format. Unlike <see cref="AddLargeEntitiesToTable"/> with an upsert operation
+    /// type, entities that do not exist cause an error and are never created.
+    ///
+    /// UpdateReplace replaces the whole logical entity: the root row is updated (and
+    /// fails if missing), part rows the new version needs are upserted, and part rows
+    /// it no longer uses are removed.
+    ///
+    /// UpdateMerge merges the given properties into the logical entity. A plain
+    /// single-row entity is merged in place; an entity that was split, or incoming
+    /// properties that are themselves oversized, are read, merged in memory and
+    /// rewritten, since merging onto physical rows directly would corrupt reassembly.
+    ///
+    /// ETag validation, when requested, applies to the entity's root row. The
+    /// read-merge-rewrite path is not atomic.
+    /// </summary>
+    /// <param name="entities">The entities to update (can be any supported type).</param>
+    /// <param name="operationType">The type of operation to perform, UpdateMerge or UpdateReplace.</param>
+    /// <param name="validateEtag">Whether or not to validate that the ETag is the same and the item has not changed.</param>
+    public void UpdateLargeEntitiesInTable(IEnumerable<object> entities, OperationTypeEnum operationType, bool validateEtag = true)
+    {
+        ValidateTableClient();
+
+        try
+        {
+            if (operationType is not (OperationTypeEnum.UpdateMerge or OperationTypeEnum.UpdateReplace))
+            {
+                throw new ArgumentException($"Operation type {operationType} is not valid for updates of large entities, use UpdateMerge or UpdateReplace!");
+            }
+
+            // Deduplicate by entity identity, last one wins, same as the add path.
+            var order = new List<(string PartitionKey, string RowKey)>();
+            var latest = new Dictionary<(string PartitionKey, string RowKey), TableEntity>();
+            foreach (var entity in entities)
+            {
+                var tableEntity = ConvertToValidatedTableEntity(entity);
+                var key = (tableEntity.PartitionKey, tableEntity.RowKey);
+                if (!latest.ContainsKey(key))
+                {
+                    order.Add(key);
+                }
+                latest[key] = tableEntity;
+            }
+
+            // Updating requires existence, and the merge path needs the split markers
+            // to decide whether merging onto the root row directly is safe.
+            var storedRoots = FetchRootRows(order);
+
+            var missing = order.Where(key => !storedRoots.ContainsKey(key)).ToList();
+            if (missing.Count > 0)
+            {
+                var described = string.Join(", ", missing.Select(k => $"PartitionKey='{k.PartitionKey}' RowKey='{k.RowKey}'"));
+                throw new InvalidOperationException($"Cannot update one or more entities because they do not exist: {described}");
+            }
+
+            var actions = new List<TableTransactionAction>(order.Count);
+            var splitEntities = new List<(string PartitionKey, string RowKey, HashSet<string> LiveRowKeys)>();
+
+            foreach (var key in order)
+            {
+                var incoming = latest[key];
+                var storedRoot = storedRoots[key];
+                // Update actions must always carry If-Match; with a default ETag the
+                // service treats a batched merge or replace as an upsert.
+                var etag = validateEtag && incoming.ETag != default ? incoming.ETag : ETag.All;
+                var storedIsSplit = HasSplitMarkers(storedRoot);
+
+                if (operationType == OperationTypeEnum.UpdateMerge)
+                {
+                    if (!storedIsSplit)
+                    {
+                        var incomingSplit = EntitySplitter.Split(incoming);
+                        if (!incomingSplit.Engaged)
+                        {
+                            // Plain stored row, plain incoming properties: one merge.
+                            actions.Add(new TableTransactionAction(TableTransactionActionType.UpdateMerge, incomingSplit.Rows[0], etag));
+                            continue;
+                        }
+                        // Oversized incoming properties fall through to the
+                        // read-merge-rewrite path so the stored properties survive.
+                    }
+
+                    var stored = ReadLogicalEntity(key.PartitionKey, key.RowKey);
+                    var merged = new TableEntity(key.PartitionKey, key.RowKey);
+                    foreach (var property in stored)
+                    {
+                        if (property.Key is "PartitionKey" or "RowKey" or "Timestamp" or "odata.etag" or "ETag")
+                        {
+                            continue;
+                        }
+                        merged[property.Key] = property.Value;
+                    }
+                    foreach (var property in incoming)
+                    {
+                        if (property.Key is "PartitionKey" or "RowKey" or "Timestamp" or "odata.etag" or "ETag")
+                        {
+                            continue;
+                        }
+                        merged[property.Key] = property.Value;
+                    }
+                    incoming = merged;
+                }
+
+                var result = EntitySplitter.Split(incoming);
+
+                // Update rather than upsert the root row, so an entity deleted since
+                // the existence check fails instead of being partially recreated.
+                actions.Add(new TableTransactionAction(TableTransactionActionType.UpdateReplace, result.Rows[0], etag));
+                foreach (var row in result.Rows.Skip(1))
+                {
+                    actions.Add(new TableTransactionAction(TableTransactionActionType.UpsertReplace, row));
+                }
+
+                if (result.Engaged || storedIsSplit)
+                {
+                    splitEntities.Add((key.PartitionKey, key.RowKey, new HashSet<string>(result.Rows.Select(r => r.RowKey), StringComparer.Ordinal)));
+                }
+            }
+
+            SubmitTransactionSized(actions);
+
+            // Remove leftover part rows from earlier writes that used more rows than
+            // this one, so stale data cannot leak into reassembly.
+            foreach (var (partitionKey, rowKey, liveRowKeys) in splitEntities)
+            {
+                RemoveStalePartRows(partitionKey, rowKey, liveRowKeys);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "UpdateLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Properties needed to classify a stored root row for the update path: the split
+    /// markers, and the keys.
+    /// </summary>
+    private static readonly string[] RootMarkerProperties =
+    {
+        "PartitionKey",
+        "RowKey",
+        EntitySplitter.SplitOverPropsKey,
+        EntitySplitter.PartCountKey,
+        EntitySplitter.OriginalEntityIdKey,
+    };
+
+    /// <summary>
+    /// Fetch the root rows for the given logical entity keys, selecting only the keys
+    /// and split markers. RowKeys are matched in chunked OR filters to keep the number
+    /// of queries low. Keys whose root row does not exist are absent from the result.
+    /// </summary>
+    private Dictionary<(string PartitionKey, string RowKey), TableEntity> FetchRootRows(List<(string PartitionKey, string RowKey)> keys)
+    {
+        var found = new Dictionary<(string PartitionKey, string RowKey), TableEntity>();
+
+        foreach (var partitionGroup in keys.GroupBy(k => k.PartitionKey, StringComparer.Ordinal))
+        {
+            var rowKeys = partitionGroup.Select(k => k.RowKey).Distinct(StringComparer.Ordinal).ToList();
+            for (var i = 0; i < rowKeys.Count; i += PartLookupChunkSize)
+            {
+                var conditions = string.Join(" or ", rowKeys
+                    .Skip(i)
+                    .Take(PartLookupChunkSize)
+                    .Select(rowKey => $"RowKey eq '{EscapeODataValue(rowKey)}'"));
+                var filter = $"PartitionKey eq '{EscapeODataValue(partitionGroup.Key)}' and ({conditions})";
+
+                foreach (var row in TableClient!.Query<TableEntity>(filter, null, RootMarkerProperties, CancellationToken))
+                {
+                    found[(row.PartitionKey, row.RowKey)] = row;
+                }
+            }
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Whether a root row carries any of the markers the large-entity write path
+    /// stamps on split entities.
+    /// </summary>
+    private static bool HasSplitMarkers(TableEntity root) =>
+        root.ContainsKey(EntitySplitter.SplitOverPropsKey) ||
+        root.ContainsKey(EntitySplitter.PartCountKey) ||
+        root.ContainsKey(EntitySplitter.OriginalEntityIdKey);
+
+    /// <summary>
+    /// Read one logical entity, reassembling it from its physical rows. Throws when
+    /// the entity does not exist or its rows cannot be reassembled.
+    /// </summary>
+    private TableEntity ReadLogicalEntity(string partitionKey, string rowKey)
+    {
+        // The prefix range is an index seek that catches the root row and every
+        // "{RowKey}-part{n}" row, but also unrelated rows sharing the prefix; filter
+        // to rows that belong to this entity before reassembling.
+        var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and {BuildRowKeyPrefixClause(rowKey)}";
+        var rows = TableClient!.Query<TableEntity>(filter, null, null, CancellationToken)
+            .Where(row => row.RowKey == rowKey ||
+                (row.TryGetValue(EntitySplitter.OriginalEntityIdKey, out var id) && id?.ToString() == rowKey))
+            .ToList();
+
+        IncompleteEntityException? incomplete = null;
+        var entity = EntitySplitter.Reassemble(rows, null, ex => incomplete ??= ex)
+            .FirstOrDefault(e => e.RowKey == rowKey);
+
+        if (incomplete is not null)
+        {
+            throw incomplete;
+        }
+
+        return entity ?? throw new InvalidOperationException($"Cannot update entity with PartitionKey='{partitionKey}' and RowKey='{rowKey}' because it does not exist.");
     }
 
     /// <summary>

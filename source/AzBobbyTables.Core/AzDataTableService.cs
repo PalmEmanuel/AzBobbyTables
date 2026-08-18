@@ -518,6 +518,11 @@ public class AzDataTableService
     {
         ValidateTableClient();
 
+        if (operationType is not (OperationTypeEnum.UpdateMerge or OperationTypeEnum.UpdateReplace))
+        {
+            throw new ArgumentException($"Operation type {operationType} is not valid for updates of entities, use UpdateMerge or UpdateReplace!");
+        }
+
         try
         {
             var transactions = CreateTransactionList(entities);
@@ -1034,7 +1039,7 @@ public class AzDataTableService
         {
             if (operationType is not (OperationTypeEnum.UpdateMerge or OperationTypeEnum.UpdateReplace))
             {
-                throw new ArgumentException($"Operation type {operationType} is not valid for updates, use UpdateMerge or UpdateReplace!");
+                throw new ArgumentException($"Operation type {operationType} is not valid for updates of large entities, use UpdateMerge or UpdateReplace!");
             }
 
             // Deduplicate by entity identity, last one wins, same as the add path.

@@ -6,11 +6,11 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ### Added
 
-- Added `Update-AzDataTableLargeEntity` for updating entities that exceed the Azure Table Storage size limits. Unlike the upsert operation types of `Add-AzDataTableLargeEntity`, entities that do not exist cause an error instead of being created. `UpdateReplace` rewrites the logical entity and removes part rows the new version no longer uses; `UpdateMerge` merges a plain single-row entity in place, and reads, merges and rewrites entities that were split for size, since merging onto physical rows directly would corrupt reassembly.
+- Added `Update-AzDataTableLargeEntity` for updating entities that exceed the Azure Table Storage size limits, allowing for updates of entities added by `Add-AzDataTableLargeEntity`.
 
 ### Fixed
 
-- `Update-AzDataTableEntity` no longer creates entities that do not exist when called with `-Force` or with entities that carry no ETag. Batched update actions were submitted without an `If-Match` header in those cases, which the table service treats as an insert-or-merge. Update actions now always carry `If-Match` (`*` when no ETag applies), matching the non-batched path and the documented behavior.
+- `Update-AzDataTableEntity` no longer creates entities that do not exist when called with `-Force` or with entities that carry no ETag.
 
 ## [3.7.1] - 2026-08-12
 

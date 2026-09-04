@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace PipeHow.AzBobbyTables.Core;
@@ -13,6 +14,7 @@ public static class Helpers
     private const string ArcImdsApiVersion = "2019-11-01";
     private const string AppServiceApiVersion = "2019-08-01";
     private const string ArcChallengePrefix = "Basic realm=";
+    private const int ArcSecretMaxLength = 4096;
 
     public static string GetManagedIdentityToken(string accountName, string? clientId = null)
     {
@@ -38,8 +40,7 @@ public static class Helpers
 
                 using (challengeResponse)
                 {
-                    string secretFile = GetArcSecretFilePath(challengeResponse.Headers[HttpResponseHeader.WwwAuthenticate]);
-                    string secret = File.ReadAllText(secretFile);
+                    string secret = ReadArcSecret(challengeResponse.Headers[HttpResponseHeader.WwwAuthenticate]);
                     request = CreateManagedIdentityRequest(resource, clientId, out _);
                     request.Headers[HttpRequestHeader.Authorization] = $"Basic {secret}";
                     response = (HttpWebResponse)request.GetResponse();
@@ -60,6 +61,10 @@ public static class Helpers
         }
         catch (Exception ex)
         {
+            if (ex is WebException webException)
+            {
+                webException.Response?.Dispose();
+            }
             string errorText = string.Format("{0} \n\n{1}", ex.Message, ex.InnerException != null ? ex.InnerException.Message : "Acquire token failed");
             throw new WebException(errorText, ex);
         }
@@ -69,11 +74,15 @@ public static class Helpers
     {
         string? identityEndpoint = Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT");
         string? identityHeader = Environment.GetEnvironmentVariable("IDENTITY_HEADER");
+        string? imdsEndpoint = Environment.GetEnvironmentVariable("IMDS_ENDPOINT");
 
         HttpWebRequest request;
-        isArc = !string.IsNullOrWhiteSpace(identityEndpoint) && string.IsNullOrWhiteSpace(identityHeader);
+        isArc = string.IsNullOrWhiteSpace(identityHeader) &&
+            IsLocalHttpEndpoint(identityEndpoint) &&
+            IsLocalHttpEndpoint(imdsEndpoint);
 
-        if (!string.IsNullOrWhiteSpace(identityEndpoint))
+        if (!string.IsNullOrWhiteSpace(identityEndpoint) &&
+            (!string.IsNullOrWhiteSpace(identityHeader) || isArc))
         {
             string apiVersion = isArc ? ArcImdsApiVersion : AppServiceApiVersion;
             string uri = $"{identityEndpoint}?api-version={apiVersion}&resource={resource}";
@@ -105,6 +114,38 @@ public static class Helpers
 
         request.Method = "GET";
         return request;
+    }
+
+    private static bool IsLocalHttpEndpoint(string? endpoint)
+    {
+        return Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? uri) &&
+            uri.Scheme == Uri.UriSchemeHttp &&
+            uri.IsLoopback;
+    }
+
+    private static string ReadArcSecret(string? challenge)
+    {
+        string secretFile = Path.GetFullPath(GetArcSecretFilePath(challenge));
+        string tokenDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AzureConnectedMachineAgent", "Tokens")
+            : "/var/opt/azcmagent/tokens";
+        tokenDirectory = Path.GetFullPath(tokenDirectory) + Path.DirectorySeparatorChar;
+
+        StringComparison comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!secretFile.StartsWith(tokenDirectory, comparison))
+        {
+            throw new WebException("Azure Arc managed identity endpoint returned an invalid secret file path.");
+        }
+
+        FileInfo secretInfo = new(secretFile);
+        if (!secretInfo.Exists || secretInfo.Length == 0 || secretInfo.Length > ArcSecretMaxLength)
+        {
+            throw new WebException("Azure Arc managed identity endpoint returned an invalid secret file.");
+        }
+
+        return File.ReadAllText(secretFile);
     }
 
     private static string GetArcSecretFilePath(string? challenge)

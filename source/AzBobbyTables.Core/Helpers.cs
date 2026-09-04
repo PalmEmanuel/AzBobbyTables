@@ -134,7 +134,8 @@ public static class Helpers
         StringComparison comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
-        if (!secretFile.StartsWith(tokenDirectory, comparison))
+        if (!secretFile.StartsWith(tokenDirectory, comparison) ||
+            !secretFile.EndsWith(".key", comparison))
         {
             throw new WebException("Azure Arc managed identity endpoint returned an invalid secret file path.");
         }

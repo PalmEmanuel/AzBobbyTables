@@ -14,7 +14,6 @@ public static class Helpers
     private const string ArcImdsApiVersion = "2019-11-01";
     private const string AppServiceApiVersion = "2019-08-01";
     private const string ArcChallengePrefix = "Basic realm=";
-    private const int ArcSecretMaxLength = 4096;
 
     public static string GetManagedIdentityToken(string accountName, string? clientId = null)
     {
@@ -47,24 +46,14 @@ public static class Helpers
                 }
             }
 
-            using (response)
-            using (StreamReader streamResponse = new(response.GetResponseStream()))
-            {
-                string stringResponse = streamResponse.ReadToEnd();
-                Dictionary<string, string>? tokenDict = JsonSerializer.Deserialize<Dictionary<string, string>>(stringResponse);
-                if (tokenDict == null || !tokenDict.TryGetValue("access_token", out string? token))
-                {
-                    throw new WebException("Managed identity endpoint returned an invalid token response.");
-                }
-                return token;
-            }
+            StreamReader streamResponse = new(response.GetResponseStream());
+            string stringResponse = streamResponse.ReadToEnd();
+
+            Dictionary<string, string> tokenDict = JsonSerializer.Deserialize<Dictionary<string, string>>(stringResponse);
+            return tokenDict["access_token"];
         }
         catch (Exception ex)
         {
-            if (ex is WebException webException)
-            {
-                webException.Response?.Dispose();
-            }
             string errorText = string.Format("{0} \n\n{1}", ex.Message, ex.InnerException != null ? ex.InnerException.Message : "Acquire token failed");
             throw new WebException(errorText, ex);
         }
@@ -125,7 +114,14 @@ public static class Helpers
 
     private static string ReadArcSecret(string? challenge)
     {
-        string secretFile = Path.GetFullPath(GetArcSecretFilePath(challenge));
+        if (challenge == null ||
+            string.IsNullOrWhiteSpace(challenge) ||
+            !challenge.StartsWith(ArcChallengePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new WebException("Azure Arc managed identity endpoint returned an invalid authentication challenge.");
+        }
+
+        string secretFile = Path.GetFullPath(challenge.Substring(ArcChallengePrefix.Length).Trim().Trim('"'));
         string tokenDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "AzureConnectedMachineAgent", "Tokens")
             : "/var/opt/azcmagent/tokens";
@@ -134,30 +130,11 @@ public static class Helpers
         StringComparison comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
-        if (!secretFile.StartsWith(tokenDirectory, comparison) ||
-            !secretFile.EndsWith(".key", comparison))
+        if (!secretFile.StartsWith(tokenDirectory, comparison))
         {
             throw new WebException("Azure Arc managed identity endpoint returned an invalid secret file path.");
         }
 
-        FileInfo secretInfo = new(secretFile);
-        if (!secretInfo.Exists || secretInfo.Length == 0 || secretInfo.Length > ArcSecretMaxLength)
-        {
-            throw new WebException("Azure Arc managed identity endpoint returned an invalid secret file.");
-        }
-
         return File.ReadAllText(secretFile);
-    }
-
-    private static string GetArcSecretFilePath(string? challenge)
-    {
-        if (challenge == null ||
-            string.IsNullOrWhiteSpace(challenge) ||
-            !challenge.StartsWith(ArcChallengePrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new WebException("Azure Arc managed identity endpoint returned an invalid authentication challenge.");
-        }
-
-        return challenge.Substring(ArcChallengePrefix.Length).Trim().Trim('"');
     }
 }

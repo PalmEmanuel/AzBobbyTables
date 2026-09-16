@@ -837,6 +837,15 @@ public class AzDataTableService
     {
         ValidateTableClient();
 
+        // Unbounded, unsorted reads stream lazily: plain (non-split) rows are projected and yielded as
+        // they page in, so the whole result set is never materialised; only the rare split-part rows are
+        // buffered for reassembly at the end. Bounded or sorted reads keep the eager path below - top
+        // already caps what is fetched, and orderBy needs the full set to sort.
+        if (orderBy is null && skip is null && top is null)
+        {
+            return StreamLargeEntitiesFromTable(query, properties, onWarning);
+        }
+
         try
         {
             // Page size hint, same reasoning as GetEntitiesFromTable.
@@ -883,6 +892,89 @@ public class AzDataTableService
         catch (Exception ex)
         {
             throw new AzDataTableException(new ErrorRecord(ex, "GetLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+    }
+
+    /// <summary>
+    /// Lazy equivalent of the reassembly branch of <see cref="GetLargeEntitiesFromTable"/> for
+    /// unbounded, unsorted reads. Plain (non-split) rows are projected and yielded as they page in, so
+    /// the whole result set is never materialised; only split-part rows (those carrying
+    /// <see cref="EntitySplitter.OriginalEntityIdKey"/> or <see cref="EntitySplitter.SplitOverPropsKey"/>,
+    /// which are rare) are buffered and reassembled at the end via the same recover + reassemble logic.
+    /// A plain row supersedes leftover parts of the same identity, matching Reassemble's plain-precedence
+    /// rule. Query failures surface as <see cref="AzDataTableException"/> during enumeration, exactly as
+    /// the eager path throws, so the cmdlet's error handling (and a missing table) behaves identically.
+    /// </summary>
+    private IEnumerable<PSObject> StreamLargeEntitiesFromTable(string query, string[] properties, Action<string> onWarning)
+    {
+        // Page size hint, same reasoning as GetEntitiesFromTable; no top/skip/orderBy on this path.
+        var maxPerPage = CalculatePageSize(null, null, null!);
+
+        IEnumerator<TableEntity> src;
+        try
+        {
+            src = TableClient!.Query<TableEntity>(query, maxPerPage, properties, CancellationToken).GetEnumerator();
+        }
+        catch (Exception ex)
+        {
+            throw new AzDataTableException(new ErrorRecord(ex, "GetLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+        }
+
+        var plainKeys = new HashSet<(string, string)>();
+        var parts = new List<TableEntity>();
+        using (src)
+        {
+            while (true)
+            {
+                TableEntity entity;
+                try
+                {
+                    if (!src.MoveNext()) break;
+                    entity = src.Current;
+                }
+                // Pages are fetched lazily on MoveNext, so a query failure surfaces here. Re-throw as the
+                // same exception type the eager path produces, so the cmdlet reports it identically
+                // (a missing table is surfaced as an error, not silently treated as empty).
+                catch (Exception ex)
+                {
+                    throw new AzDataTableException(new ErrorRecord(ex, "GetLargeEntitiesError", ErrorCategory.InvalidOperation, null));
+                }
+
+                // A row needs reassembly if it is a cross-ROW split part (carries OriginalEntityId) OR a
+                // cross-COLUMN chunked row (carries the SplitOverProps marker). Rows with neither are
+                // plain and streamed as-is.
+                if (entity.ContainsKey(EntitySplitter.OriginalEntityIdKey) ||
+                    entity.ContainsKey(EntitySplitter.SplitOverPropsKey))
+                {
+                    parts.Add(entity);
+                }
+                else
+                {
+                    plainKeys.Add((entity.PartitionKey, entity.RowKey));
+                    yield return ProjectToPSObject(entity);
+                }
+            }
+        }
+
+        if (parts.Count == 0)
+        {
+            yield break;
+        }
+
+        var recovered = RecoverMissingPartRows(parts, properties);
+        foreach (var reassembled in EntitySplitter.Reassemble(
+                     recovered,
+                     onWarning,
+                     incomplete => LogError(
+                         incomplete.Message,
+                         IncompleteEntityErrorCode,
+                         $"{incomplete.EntityPartitionKey}/{incomplete.EntityRowKey}")))
+        {
+            if (plainKeys.Contains((reassembled.PartitionKey, reassembled.RowKey)))
+            {
+                continue; // a plain row of this identity was already emitted; it wins over leftover parts
+            }
+            yield return ProjectToPSObject(reassembled);
         }
     }
 

@@ -36,6 +36,8 @@ If both a plain row and leftover part rows exist for the same RowKey, the plain 
 
 Since split entities span multiple rows, First, Skip, Sort and Count operate on rows before reassembly. If a filter matches only some rows of a split entity, the cmdlet fetches the missing rows before reassembly. A Property selection that excludes the split markers (OriginalEntityId, PartIndex, SplitOverProps, PartCount and the chunk properties) prevents reassembly.
 
+When none of the parameters First, Skip or Sort are specified, entities are streamed to the pipeline as they are read instead of being collected first.
+
 ## EXAMPLES
 
 ### Example 1

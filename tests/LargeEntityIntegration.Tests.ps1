@@ -647,6 +647,18 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             $result.Plain | Should -Be 'kept'
         }
 
+        It 'uses the unbounded streaming path when no paging or sort is requested' {
+            $streamData = New-PatternString -Length 1500000 -Seed 'STREAM'
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{
+                PartitionKey = 'stream'; RowKey = 'plain'; Data = $streamData; Plain = 'kept'
+            } -Force
+
+            $result = @(Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'stream'")
+            $result.Count | Should -Be 1
+            ($result[0].Data -ceq $streamData) | Should -BeTrue -Because 'the unbounded read path must still reassemble a split entity'
+            $result[0].Plain | Should -Be 'kept'
+        }
+
         It 'leaks no chunk properties or split markers when recovered' {
             $result = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'partial' and RowKey eq 'split'"
             $result.PSObject.Properties['Data_Part0'] | Should -BeNullOrEmpty

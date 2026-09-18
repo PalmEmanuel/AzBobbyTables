@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- `Get-AzDataTableLargeEntity` now streams unbounded, unsorted reads instead of creating the whole list before returning, improving performance and reducing memory usage in most cases. Reads that use `-First`, `-Skip` or `-Sort` keep the previous behaviour.
+
 ## [3.8.0] - 2026-08-18
 
 ### Added

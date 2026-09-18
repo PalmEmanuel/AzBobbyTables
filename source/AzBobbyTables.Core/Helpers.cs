@@ -34,6 +34,7 @@ public static class Helpers
                 HttpWebResponse? challengeResponse = ex.Response as HttpWebResponse;
                 if (!isArc || challengeResponse?.StatusCode != HttpStatusCode.Unauthorized)
                 {
+                    challengeResponse?.Dispose();
                     throw;
                 }
 
@@ -46,11 +47,21 @@ public static class Helpers
                 }
             }
 
-            StreamReader streamResponse = new(response.GetResponseStream());
-            string stringResponse = streamResponse.ReadToEnd();
+            using (response)
+            using (StreamReader streamResponse = new(response.GetResponseStream()))
+            {
+                string stringResponse = streamResponse.ReadToEnd();
 
-            Dictionary<string, string> tokenDict = JsonSerializer.Deserialize<Dictionary<string, string>>(stringResponse);
-            return tokenDict["access_token"];
+                Dictionary<string, string>? tokenDict = JsonSerializer.Deserialize<Dictionary<string, string>>(stringResponse);
+                if (tokenDict == null ||
+                    !tokenDict.TryGetValue("access_token", out string? accessToken) ||
+                    string.IsNullOrWhiteSpace(accessToken))
+                {
+                    throw new WebException("Managed identity endpoint returned an empty access token.");
+                }
+
+                return accessToken;
+            }
         }
         catch (Exception ex)
         {

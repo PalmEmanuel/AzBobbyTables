@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.8.1] - 2026-09-18
+
 ### Added
 
 - Added managed identity authentication support for Azure Arc-enabled servers.
@@ -156,7 +158,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.0...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.1...HEAD
+[3.8.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.1...v3.8.0
 [3.7.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.0...v3.7.1
 [3.7.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.6.1...v3.7.0

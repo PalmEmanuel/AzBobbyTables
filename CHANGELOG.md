@@ -6,7 +6,7 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ### Changed
 
-- `Get-AzDataTableLargeEntity` now streams unbounded, unsorted reads instead of materialising the whole result set before returning. Non-split rows are projected and yielded as they page in, and only the rare split-part rows (those carrying `OriginalEntityId` or `SplitOverProps`) are buffered and reassembled at the end, so peak memory on a large partition drops to roughly one page plus the split buffer. Reads that use `-First`, `-Skip` or `-Sort` keep the previous eager behaviour, and reassembly, ordering and error handling are unchanged.
+- `Get-AzDataTableLargeEntity` now streams unbounded, unsorted reads instead of creating the whole list before returning, improving performance and reducing memory usage in most cases. Reads that use `-First`, `-Skip` or `-Sort` keep the previous behaviour.
 
 ## [3.8.0] - 2026-08-18
 

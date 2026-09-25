@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Fixed
+
+- `Remove-AzDataTableLargeEntity`, and the stale part cleanup of `Add-` and `Update-AzDataTableLargeEntity`, no longer scan the whole partition to find part rows. Part rows were looked up by filtering on `OriginalEntityId`, which is not a key, so every lookup read every row in the partition and removing entities from large partitions took minutes per batch. Part rows are now found by their RowKey range, an index seek, and confirmed by `OriginalEntityId`.
+
 ## [3.8.1] - 2026-09-18
 
 ### Added

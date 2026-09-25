@@ -407,6 +407,52 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal'") | Should -BeNullOrEmpty
         }
 
+        It 'removes every part row when given keys-only rows, which carry no split markers' {
+            $entity = @{ PartitionKey = 'removal-keys'; RowKey = 'split' }
+            1..40 | ForEach-Object { $entity["P$_"] = New-PatternString -Length 25000 -Seed "rk$_" }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $entity -Force
+
+            $root = Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-keys' and RowKey eq 'split'" -Property PartitionKey, RowKey
+            Remove-AzDataTableLargeEntity -Context $Context -Entity $root -Force
+
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-keys'") | Should -BeNullOrEmpty
+        }
+
+        It 'leaves neighbours whose RowKey shares the part-row prefix' {
+            $abc = @{ PartitionKey = 'removal-prefix'; RowKey = 'abc' }
+            $partial = @{ PartitionKey = 'removal-prefix'; RowKey = 'abc-partial' }
+            1..40 | ForEach-Object {
+                $abc["P$_"] = New-PatternString -Length 25000 -Seed "pa$_"
+                $partial["P$_"] = New-PatternString -Length 25000 -Seed "pb$_"
+            }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $abc, $partial -Force
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal-prefix'; RowKey = 'abc-party'; V = 'neighbour' } -Force
+            $before = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix' and RowKey ge 'abc-partial' and RowKey lt 'abc-partial~'" -Property RowKey).Count
+
+            Remove-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal-prefix'; RowKey = 'abc' } -Force
+
+            $left = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix'" -Property RowKey).RowKey
+            $left | Should -Not -Contain 'abc'
+            $left | Where-Object { $_ -like 'abc-part[0-9]*' } | Should -BeNullOrEmpty
+            $left | Should -Contain 'abc-party'
+            @($left | Where-Object { $_ -like 'abc-partial*' }).Count | Should -Be $before
+            (Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix' and RowKey eq 'abc-partial'").P40 -ceq $partial.P40 | Should -BeTrue
+        }
+
+        It 'removes the part rows of more entities than fit in one lookup' {
+            $entities = 1..9 | ForEach-Object {
+                $e = @{ PartitionKey = 'removal-many'; RowKey = "e$_" }
+                1..40 | ForEach-Object { $e["P$_"] = 'x' * 25000 }
+                $e
+            }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $entities -Force
+            $roots = $entities | ForEach-Object { @{ PartitionKey = $_.PartitionKey; RowKey = $_.RowKey } }
+
+            Remove-AzDataTableLargeEntity -Context $Context -Entity $roots -Force
+
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-many'") | Should -BeNullOrEmpty
+        }
+
         It 'removes entities that were never split' {
             Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal2'; RowKey = 'plain'; V = 1 } -Force
             $target = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal2'"

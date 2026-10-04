@@ -4,6 +4,8 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+## [3.8.2] - 2026-10-04
+
 ### Fixed
 
 - `Remove-AzDataTableLargeEntity`, and the stale part cleanup of `Add-` and `Update-AzDataTableLargeEntity`, no longer scan the whole partition to find part rows. Part rows were looked up by filtering on `OriginalEntityId`, which is not a key, so every lookup read every row in the partition and removing entities from large partitions took minutes per batch. Part rows are now found by their RowKey range, an index seek, and confirmed by `OriginalEntityId`.
@@ -162,7 +164,8 @@ Bumped Microsoft.VisualStudio.Threading from 17.14.15 to 18.7.23 (#132)
 
 ## 3.1.1 - 2023-05-03
 
-[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.1...HEAD
+[unreleased]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.2...HEAD
+[3.8.2]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.1...v3.8.2
 [3.8.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.8.0...v3.8.1
 [3.8.0]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.1...v3.8.0
 [3.7.1]: https://github.com/PalmEmanuel/AzBobbyTables/compare/v3.7.0...v3.7.1

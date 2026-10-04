@@ -407,6 +407,79 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal'") | Should -BeNullOrEmpty
         }
 
+        It 'removes every part row when given keys-only rows, which carry no split markers' {
+            $entity = @{ PartitionKey = 'removal-keys'; RowKey = 'split' }
+            1..40 | ForEach-Object { $entity["P$_"] = New-PatternString -Length 25000 -Seed "rk$_" }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $entity -Force
+
+            $root = Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-keys' and RowKey eq 'split'" -Property PartitionKey, RowKey
+            Remove-AzDataTableLargeEntity -Context $Context -Entity $root -Force
+
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-keys'") | Should -BeNullOrEmpty
+        }
+
+        It 'leaves neighbours whose RowKey shares the part-row prefix' {
+            $abc = @{ PartitionKey = 'removal-prefix'; RowKey = 'abc' }
+            $partial = @{ PartitionKey = 'removal-prefix'; RowKey = 'abc-partial' }
+            1..40 | ForEach-Object {
+                $abc["P$_"] = New-PatternString -Length 25000 -Seed "pa$_"
+                $partial["P$_"] = New-PatternString -Length 25000 -Seed "pb$_"
+            }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $abc, $partial -Force
+            Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal-prefix'; RowKey = 'abc-party'; V = 'neighbour' } -Force
+            $before = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix' and RowKey ge 'abc-partial' and RowKey lt 'abc-partial~'" -Property RowKey).Count
+
+            Remove-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal-prefix'; RowKey = 'abc' } -Force
+
+            $left = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix'" -Property RowKey).RowKey
+            $left | Should -Not -Contain 'abc'
+            $left | Where-Object { $_ -like 'abc-part[0-9]*' } | Should -BeNullOrEmpty
+            $left | Should -Contain 'abc-party'
+            @($left | Where-Object { $_ -like 'abc-partial*' }).Count | Should -Be $before
+            (Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal-prefix' and RowKey eq 'abc-partial'").P40 -ceq $partial.P40 | Should -BeTrue
+        }
+
+        It 'removes the part rows of multiple entities in one partition' {
+            $entities = 1..9 | ForEach-Object {
+                $e = @{ PartitionKey = 'removal-many'; RowKey = "e$_" }
+                1..40 | ForEach-Object { $e["P$_"] = 'x' * 25000 }
+                $e
+            }
+            Add-AzDataTableLargeEntity -Context $Context -Entity $entities -Force
+            $roots = $entities | ForEach-Object { @{ PartitionKey = $_.PartitionKey; RowKey = $_.RowKey } }
+
+            Remove-AzDataTableLargeEntity -Context $Context -Entity $roots -Force
+
+            @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq 'removal-many'") | Should -BeNullOrEmpty
+        }
+
+        It 'removes overlapping root ranges without deleting rows owned by neighbours' {
+            $partition = 'removal-overlap'
+            $rows = @(
+                @{ PartitionKey = $partition; RowKey = 'abc' }
+                @{ PartitionKey = $partition; RowKey = 'abc-part1'; OriginalEntityId = 'abc' }
+                @{ PartitionKey = $partition; RowKey = 'abc-partial' }
+                @{ PartitionKey = $partition; RowKey = 'abc-partial-part1'; OriginalEntityId = 'abc-partial' }
+                @{ PartitionKey = $partition; RowKey = 'abc-party'; V = 'no owner' }
+                @{ PartitionKey = $partition; RowKey = 'abc-part2'; OriginalEntityId = 'ABC' }
+                @{ PartitionKey = $partition; RowKey = 'abc-part3'; OriginalEntityId = 'neighbour' }
+            )
+            Add-AzDataTableEntity -Context $Context -Entity $rows -Force
+
+            $roots = @(
+                @{ PartitionKey = $partition; RowKey = 'abc' }
+                @{ PartitionKey = $partition; RowKey = 'abc-partial' }
+            )
+            Remove-AzDataTableLargeEntity -Context $Context -Entity $roots -Force
+
+            $left = @(Get-AzDataTableEntity -Context $Context -Filter "PartitionKey eq '$partition'" | Sort-Object RowKey)
+            $left.Count | Should -Be 3
+            $left.RowKey | Should -Be @('abc-part2', 'abc-part3', 'abc-party')
+            $left[0].OriginalEntityId | Should -BeExactly 'ABC'
+            $left[1].OriginalEntityId | Should -BeExactly 'neighbour'
+            $left[2].V | Should -Be 'no owner'
+        }
+
         It 'removes entities that were never split' {
             Add-AzDataTableLargeEntity -Context $Context -Entity @{ PartitionKey = 'removal2'; RowKey = 'plain'; V = 1 } -Force
             $target = Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'removal2'"

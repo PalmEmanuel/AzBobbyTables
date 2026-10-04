@@ -733,11 +733,6 @@ public class AzDataTableService
     private const int PartLookupChunkSize = 10;
 
     /// <summary>
-    /// Number of RowKey ranges per OData filter when looking up part rows (the service allows 15 comparisons).
-    /// </summary>
-    private const int PartRangeChunkSize = 7;
-
-    /// <summary>
     /// Properties to request when looking up part rows.
     /// </summary>
     private static readonly string[] PartLookupProperties = { "PartitionKey", "RowKey", EntitySplitter.OriginalEntityIdKey };
@@ -1474,20 +1469,19 @@ public class AzDataTableService
     }
 
     /// <summary>
-    /// The part rows of the given entities, found by RowKey range and confirmed by OriginalEntityId.
+    /// The part rows of the given entities, found by one RowKey range per root and confirmed by OriginalEntityId.
     /// </summary>
     private IEnumerable<TableEntity> QueryPartRows(string partitionKey, IReadOnlyList<string> rowKeys)
     {
-        for (var i = 0; i < rowKeys.Count; i += PartRangeChunkSize)
+        // Combining RowKey ranges with OR makes Azure Table Storage scan the partition.
+        foreach (var rowKey in rowKeys)
         {
-            var chunk = rowKeys.Skip(i).Take(PartRangeChunkSize).ToList();
-            var owners = new HashSet<string>(chunk, StringComparer.Ordinal);
-            var ranges = string.Join(" or ", chunk.Select(rowKey => BuildRowKeyPrefixClause($"{rowKey}-part")));
-            var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and ({ranges})";
+            var range = BuildRowKeyPrefixClause($"{rowKey}-part");
+            var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and {range}";
 
             foreach (var row in TableClient!.Query<TableEntity>(filter, null, PartLookupProperties, CancellationToken))
             {
-                if (row.TryGetValue(EntitySplitter.OriginalEntityIdKey, out var id) && id?.ToString() is { } owner && owners.Contains(owner))
+                if (row.TryGetValue(EntitySplitter.OriginalEntityIdKey, out var id) && id?.ToString() is { } owner && string.Equals(owner, rowKey, StringComparison.Ordinal))
                 {
                     yield return row;
                 }

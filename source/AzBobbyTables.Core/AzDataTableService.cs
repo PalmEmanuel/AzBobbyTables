@@ -728,14 +728,14 @@ public class AzDataTableService
     #region Large entity operations
 
     /// <summary>
-    /// Properties to request when only the row identity is needed.
-    /// </summary>
-    private static readonly string[] KeysOnlyProperties = { "PartitionKey", "RowKey" };
-
-    /// <summary>
-    /// Number of RowKeys to combine into one OData filter when looking up part rows.
+    /// Number of RowKeys to combine into one OData filter when looking up root rows.
     /// </summary>
     private const int PartLookupChunkSize = 10;
+
+    /// <summary>
+    /// Properties to request when looking up part rows.
+    /// </summary>
+    private static readonly string[] PartLookupProperties = { "PartitionKey", "RowKey", EntitySplitter.OriginalEntityIdKey };
 
     /// <summary>
     /// Add one or more entities to a table, transparently splitting entities that
@@ -1070,25 +1070,15 @@ public class AzDataTableService
                 actions.Add(new TableTransactionAction(TableTransactionActionType.Delete, entity, validateEtag ? entity.ETag : default));
             }
 
-            // Find the part rows belonging to the removed entities. OriginalEntityId
-            // is matched in chunked OR filters to keep the number of queries low.
+            // Find the part rows belonging to the removed entities.
             foreach (var partitionGroup in mainRows.GroupBy(e => e.PartitionKey))
             {
                 var rowKeys = partitionGroup.Select(e => e.RowKey).Distinct(StringComparer.Ordinal).ToList();
-                for (var i = 0; i < rowKeys.Count; i += PartLookupChunkSize)
+                foreach (var partRow in QueryPartRows(partitionGroup.Key, rowKeys))
                 {
-                    var conditions = string.Join(" or ", rowKeys
-                        .Skip(i)
-                        .Take(PartLookupChunkSize)
-                        .Select(rowKey => $"{EntitySplitter.OriginalEntityIdKey} eq '{EscapeODataValue(rowKey)}'"));
-                    var filter = $"PartitionKey eq '{EscapeODataValue(partitionGroup.Key)}' and ({conditions})";
-
-                    foreach (var partRow in TableClient!.Query<TableEntity>(filter, null, KeysOnlyProperties, CancellationToken))
+                    if (!mainKeys.Contains((partRow.PartitionKey, partRow.RowKey)))
                     {
-                        if (!mainKeys.Contains((partRow.PartitionKey, partRow.RowKey)))
-                        {
-                            actions.Add(new TableTransactionAction(TableTransactionActionType.Delete, partRow));
-                        }
+                        actions.Add(new TableTransactionAction(TableTransactionActionType.Delete, partRow));
                     }
                 }
             }
@@ -1467,9 +1457,7 @@ public class AzDataTableService
     /// </summary>
     private void RemoveStalePartRows(string partitionKey, string originalRowKey, HashSet<string> liveRowKeys)
     {
-        var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and {EntitySplitter.OriginalEntityIdKey} eq '{EscapeODataValue(originalRowKey)}'";
-
-        var staleActions = TableClient!.Query<TableEntity>(filter, null, KeysOnlyProperties, CancellationToken)
+        var staleActions = QueryPartRows(partitionKey, new[] { originalRowKey })
             .Where(e => !liveRowKeys.Contains(e.RowKey))
             .Select(e => new TableTransactionAction(TableTransactionActionType.Delete, e))
             .ToList();
@@ -1477,6 +1465,27 @@ public class AzDataTableService
         if (staleActions.Count > 0)
         {
             SubmitTransactionSized(staleActions);
+        }
+    }
+
+    /// <summary>
+    /// The part rows of the given entities, found by one RowKey range per root and confirmed by OriginalEntityId.
+    /// </summary>
+    private IEnumerable<TableEntity> QueryPartRows(string partitionKey, IReadOnlyList<string> rowKeys)
+    {
+        // Combining RowKey ranges with OR makes Azure Table Storage scan the partition.
+        foreach (var rowKey in rowKeys)
+        {
+            var range = BuildRowKeyPrefixClause($"{rowKey}-part");
+            var filter = $"PartitionKey eq '{EscapeODataValue(partitionKey)}' and {range}";
+
+            foreach (var row in TableClient!.Query<TableEntity>(filter, null, PartLookupProperties, CancellationToken))
+            {
+                if (row.TryGetValue(EntitySplitter.OriginalEntityIdKey, out var id) && id?.ToString() is { } owner && string.Equals(owner, rowKey, StringComparison.Ordinal))
+                {
+                    yield return row;
+                }
+            }
         }
     }
 

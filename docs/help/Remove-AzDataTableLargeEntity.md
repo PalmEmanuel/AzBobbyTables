@@ -24,8 +24,6 @@ Remove one or more entities from an Azure Table, based on PartitionKey and RowKe
 
 In addition to the entity's own row, any part rows that the entity was split into when added by `Add-AzDataTableLargeEntity` (rows whose `OriginalEntityId` matches the entity's RowKey) are found and removed as well, so no orphaned parts are left behind. Part rows are removed without ETag validation; ETag validation, when not skipped with the `Force` parameter, applies only to the entity's own row.
 
-Part rows are looked up using a separate bounded RowKey range for each entity, then checked against `OriginalEntityId`. Removing multiple entities makes more lookup requests rather than combining ranges with `or`, which would cause a partition scan in Azure Table Storage.
-
 ## EXAMPLES
 
 ### Example 1

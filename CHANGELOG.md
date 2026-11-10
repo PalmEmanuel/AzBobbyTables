@@ -4,6 +4,14 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- Reusing table clients for repeated connection-string operations reduces setup overhead.
+
+### Fixed
+
+- `Get-AzDataTableLargeEntity` now uses the root-row value when a property is duplicated across split rows, preventing stale values from being concatenated. For example, a current value of `Completed` could previously be returned as `CompletedPlanned` when a split row still held the old value `Planned`.
+
 ## [3.8.2] - 2026-10-04
 
 ### Fixed

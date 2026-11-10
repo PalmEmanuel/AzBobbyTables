@@ -34,6 +34,8 @@ Rows belonging to one logical entity are recognized by their `OriginalEntityId` 
 
 If both a plain row and leftover part rows exist for the same RowKey, the plain row wins, so an entity that was rewritten smaller after having been split still reads correctly.
 
+If a property appears on more than one row of a split entity, the value on the first row (the row whose RowKey is the entity's own) is returned. This happens when a split-unaware update such as `Update-AzDataTableEntity` merges a property onto that row while an older copy remains on a part row.
+
 Since split entities span multiple rows, First, Skip, Sort and Count operate on rows before reassembly. If a filter matches only some rows of a split entity, the cmdlet fetches the missing rows before reassembly. A Property selection that excludes the split markers (OriginalEntityId, PartIndex, SplitOverProps, PartCount and the chunk properties) prevents reassembly.
 
 When none of the parameters First, Skip or Sort are specified, entities are streamed to the pipeline as they are read instead of being collected first.

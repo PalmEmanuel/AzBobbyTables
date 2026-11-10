@@ -604,13 +604,10 @@ public static class EntitySplitter
                     continue;
                 }
 
-                // The writer places each property on exactly one row; string values
-                // colliding across rows are treated as fragments and concatenated.
-                if (merged.TryGetValue(property.Key, out var existing) && existing is string left && property.Value is string right)
-                {
-                    merged[property.Key] = left + right;
-                }
-                else
+                // The writer places each property on exactly one row, so a property on more than
+                // one row was merged onto the root row by a split-unaware update: the root (the
+                // first row by PartIndex) holds the current value.
+                if (!merged.ContainsKey(property.Key))
                 {
                     merged[property.Key] = property.Value;
                 }

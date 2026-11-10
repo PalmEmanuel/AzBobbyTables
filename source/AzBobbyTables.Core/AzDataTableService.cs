@@ -4,6 +4,7 @@ using PipeHow.AzBobbyTables.Core.Conversion;
 using PipeHow.AzBobbyTables.Core.Logging;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
@@ -244,17 +245,21 @@ public class AzDataTableService
         }
     }
 
+    // Clients are thread-safe and building one reflects over assembly attributes, so reuse them per connection.
+    private static readonly ConcurrentDictionary<(string ConnectionString, int MaxRetries), TableServiceClient> _serviceClients = new();
+    private static readonly ConcurrentDictionary<(string ConnectionString, string TableName, int MaxRetries), TableClient> _tableClients = new();
+
     public static AzDataTableService CreateWithConnectionString(string connectionString, string tableName, bool createIfNotExists, CancellationToken cancellationToken, int maxRetries = 0)
     {
         try
         {
             var dataTableService = new AzDataTableService(cancellationToken);
 
-            TableServiceClient serviceClient = new(connectionString, CreateSharedOptions(maxRetries));
+            TableServiceClient serviceClient = _serviceClients.GetOrAdd((connectionString, maxRetries), key => new(key.ConnectionString, CreateSharedOptions(key.MaxRetries)));
 
             if (tableName is not null)
             {
-                TableClient client = new(connectionString, tableName, CreateSharedOptions(maxRetries));
+                TableClient client = _tableClients.GetOrAdd((connectionString, tableName, maxRetries), key => new(key.ConnectionString, key.TableName, CreateSharedOptions(key.MaxRetries)));
 
                 if (createIfNotExists && !string.IsNullOrWhiteSpace(tableName))
                 {

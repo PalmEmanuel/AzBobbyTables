@@ -4,10 +4,13 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- Reusing table clients for repeated connection-string operations reduces setup overhead.
+
 ### Fixed
 
-- Every cmdlet that connects with a connection string no longer builds new table clients on each call. Building a client reflects over assembly attributes, which made it the main per-call cost for callers issuing many small requests. Clients are thread-safe, so one `TableServiceClient` and one `TableClient` are now reused per connection string, table name and `-MaxRetries` value.
-- `Get-AzDataTableLargeEntity` no longer concatenates a property that appears on more than one row of a split entity. That only happens when a split-unaware update, such as `Update-AzDataTableEntity`, merges a property onto the root row while an older copy remains on a part row; the root row's value is now returned, instead of both values joined (`'Completed'` + `'Planned'` read as `'CompletedPlanned'`).
+- `Get-AzDataTableLargeEntity` now uses the root-row value when a property is duplicated across split rows, preventing stale values from being concatenated. For example, a current value of `Completed` could previously be returned as `CompletedPlanned` when a split row still held the old value `Planned`.
 
 ## [3.8.2] - 2026-10-04
 

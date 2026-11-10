@@ -234,6 +234,26 @@ Describe 'Large Entity Integration Tests' -Tag 'Integration' {
             $result.Filler | Should -Be 'other'
         }
 
+        It 'keeps the root row value of a property that a split-unaware update duplicated (<Path> read)' -ForEach @(
+            @{ Path = 'streamed'; Read = @{} }
+            @{ Path = 'sorted'; Read = @{ Sort = 'RowKey' } }
+        ) {
+            # Older writers left small properties on a later part row; a plain update then
+            # writes the same property to the root row only, and the part keeps the old value.
+            # The filter matches only the stale part row, so the root is fetched to reassemble.
+            Add-AzDataTableEntity -Context $Context -Force -Entity @(
+                @{ PartitionKey = 'psformat'; RowKey = 'dup'; OriginalEntityId = 'dup'; PartIndex = 0; State = 'Completed'; Attempts = 2 }
+                @{ PartitionKey = 'psformat'; RowKey = 'dup-part1'; OriginalEntityId = 'dup'; PartIndex = 1; State = 'Planned'; Attempts = 1; Other = 'kept' }
+            )
+
+            $result = @(Get-AzDataTableLargeEntity -Context $Context -Filter "PartitionKey eq 'psformat' and State eq 'Planned'" @Read)
+            $result.Count | Should -Be 1
+            $result[0].RowKey | Should -Be 'dup'
+            $result[0].State | Should -Be 'Completed'
+            $result[0].Attempts | Should -Be 2
+            $result[0].Other | Should -Be 'kept'
+        }
+
         It 'prefers a plain row over leftover part rows with the same identity' {
             Add-AzDataTableEntity -Context $Context -Force -Entity @(
                 @{ PartitionKey = 'psformat'; RowKey = 'stale'; Current = 'fresh' }

@@ -4,6 +4,10 @@ The format is based on and uses the types of changes according to [Keep a Change
 
 ## [Unreleased]
 
+### Changed
+
+- Query responses are read into pooled buffers and split properties are rejoined with a single copy, roughly halving the memory allocated when reading large tables. The pool keeps at most four buffers per size up to 4 MB, the largest page Azure Table storage returns, and larger responses are read without pooling.
+
 ## [3.8.3] - 2026-11-10
 
 ### Changed

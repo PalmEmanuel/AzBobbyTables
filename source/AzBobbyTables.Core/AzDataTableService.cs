@@ -93,6 +93,7 @@ public class AzDataTableService
     {
         var options = new TableClientOptions();
         options.Transport = SharedTransport;
+        options.AddPolicy(new PooledResponseBufferPolicy(), HttpPipelinePosition.PerRetry);
 
         if (maxRetries > 0)
         {

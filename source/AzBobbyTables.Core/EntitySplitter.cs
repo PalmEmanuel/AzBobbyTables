@@ -670,7 +670,8 @@ public static class EntitySplitter
                     _ => throw new JsonException("Manifest SplitHeaders is neither an array nor a string."),
                 };
 
-                var joined = new StringBuilder();
+                // Concat(string[]) sizes the joined value up front; the IEnumerable overload and StringBuilder grow and copy
+                var chunks = new List<string>(splitHeaders.Count);
                 foreach (var header in splitHeaders)
                 {
                     // Skipping a missing chunk would store the rest as though it were the
@@ -683,10 +684,10 @@ public static class EntitySplitter
                             $"Cannot reassemble property '{originalHeader}' of entity with PartitionKey='{entity.PartitionKey}' and RowKey='{entity.RowKey}': chunk property '{header}' is missing. The query did not return every row the entity was split over.");
                     }
 
-                    joined.Append(chunk);
+                    chunks.Add(chunk.ToString()!);
                 }
 
-                entity[originalHeader] = joined.ToString();
+                entity[originalHeader] = string.Concat(chunks.ToArray());
                 foreach (var header in splitHeaders)
                 {
                     entity.Remove(header);
